@@ -1,0 +1,14 @@
+# macOS / editor metadata
+.DS_Store
+
+# Local-only runtime and dependency artifacts
+node_modules/
+coverage/
+dist/
+.env
+.env.*
+!.env.example
+
+# Release packages and private validation inputs stay outside source history.
+releases/
+*.xlsx
