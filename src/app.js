@@ -1,11 +1,11 @@
 import { coveredCellsForRange } from './geometry.js';
-import { V020_SCHEMA_VERSION, createEncounterMember, materializeCombatant, migrateV010Session, normalizeV020Lifecycle, validateImportedEnvelope, finalizeCombatSession, referenceTemplateSeeds, legacyCharacterPresets, legacyNpcPresets, footprintFits, footprintsOverlap, firstFreeFootprintPosition, combatantCanAct, nextEligibleTurn, clearTemporaryCombatState, declareCombatantDead, normalizeInitiativeModifier, resolveInitiative } from './encounter.js';
+import { V020_SCHEMA_VERSION, createSessionEnvelope, createEncounterMember, materializeCombatant, migrateV010Session, normalizeV020Lifecycle, validateImportedEnvelope, finalizeCombatSession, referenceTemplateSeeds, legacyCharacterPresets, legacyNpcPresets, footprintFits, footprintsOverlap, firstFreeFootprintPosition, combatantCanAct, nextEligibleTurn, clearTemporaryCombatState, declareCombatantDead, normalizeInitiativeModifier, resolveInitiative } from './encounter.js?v=20260824-2';
 import { abandonPostCombatDiff, applyCombatInventoryBalanceChange, applyCombatResourceChange, applyCombatSpellResourceChange, applyPostCombatDecisions, archiveCharacterRecord, buildPostCombatDiff, canPermanentlyDeleteCharacterRecord, createCharacterRecord, createCharacterSheet, createCombatProjection, createEncounterMemberFromProjection, createLinkedEntityProjection, currentCharacterSheet, diffCharacterRevisions, M1_S5_RULES, M1_S5_WEAPON_MASTERY_CATALOG, normalizeCharacterRecord, restoreCharacterRecord, reviseCharacterRecord, reviseWeaponMasterySelections, weaponMasteryEligibleAttacks } from './characters.js';
 import { BEILING_PROFILE, parseBeilingXlsxFile } from './character-import.js';
 import { sessionForStorage } from './session-persistence.js?v=20260821-7';
 
-const APP_VERSION = V020_SCHEMA_VERSION;
-const DELIVERY_VERSION = '0.3.0 M1-S5';
+const SESSION_ENVELOPE_SCHEMA_VERSION = V020_SCHEMA_VERSION;
+const DELIVERY_VERSION = '0.3.1';
 // M1-S5 persists only to new keys.  Existing M1-S4 data is read once as a
 // compatibility source and remains untouched until a new S5 snapshot is saved.
 const STORAGE_KEY = 'dnd-terminal.v0.3.0-m1-s5.session.current';
@@ -44,7 +44,7 @@ const templates = [
 ];
 
 function emptySession() {
-  return { schemaVersion:APP_VERSION, sessionId:uid(), name:'未命名遭遇', createdAt:now(), updatedAt:now(),
+  return { schemaVersion:SESSION_ENVELOPE_SCHEMA_VERSION, sessionId:uid(), name:'未命名遭遇', createdAt:now(), updatedAt:now(),
     settings:{ width:24, height:18, cellFeet:5, diagonalRule:'five-feet', visibleTabs:TABS, darkRolls:true, mapMode:'fit' },
     characters:[], combatProjections:[], linkedEntityProjections:[], postCombatDiffs:[], masteryCandidates:[], combatants:[], turn:{round:0, index:-1, order:[], started:false}, effects:[], events:[], snapshotSequence:0,
     encounter:{ id:uid(), phase:'preparation', members:[], preparationSnapshot:null, confirmedAt:null, migratedFrom:null },
@@ -79,7 +79,7 @@ function serializedKilobytes(text){const bytes=globalThis.TextEncoder?new TextEn
 function persist() {
   state.updatedAt=now();
   let serialized='',phase='压缩会话';
-  try { const stored=sessionForStorage(state,clone);phase='序列化会话';serialized=JSON.stringify({schemaVersion:APP_VERSION, appVersion:APP_VERSION, exportedAt:now(), session:stored, checksum:`events:${state.events.length}`});phase='写入浏览器存储';localStorage.setItem(STORAGE_KEY,serialized); return true; }
+  try { const stored=sessionForStorage(state,clone);phase='序列化会话';serialized=JSON.stringify(createSessionEnvelope(stored,{exportedAt:now()}));phase='写入浏览器存储';localStorage.setItem(STORAGE_KEY,serialized); return true; }
   catch(error) { const detail=`${error?.name||'Error'}${error?.message?`：${error.message}`:''}`;if(phase==='写入浏览器存储'&&error?.name==='QuotaExceededError'){state.ui.message=`浏览器存储空间不足；本次压缩会话约 ${serializedKilobytes(serialized)} KB。当前战斗仍保留在本页内存，请先导出；刷新会回到最后一次成功保存的状态。`;}else state.ui.message=`战斗保存失败（${phase}）：${detail}。当前战斗仍保留在本页内存，请先导出，不要刷新。`;state.ui.messageKind='error'; console.error(error); return false; }
 }
 function validateEnvelope(data) { return validateImportedEnvelope(data, uid, now); }
@@ -698,7 +698,7 @@ function updateRangeGeometry(range, start, cell){ if(range.shape==='circle'||ran
 function updateMapPreview(grid, cell, plan){ grid.querySelectorAll('.move-preview,.move-pending').forEach(node=>node.classList.remove('move-preview','move-pending')); const target=grid.querySelector(`[data-cell="${cell.x},${cell.y}"]`); if(target)target.classList.add('move-preview',...((plan?.blocked||plan?.pending)?['move-pending']:[])); const box=document.querySelector('#movement-preview'); if(box&&plan) {box.className=`notice ${(plan.blocked||plan.pending)?'warn':''}`;const result=plan.blocked?`不可提交：${plan.reasons.join('；')}`:plan.pending?`超过移动力，DM 可确认：${plan.reasons.join('；')}`:'可采用（未自动判断墙体、视线或掩护）';box.textContent=`路径：(${plan.from.x},${plan.from.y}) → (${cell.x},${cell.y})；计算距离 ${plan.feet} 尺；${result}`;} }
 function updateRangePreview(grid, range){ const cells=coveredCells(range); grid.querySelectorAll('.preview').forEach(node=>node.classList.remove('preview')); cells.forEach(key=>grid.querySelector(`[data-cell="${key}"]`)?.classList.add('preview')); const targets=rangeTargets(cells).map(c=>c.name).join('、')||'无'; const live=document.querySelector('#range-live'); if(live)live.textContent=`${rangeLabel(range.shape)}实时预览：${cells.length} 格；自动候选：${targets}`; }
 function roll() { const formula=document.querySelector('#dice-formula')?.value?.trim()||'1d20'; const m=formula.match(/^(\d*)d(\d+)([+-]\d+)?$/i);if(!m)return message('骰式须为 NdM±K，例如 2d6+3。','error');const n=Number(m[1]||1),s=Number(m[2]),k=Number(m[3]||0);if(n<1||n>100||s<2)return message('骰式范围无效。','error');const dice=Array.from({length:n},()=>1+Math.floor(Math.random()*s));const total=dice.reduce((a,b)=>a+b,0)+k;command('dice.rolled',{formula,dice,modifier:k,total,visibility:state.settings.darkRolls?'dm-only':'public'},()=>{});message(`${formula} = ${dice.join('+')}${k?`${k>0?'+':''}${k}`:''} = ${total}`); }
-function exportJson(){ const blob=new Blob([JSON.stringify({schemaVersion:APP_VERSION,appVersion:APP_VERSION,exportedAt:now(),session:state,checksum:`events:${state.events.length}`},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`dnd-terminal-${state.sessionId}.json`;a.click();URL.revokeObjectURL(a.href); }
+function exportJson(){ const blob=new Blob([JSON.stringify(createSessionEnvelope(state,{exportedAt:now(),deliveryVersion:DELIVERY_VERSION}),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`dnd-terminal-${state.sessionId}.json`;a.click();URL.revokeObjectURL(a.href);message('已生成 v0.3.1 JSON 导出；文件将由浏览器下载。'); }
 function writeback(){message('M1-S2 只允许在战斗结束后，由 DM 从候选差异中逐项确认 HP 与既有资源余额。装备消费扩展、永久损伤、奖励、诅咒与祝福仍不自动回写。','warn');}
 
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
@@ -923,7 +923,7 @@ function mapViewV2(){
   return `<section class="panel"><div class="map-layout"><div class="card map-wrap"><h2>二维战术地图 <small>${w}×${h} / 每格 ${state.settings.cellFeet} 尺</small></h2><div class="row map-mode"><span>显示：</span><button data-map-mode="fit" class="${mode==='fit'?'active':''}">适应屏幕</button><button data-map-mode="tactical" class="${mode==='tactical'?'active':''}">战术操作</button></div><div id="movement-preview" class="notice ${pendingPlacements.length?'warn':''}">${pendingPlacements.length?`正在摆放本批 ${pendingPlacements.length} 个单位：逐个拖动后一次性确认投入；未确认前不会加入先攻或写入事件。`:'按住棋子并拖动；松开后才记录移动。黄色提示表示超过移动力，重叠和越界不可提交。'}</div><div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div><p class="muted">棋子正面边以金色标示；点选棋子可设置朝向和发射口。</p>${mapInspector()}</div><aside class="card"><h2>地图与范围</h2>${sidebar}</aside></div></section>`;
 }
 function view(){if(state.encounter?.phase==='preparation'&&state.ui.tab==='战斗')return preparationView();if(state.encounter?.phase==='preparation'&&state.ui.tab==='地图')return preparationMapView();return ({'战斗':combatView,'地图':mapViewV2,'角色':characterView,'单位库':libraryViewV2,'日志':logView,'掷骰':diceView,'设置':settingsView}[state.ui.tab]||combatView)();}
-function render(){document.querySelector('#app').innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><h1>DND Terminal</h1><small>v${DELIVERY_VERSION} 候选 · 会话兼容层 ${APP_VERSION} · 本地私有</small></div><span class="muted">${esc(state.name)} · ${state.events.length} events</span></header><nav class="tabs">${state.settings.visibleTabs.map(tabButton).join('')}</nav>${state.ui.message?`<p class="notice ${state.ui.messageKind||''}">${esc(state.ui.message)}</p>`:''}${view()}<footer class="footer">受控 Excel → CharacterDraft → CharacterSheet → CombatProjection → CombatantInstance → CombatEvent → PostCombatDiff · M1-S5 稳定化</footer></div>`; upgradeLinkedEditors(); bind();}
+function render(){document.querySelector('#app').innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><h1>DND Terminal</h1><small>v${DELIVERY_VERSION} · 会话 Schema ${SESSION_ENVELOPE_SCHEMA_VERSION} · 本地私有</small></div><span class="muted">${esc(state.name)} · ${state.events.length} events</span></header><nav class="tabs">${state.settings.visibleTabs.map(tabButton).join('')}</nav>${state.ui.message?`<p class="notice ${state.ui.messageKind||''}">${esc(state.ui.message)}</p>`:''}${view()}<footer class="footer">受控 Excel → CharacterDraft → CharacterSheet → CombatProjection → CombatantInstance → CombatEvent → PostCombatDiff · M1-S5 稳定化</footer></div>`; upgradeLinkedEditors(); bind();}
 function bindMapInteractions(){
   const grid=document.querySelector('[data-map-grid]');if(!grid)return;
   const within=cell=>cell.x>=0&&cell.y>=0&&cell.x<state.settings.width&&cell.y<state.settings.height;

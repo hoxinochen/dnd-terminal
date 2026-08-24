@@ -1,5 +1,18 @@
 export const V020_SCHEMA_VERSION = '0.2.0';
 
+// Delivery identity is intentionally optional metadata.  Session validation
+// remains bound to the stable Envelope Schema, not to a product release name.
+export function createSessionEnvelope(session, { exportedAt, deliveryVersion } = {}) {
+  const envelope = {
+    schemaVersion: V020_SCHEMA_VERSION,
+    appVersion: V020_SCHEMA_VERSION,
+    exportedAt,
+    session,
+    checksum: `events:${Array.isArray(session?.events) ? session.events.length : 0}`,
+  };
+  return deliveryVersion ? { ...envelope, deliveryVersion } : envelope;
+}
+
 const copy = value => globalThis.structuredClone ? globalThis.structuredClone(value) : JSON.parse(JSON.stringify(value));
 
 export function normalizeInitiativeModifier(value, fallback = 0) {
@@ -251,7 +264,7 @@ export function validateImportedEnvelope(data, id, timestamp) {
     const session = migrateV010Session(data.session, id, timestamp);
     return { ...data, schemaVersion: V020_SCHEMA_VERSION, appVersion: V020_SCHEMA_VERSION, session: normalizeV020Lifecycle(session) };
   }
-  if (data.schemaVersion !== V020_SCHEMA_VERSION) throw new Error('导入失败：仅接受 v0.1.0 或 v0.2.0 导出 Envelope。');
+  if (data.schemaVersion !== V020_SCHEMA_VERSION) throw new Error('导入失败：仅接受 v0.1.0 或 v0.2.0 Session Envelope Schema。');
   if (!Array.isArray(data.session.combatants) || !data.session.settings) throw new Error('导入失败：缺少战斗状态。');
   if (!data.session.encounter) throw new Error('导入失败：v0.2.0 会话缺少遭遇状态。');
   return { ...data, session: normalizeV020Lifecycle(data.session) };
