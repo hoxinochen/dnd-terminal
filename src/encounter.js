@@ -64,10 +64,12 @@ export function firstFreeFootprintPosition(footprint, occupied, settings) {
 }
 
 export function combatantCanAct(combatant, round) {
+  const pcPhase = combatant?.lifePhase || ({ alive:'active', unconscious:'dying', stable:'stable', dead:'dead', 'needs-review':'needs-review' }[combatant?.lifeStatus]);
+  const hasLifeTurn = combatant?.kind === 'character'
+    ? (pcPhase === 'dying' && combatant?.hp === 0) || (pcPhase === 'active' && combatant?.hp > 0 && !(combatant?.conditions || []).includes('unconscious'))
+    : combatant?.hp > 0 && !['dead', 'transformed', 'stable', 'needs-review'].includes(combatant?.lifeStatus);
   return !!combatant
-    && combatant.hp > 0
-    && combatant.lifeStatus !== 'dead'
-    && combatant.lifeStatus !== 'transformed'
+    && hasLifeTurn
     && combatant.presenceStatus === 'on-field'
     && combatant.participationStatus === 'active'
     && !combatant.cleanupRemoved

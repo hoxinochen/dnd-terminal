@@ -11,6 +11,6 @@ assert(source.includes('combatant.spell-resource.changed'), 'spell resource cons
 assert(source.includes("'combatant.spell-resource.changed'"), 'spell resource consumption can be compensated through the existing undo path');
 assert(source.includes('同名法术的多个 CastingOption'), 'fixture text makes source-specific casting options explicit');
 assert(source.includes('种施放方式：'), 'spell cards make multiple casting options legible');
-assert(source.includes('M1-S5 候选'), 'footer is aligned with the active slice');
+assert(source.includes('CombatantInstance（单场生命状态）'), 'footer retains the character/projection/instance boundary under the v0.4.0 delivery');
 
 console.log('spellcasting-ui-m1-s4.test.mjs: pass');

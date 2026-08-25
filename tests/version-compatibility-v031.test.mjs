@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { CHARACTER_SHEET_SCHEMA_VERSION } from '../src/characters.js';
 import { createSessionEnvelope, V020_SCHEMA_VERSION, validateImportedEnvelope } from '../src/encounter.js';
+import { createV040Envelope, V040_SESSION_SCHEMA_VERSION, validateV040Envelope } from '../src/life-cycle-v040.js';
 
 const [appSource, indexSource, v020BrowserFixture, v031BrowserFixture] = await Promise.all([
   readFile(new URL('../src/app.js', import.meta.url), 'utf8'),
@@ -50,20 +51,25 @@ assert.throws(
   'a product release label is not accepted as a made-up Session Schema',
 );
 
-assert.match(appSource, /const SESSION_ENVELOPE_SCHEMA_VERSION = V020_SCHEMA_VERSION;/);
-assert.match(appSource, /const DELIVERY_VERSION = '0\.3\.1';/);
-assert.match(appSource, /from '\.\/encounter\.js\?v=20260824-2';/, 'the updated Envelope module receives the same cache revision as the app entry');
-assert.match(indexSource, /<title>DND Terminal v0\.3\.1 — Local Private<\/title>/, 'the browser tab identity matches the v0.3.1 delivery');
-assert.match(indexSource, /src="src\/app\.js\?v=20260824-2"/, 'the HTML entry revision invalidates the prior app module cache');
-assert.match(appSource, /const STORAGE_KEY = 'dnd-terminal\.v0\.3\.0-m1-s5\.session\.current';/);
-assert.match(appSource, /const LEGACY_STORAGE_KEY = 'dnd-terminal\.v0\.2\.0\.session\.current';/);
+const v040Export = createV040Envelope(session, { exportedAt:'2026-08-25T00:00:00.000Z' });
+assert.equal(v040Export.schemaVersion, V040_SESSION_SCHEMA_VERSION, 'v0.4.0 advances only the Session Envelope Schema');
+assert.equal(v040Export.deliveryVersion, '0.4.0', 'v0.4.0 export identifies the delivery separately');
+assert.equal(validateV040Envelope(v031BrowserFixture, ()=>'migrated', ()=>'2026-08-25').session.schemaVersion, '0.3.0', 'v0.3.1 exports migrate as read-only copies');
+
+assert.match(appSource, /const SESSION_ENVELOPE_SCHEMA_VERSION = V040_SESSION_SCHEMA_VERSION;/);
+assert.match(appSource, /const DELIVERY_VERSION = V040_DELIVERY_VERSION;/);
+assert.match(appSource, /from '\.\/encounter\.js\?v=20260825-3';/, 'the Amendment 01 encounter module receives a fresh cache revision');
+assert.match(indexSource, /<title>DND Terminal v0\.4\.0 — Local Private Candidate<\/title>/, 'the browser tab identity matches the candidate delivery');
+assert.match(indexSource, /src="src\/app\.js\?v=20260825-2"/, 'the HTML entry revision invalidates the Amendment 01 app module cache');
+assert.match(appSource, /const STORAGE_KEY = V040_STORAGE_KEY;/);
+assert.match(appSource, /const LEGACY_STORAGE_KEY = V031_STORAGE_KEY;/);
 assert.match(appSource, /const TEMPLATE_STORAGE_KEY = 'dnd-terminal\.v0\.2\.0\.templates';/);
 assert.match(appSource, /const CHARACTER_STORAGE_KEY = 'dnd-terminal\.v0\.3\.0-m1-s5\.character-records';/);
 assert.match(appSource, /const LEGACY_CHARACTER_STORAGE_KEY = 'dnd-terminal\.v0\.3\.0\.character-records';/);
-assert.match(appSource, /createSessionEnvelope\(stored,\{exportedAt:now\(\)\}\)/);
-assert.match(appSource, /createSessionEnvelope\(state,\{exportedAt:now\(\),deliveryVersion:DELIVERY_VERSION\}\)/);
+assert.match(appSource, /createV040Envelope\(stored,\{exportedAt:now\(\)\}\)/);
+assert.match(appSource, /createV040Envelope\(state,\{exportedAt:now\(\)\}\)/);
 assert.match(appSource, /会话 Schema \$\{SESSION_ENVELOPE_SCHEMA_VERSION\}/);
-assert.match(appSource, /已生成 v0\.3\.1 JSON 导出；文件将由浏览器下载。/);
+assert.match(appSource, /已生成 v0\.4\.0 \/ Session Schema 0\.3\.0 JSON 导出/);
 assert.doesNotMatch(appSource, /const APP_VERSION =/);
 assert.equal(CHARACTER_SHEET_SCHEMA_VERSION, '0.3.0-m1-s5', 'the CharacterSheet contract remains unchanged');
 
