@@ -55,6 +55,15 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 
 产品 Workspace 中的代码与测试证据必须由文档 Authority 以 Workspace 相对路径、不可变 Git identity 或实际 SHA-256 引用。私有绝对路径可以用于当前本地定位，但不得直接进入未来公开 Release 产物。
 
+## 活文档治理
+
+交付记录证明某一历史事实；活文档负责让人能够正确理解**现在**的项目状态。两者缺一不可，且不得互相替代。
+
+- Authority 中的 `AGENTS.md`、`README.md`、`docs/ROADMAP.md`、`docs/BACKLOG.md` 与本文件构成活文档集合；每次交付范围、生命周期、授权、当前门禁、延期依赖或技术同步发生变化时，必须由事实源驱动逐项核对。
+- 运行顺序固定为：交付事实源 → 活文档核对/更新 → `authority-mirror/` 单向生成 → 根 README 链接投影 → 差异与链接验证 → 经用户授权的技术同步 Commit/Push。不得跳过活文档而直接镜像或提交。
+- 每次收口报告必须说明：哪些活文档已更新、哪些已核对但不受影响、镜像是否与 Authority 一致、根 README 是否已投影、以及 Commit/Push 是否已执行。缺少任一项时，不得宣称“活文档同步完成”。
+- 该流程是治理和可见性要求，不会自动授予 ABC、Implementation、Review、Release、Archive、Commit 或 Push 权限，也不会允许改写冻结原件。
+
 ## 规则效力
 
 1. 规则结论只来自 `rules-baseline.md` 固定的实际 Entry。
@@ -85,7 +94,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 ## v0.5.0 归档结论
 
 - User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与独立选择的 Lightweight Archive；`version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md` 记录发布身份、完整快照、测试执行与八项 Gate。
-- v0.5.0 已归档为 Local Private；分支、Commit、Push、部署、公开发布或再分发仍未授权。
+- v0.5.0 已归档为 Local Private；User 后续已授权并完成本地产品 Commit 与 Authority 技术镜像同步 Commit。Push、部署、公开发布或再分发仍未授权。
 
 ## 决策与变更
 

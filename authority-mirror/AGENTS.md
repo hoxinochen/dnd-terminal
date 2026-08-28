@@ -61,7 +61,18 @@ Roadmap、Backlog、Draft、Candidate、测试计划或聊天记忆都不授予 
 
 规则结论必须回到 `rules-baseline.md` 固定的实际 Entry。不得用模型常识、聊天记忆或未提供的网络资料补齐规则。
 
-## 5. 当前批准门禁
+## 5. 活文档治理与交付收口
+
+活文档用于陈述项目的**当前**版本、门禁、权限、导航和延期意图；它们不是冻结交付原件，也不能取代 User 批准。每次发生范围、生命周期、权限或技术同步事实变化时，必须按以下顺序收口，不能只更新其中一处：
+
+1. **先固化事实源。** 先写入与事实相符的交付记录（获批 ABC、Implementation、Testing、Review、Release 或 Archive）；没有 User 授权不得创建、升级或伪造该事实。已冻结的 ABC、Release Notes、Archive Summary 和代码快照不得为“更新状态”而改写。
+2. **再核对并更新全部活文档。** 依次检查 `AGENTS.md`（当前交付、门禁、权限）、Authority `README.md`（入口、状态、导航、下一门禁）、`docs/extensions/project-authority.md`（Authority 与技术同步边界）、`docs/ROADMAP.md`（当前/下一候选方向）和 `docs/BACKLOG.md`（已完成、延期与依赖）。内容受影响则更新；不受影响也必须在收口检查中明确列为“已核对、无变更”。
+3. **最后生成技术投影。** Authority 活文档确认后，才可从 Obsidian Authority 单向同步 `authority-mirror/`，并从 Authority `README.md` 生成根 `README.md`；根投影仅可重写 GitHub 相对链接。禁止从 Workspace、镜像、聊天或 Git 历史反向补写 Authority。
+4. **把同步作为可验证的收口门禁。** 在任何获授权的技术同步 Commit 或 Push 前，必须验证：镜像与 Authority（排除 `.git`、`.DS_Store`）一致；根 README 的当前版本/状态和全部文档链接正确；`git diff --check` 通过；镜像未带入用户数据、Rules Baseline 原件、发布包或运行时数据。最终报告必须列出活文档更新项、已核对但无变更项、镜像校验和是否已 Commit/Push。
+
+任一项缺失时，交付可以保留其已有 Release/Archive 身份，但“活文档与 GitHub 技术同步完成”的结论不得成立。产品代码 Commit、技术同步 Commit 和 Push 仍分别需要用户授权；技术同步不得反向改变冻结交付身份。
+
+## 6. 当前批准门禁
 
 v0.1.0 已 Released / Archived — Local Private，保持历史冻结。v0.2.0 已完成 User 授权的 Local Private Release，尚未 Archive。v0.3.0 的 `M1-S1` 至 `M1-S5`、`M1-S5-STAB-1` 与 `M1-S5-STAB-2` 均已完成并通过 User Human Acceptance；Independent Review、Local Private Release 与 Archive 均已获 User 批准。`schema-v0.1.1` Archive Contract 与 `schema-v0.1.2` Lightweight Archive Profile 的八项 Gate 全部通过，最终证据见 `version-work/v0.3.0/archive/ARCHIVE_SUMMARY.md`。部署、公开发布和再分发仍未授权。以下仍不自动获批：
 
@@ -69,7 +80,7 @@ User 于 `2026-08-24` 将归档后的兼容性维护交付正式命名为 `v0.3.
 
 User 于 `2026-08-25` 确认 v0.4.0 采用“一份 ABC、一个主 Slice、一次 Implementation、一次综合验收”的范围方向，主能力为 PC `0 HP`、死亡豁免与稳定状态；最低迁移保护、针对性测试和两项不阻塞展示修复合入同一 Slice，不再建立原讨论中的四个独立 Step。原 S1 与 User 同日批准的 `version-work/v0.4.0/AMENDMENT_01.md` 均已获 User Human Acceptance；后者实现 d20 面板以及 PC 生命阶段与昏迷/倒地分离。User 已批准 Review、Local Private Release 与 Archive；v0.4.0 的 Lightweight Archive 八项 Gate 已通过，最终证据见 `version-work/v0.4.0/archive/ARCHIVE_SUMMARY.md`。PC 死亡后的复活/转化留待独立 v0.4.1。尚未授权分支、Commit、Push、部署、公开发布或再分发。
 
-User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与 Lightweight Archive。v0.5.0 的发布身份、34 文件快照、测试执行、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md`；分支、Commit、Push、部署、公开发布或再分发仍未授权。
+User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与 Lightweight Archive。v0.5.0 的发布身份、34 文件快照、测试执行、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md`。User 后续已授权并完成本地产品 Commit 与 Authority 技术镜像同步 Commit；Push、部署、公开发布或再分发仍未授权。
 
 - 为 v0.4.0 创建/切换分支、Commit、Push、部署或公开发布；
 - 创建归档材料或将 v0.2.0 写成 Archived；
@@ -77,7 +88,7 @@ User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与
 
 `M1-S2` 技术实施、自动测试、浏览器验证与 User Human Acceptance 已于 `2026-08-17` 完成。用户确认徒手打击缺失数据保持 `unknown / needs-review` 的原因可理解，并同意将重复 `unknown` 的显示文案作为非阻塞优化留待下一获授权切片处理。用户随后于 `2026-08-17` 明确要求“实施s3”，并在验收期授权补充莉亚的三级熟练、特性、主要装备/背包和 DM 武器精通选择；又于 `2026-08-18` 明确授权 M1-S3 的角色详情 UI 验收整改，以及“仅 Excel 明确导入 `武器精通` 职业特性时才请求 DM 选择”的泛化缺陷修复。用户于同日明确确认“M1-S3 人工验收通过”；`M1-S3` 已完成受控 Excel Profile、莉亚验证、`M1-S2-O1` 文案优化、页签式角色详情和资格泛化修复。导入特性只展示、不自动执行。用户随后明确“授权实施m1s4”；该 Slice 的多施法来源、多职业与多资源池骨架、测试和累计 Implementation/Testing 记录已完成，且用户已人工验收通过。`M1-S4-O1` 留待下一获授权实施；“仍不授权 M1-S5”的历史表述已被 2026-08-21 的 Amendment 1 取代，随后 Review 与 Local Private Release 已于 `2026-08-24` 获 User 依次批准；Archive、部署与公开发布仍未授权。
 
-## 6. 规则与数据边界
+## 7. 规则与数据边界
 
 - 同名规则存在版本、译名或效力冲突时，记录冲突并停止自动选择。
 - 未核验的出版身份、翻译授权、许可或映射必须标记为 `unknown`、`claimed` 或 `inferred`。
@@ -86,7 +97,7 @@ User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与
 - 撤销必须追加补偿事件，不得删除或改写旧事件。
 - 隐藏标签页只改变 UI，不得删除数据或停止战斗状态与日志维护。
 
-## 7. 文档职责
+## 8. 文档职责
 
 - `README.md`：人类入口、当前状态、导航与拟采纳摘要。
 - `docs/extensions/project-authority.md`：项目级 Authority、采纳、权限与决策边界。
@@ -100,7 +111,7 @@ User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与
 
 不得创建内容重复的状态文件、决策文件或一功能一文档。
 
-## 8. 验证与报告
+## 9. 验证与报告
 
 - 计划、未执行、通过、失败、阻塞和跳过必须明确区分。
 - 测试必须区分自动测试、浏览器交互、触屏、规则人工核对与真实 DM 验收。

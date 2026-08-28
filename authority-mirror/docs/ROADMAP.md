@@ -3,14 +3,13 @@
 - **Status：** Active Direction / Not Implementation Approval
 - **Naming Rule：** 产品交付使用 SemVer；自 v0.3.0 起，内部治理可在 ESG Milestone Documentation Profile 适用时使用独立 Milestone/Slice 身份。当前映射为 `M1 ↔ v0.3.0`、`M1-S1` 至 `M1-S5`；Milestone/Slice 不等于产品版本或 Release。
 
-## 当前候选交付：v0.4.0
+## 当前交付状态
 
-- **主题：** PC `0 HP`、死亡豁免与稳定状态；
-- **结构：** 一份 ABC、一个 `v0.4.0-S1`、一次 Implementation、一次综合验收；
-- **状态：** Implementation Complete / User Human Acceptance Pending；
-- **候选退出条件：** PC 的昏迷、死亡豁免、稳定、死亡、治疗恢复、0 HP 受伤、回合位置、刷新恢复、事件日志和战后隔离形成一致闭环；旧会话迁移失败不得覆盖旧数据；自动测试、隔离浏览器验证和 User Human Acceptance 均完成。
+`v0.4.0` 的 PC `0 HP`、死亡豁免、稳定与死亡闭环，及 `v0.5.0` 的 PC 死亡后 DM 复活、独立承接角色与受控亡灵窄流程，均已完成 Local Private Archive。当前没有候选交付或 Implementation 授权；Roadmap 只记录方向，不能恢复任何历史授权。
 
-本候选不包含跨刷新历史撤销、完整 Recovery Mode、密码学完整性协议、大型 E2E 平台、复活/击晕完整规则、法术/攻击/伤害引擎或其他 Backlog。User 已另行授权本次 Implementation；唯一范围合同仍见 `version-work/v0.4.0/ABC.md`，Roadmap 本身不授予额外权限。
+## 下一候选方向：逐项规则准入的法术与长期变更
+
+若 User 另行授权，后续可逐一审查并纳入特定法术的规则条件、材料、资格、目标、持续时间、续控与长期角色变更。每一项均需在新的 ABC（或尚未冻结交付内重新批准的 Amendment）中明确 Rules Baseline Entry、DM 裁定边界、数据/事件合同、失败恢复、迁移与验收；不得将现有 `renewal-requested` 扩展点或 Backlog 条目视作实现权限。
 
 ## 项目基线
 

@@ -23,7 +23,7 @@
 | BL-017 | 多战斗 Campaign 与跨设备同步                                  | Deferred                                              | 单场战斗与本地恢复尚未验证                                                                              |
 | BL-018 | Character Conversation, Import and Combat Projection | Candidate for v0.3.0（部分）                              | v0.3.0 ABC 草案仅候选长期角色卡、受控导入与战斗投影；对话式建卡、Agent Gateway 与自动完整建卡继续延期。                           |
 | BL-019 | 战后长期角色结算、永久损伤与永久奖励                                   | Deferred / Later Candidate                            | 需要先建立独立、可修订的长期 `CharacterSheet`；不得把战斗 HP 或效果直接覆盖到长期角色数据。                                   |
-| BL-020 | 0 HP 生命周期、怪物死亡与角色死亡豁免                                | Implemented in v0.4.0 / User Human Acceptance Pending | v0.4.0 只完成 PC `0 HP`、死亡豁免、稳定与死亡垂直闭环；v0.2.0 怪物/NPC DM 记录保持。复活、完整击晕及外围状态/伤害引擎仍延期。            |
+| BL-020 | 0 HP 生命周期、怪物死亡与角色死亡豁免                                | Implemented in v0.4.0 / Archived                      | v0.4.0 已完成并归档 PC `0 HP`、死亡豁免、稳定与死亡垂直闭环；v0.2.0 怪物/NPC DM 记录保持。复活/转化的获批窄流程已在独立 v0.5.0 归档；完整击晕、外围状态/伤害引擎与规则自动裁定仍延期。            |
 | BL-021 | 玩家端骰点触发与战斗效果提示框架                                     | Deferred / Later Candidate                            | 依赖多人账户与权限、权威骰点结果、触发候选合同及 DM 确认边界；不进入 v0.3.0 当前候选范围。                                        |
 | BL-022 | 全职业、多职业升级与合法性引擎                                      | Deferred / Committed Direction                        | v0.3.0 先建立多职业与多施法来源骨架；完整升级、选项资格、全部职业组合与自动合法性判断后续单独交付。                                      |
 | BL-023 | 全量法术内容与复杂法术执行引擎                                      | Deferred / Committed Direction                        | v0.3.0 只做法术档案、准备状态、资源与战斗投影；全量法术表、目标/范围/持续时间/专注及复杂效果自动结算后续实施。                               |

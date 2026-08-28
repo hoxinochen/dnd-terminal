@@ -6,7 +6,7 @@
 - **当前状态：** Archived — Local Private
 - **当前交付：** `v0.5.0 — PC 死亡后复活、独立承接角色与受控亡灵`（Archived — Local Private）
 - **当前门禁：** No Active Delivery Authorization
-- **Release Authorization：** User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与 Lightweight Archive；未授权 Commit、Push、部署或公开发布
+- **Release / Technical Sync：** User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与 Lightweight Archive，随后授权完成本地产品 Commit 与 Authority 镜像 Commit；Push、部署或公开发布仍未授权
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
@@ -21,7 +21,9 @@
 
 `v0.3.0` 已完成长期角色卡修订、受控 Excel 导入、角色战斗投影、多施法来源与资源池、关联单位独立物化、DM 确认的武器精通候选、战后逐项审核回写与角色归档生命周期。`v0.3.1` 在不改变这些能力、Schema 或存储键的前提下，明确版本身份、保持导入导出兼容并修复 Chrome 模块缓存失配；两者均已本地私有归档。
 
-User 于 `2026-08-25` 通过并随后明确批准冻结 v0.4.0 ABC：候选版本只使用一个 `v0.4.0-S1`，以 PC `0 HP`、死亡豁免、稳定与死亡的垂直闭环为主体；最低迁移失败保护、针对性测试及不阻塞的展示修复在同一次 Implementation 中处理，不拆成四个独立 Slice。原 S1 与 Amendment 01 均已获 User Human Acceptance；User 已批准 Review、Local Private Release 与 Archive。v0.4.0 的 Lightweight Archive 八项 Gate 均为 Pass，正式状态为 `Archived — Local Private`。PC 死亡后的复活/转化留待 v0.4.1；部署与公开发布仍未授权。
+User 于 `2026-08-25` 通过并随后明确批准冻结 v0.4.0 ABC：候选版本只使用一个 `v0.4.0-S1`，以 PC `0 HP`、死亡豁免、稳定与死亡的垂直闭环为主体；最低迁移保护、针对性测试及不阻塞的展示修复在同一次 Implementation 中处理，不拆成四个独立 Slice。原 S1 与 Amendment 01 均已获 User Human Acceptance；User 已批准 Review、Local Private Release 与 Archive。v0.4.0 的 Lightweight Archive 八项 Gate 均为 Pass，正式状态为 `Archived — Local Private`。
+
+`v0.5.0` 在 v0.4.0 的冻结基线上完成 PC 死亡后的 DM 复活、独立承接角色与受控亡灵窄流程；其 Local Private Release、34 文件冻结快照和 Lightweight Archive 八项 Gate 已完成，正式状态为 `Archived — Local Private`。完整规则法术执行、材料、资格和续控仍保持 Backlog 身份，需新的 ABC 才能进入实施。
 
 - [项目 Authority](docs/extensions/project-authority.md)
 - [产品需求基线](docs/extensions/product-requirements.md)
@@ -59,11 +61,13 @@ User 于 `2026-08-25` 通过并随后明确批准冻结 v0.4.0 ABC：候选版�
 - [v0.4.0 Release Notes](version-work/v0.4.0/RELEASE_NOTES.md)
 - [v0.4.0 Archive Summary](version-work/v0.4.0/archive/ARCHIVE_SUMMARY.md)
 - [v0.5.0 ABC](version-work/v0.5.0/ABC.md)
+- [v0.5.0 Implementation](version-work/v0.5.0/IMPLEMENTATION.md)
+- [v0.5.0 Testing](version-work/v0.5.0/TESTING.md)
 - [v0.5.0 Independent Review](version-work/v0.5.0/REVIEW.md)
 - [v0.5.0 Release Notes](version-work/v0.5.0/RELEASE_NOTES.md)
 - [v0.5.0 Archive Summary](version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md)
 
-全部项目文档只保存在 Obsidian 文档 Authority。产品 Workspace 的 v0.4.0 技术起点为 `main@444cdce1248ab4173bbfd904b91a0cebb0000d38`，与 v0.3.1 的 25 文件冻结代码快照一致；私有 GitHub 同步只属于 post-archive 技术同步，不改变 v0.3.1 的正式 Release/Archive 身份。v0.4.0 Implementation 已在当前 `main` 工作树形成未提交的源码与测试变更；未创建分支、Commit、Push、部署或公开发布。
+全部项目文档只保存在 Obsidian 文档 Authority。v0.5.0 的产品实现已本地提交为 `main@370b92a`，随后 `main@2f897a6` 完成其 Authority 技术镜像提交；二者都属于 post-archive 技术同步，不改变已冻结的 Local Private Release/Archive 身份。Push、部署与公开发布仍未授权。
 
 ## ESG 活采纳矩阵
 
@@ -74,12 +78,12 @@ User 于 `2026-08-25` 通过并随后明确批准冻结 v0.4.0 ABC：候选版�
 | Minimal Governance Framework | `schema-v0.2.0` | `84b0fbbe1dd5703acfcda63b297a115e725c79629647d807ae3664a55c4aa727` | 全项目治理生命周期 | Keep Current |
 | Downstream Documentation Schema | `schema-v0.3.0` | `4a95a932eba5e549fa96449c178ce18ecc049513a3697b041b08dbd8736f4f4d` | 项目文档与版本交付记录 | Keep Current |
 | Milestone Documentation Profile | `schema-v0.3.0` | `48311b2f51600e25df249162414478f96963d194e4c59d2b663355ae4e39b22a` | `M1 ↔ v0.3.0` 的 `M1-S1` 至 `M1-S5`、人工验收与跨 Slice Exit Gate | Adopted for M1；`Not Applicable` for v0.4.0 |
-| Archive Contract | `schema-v0.1.1` | `7817687601b2bad7cc8f87015d5b8f6b8ae4fe504cd68abb30b8255b531133df` | `v0.3.0` 与 `v0.3.1` 本地私有 Archive；各自八项 Gate | Adopted / Passed / `2026-08-24` |
-| Lightweight Archive Profile | `schema-v0.1.2` | `7fc38398b5c131bddf16805e15f14382c0e4424be4bcf63ef115b0865643cb1e` | `v0.3.0` 与 `v0.3.1` 归档叙述合并；不减免证据/Gate | Selected / Executed / `2026-08-24` |
+| Archive Contract | `schema-v0.1.1` | `7817687601b2bad7cc8f87015d5b8f6b8ae4fe504cd68abb30b8255b531133df` | `v0.3.0`、`v0.3.1`、`v0.4.0` 与 `v0.5.0` 本地私有 Archive；各自八项 Gate | Adopted / Passed；最新为 `2026-08-28` |
+| Lightweight Archive Profile | `schema-v0.1.2` | `7fc38398b5c131bddf16805e15f14382c0e4424be4bcf63ef115b0865643cb1e` | 上述四个交付的归档叙述合并；不减免证据/Gate | Selected / Executed；最新为 `2026-08-28` |
 
 M1 Profile 选择日期为 `2026-08-14`；Selecting Authority 为 User。其历史适用性判定为 `Core + Required Profiles`，详细触发事实、双轴身份和等价路径登记在 `version-work/v0.3.0/ABC.md`。
 
-对于当前 `v0.4.0`：继续采用 Downstream Documentation Schema Core `schema-v0.3.0`，兼容 Minimal Governance Framework `schema-v0.2.0`；因为只有一个实施 Slice、没有跨 Slice Exit Gate，Milestone Documentation Profile 判定为 `Not Applicable`。Archive Contract/Profile 在当前 User Human Acceptance Gate 仍为 `Not Selected / Not Applicable at Current Gate`，不得从 v0.3.1 自动继承。
+对于已归档的 `v0.4.0` 与 `v0.5.0`：两者均继续采用 Downstream Documentation Schema Core `schema-v0.3.0`，兼容 Minimal Governance Framework `schema-v0.2.0`；因各自只有一个主实施 Slice、没有跨 Slice Exit Gate，Milestone Documentation Profile 均为 `Not Applicable`。两次 Archive Contract/Profile 选择均由 User 单独授权并执行，不从既有版本自动继承。
 
 ## 规则资料
 
@@ -91,4 +95,4 @@ M1 Profile 选择日期为 `2026-08-14`；Selecting Authority 为 User。其历�
 
 User 于 `2026-08-24` 将维护交付命名为 `v0.3.1`，明确批准冻结其 ABC、Implementation，并确认人工验收通过；随后明确授权完成 Review、Release 与 Archive。v0.3.1 的 25 文件快照、发布包、全部哈希、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.3.1/archive/ARCHIVE_SUMMARY.md`。
 
-User 于 `2026-08-25` 已明确批准并冻结 `version-work/v0.4.0/ABC.md` 全文，并于同日独立授权版本实施。原 S1 与 Amendment 01 均已通过 User Human Acceptance；Review 已获 User 批准，Local Private Release 已按授权完成。不得据此推导分支、Commit、Push、Archive、部署、公开发布或再分发权限。
+v0.4.0 与 v0.5.0 均已完成其获授权的 Review、Local Private Release 和 Lightweight Archive。当前没有活跃交付授权；若要把特定法术的规则条件、材料、资格、持续时间或长期角色变更纳入产品，必须先取得新的 ABC（或在未冻结交付内重新批准的 Amendment）并逐项完成 Rules Baseline 准入。不得据此推导 Push、部署、公开发布或再分发权限。
