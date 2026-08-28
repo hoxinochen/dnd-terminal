@@ -17,6 +17,6 @@ assert(domain.includes("'needs-review'"));
 assert(domain.includes("'dying'"));
 assert(domain.includes("'prone'"));
 assert(domain.includes('blocked-corrupt-current'));
-assert(index.includes('DND Terminal v0.4.0'));
+assert(index.includes('DND Terminal v0.5.0 — Local Private Implementation'));
 
 console.log('v040-ui-contract.test.mjs: pass');

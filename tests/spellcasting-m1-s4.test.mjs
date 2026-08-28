@@ -40,7 +40,7 @@ const base = {
 };
 
 const sheet = createCharacterSheet(base, { id, timestamp });
-assert.equal(sheet.schemaVersion, '0.3.0-m1-s5');
+assert.equal(sheet.schemaVersion, '0.3.0-m1-s6');
 assert.equal(sheet.spellcastingProfiles[0].preparedCount.value, 19);
 assert.equal(sheet.spellcastingProfiles[0].spellAttack.status, 'needs-review', 'no attack value is invented without admitted inputs');
 assert.equal(sheet.spells[0].availability.prepared, true);

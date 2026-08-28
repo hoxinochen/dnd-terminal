@@ -31,7 +31,7 @@ const sheet = createCharacterSheet({
   weaponMastery:{status:'dm-confirmed',grants:[{id:'rogue-mastery'}],selectionLimit:2,changeTiming:'finish-long-rest',selections:[{id:'lia-shortbow',weaponKind:'短弓',weaponId:'phb2024:shortbow',masteryPropertyId:'phb2024:vex'}],note:'DM confirmed'},
   linkedEntities:[{id:'familiar',name:'验证魔宠',kind:'familiar',relation:'ally',templateRef:{templateId:'preset-scout',templateRevision:1}}],
 }, {id,timestamp});
-assert.equal(sheet.schemaVersion, '0.3.0-m1-s5');
+assert.equal(sheet.schemaVersion, '0.3.0-m1-s6');
 assert.equal(sheet.attackProfiles[0].masteryPropertyId, 'phb2024:vex');
 assert.equal(sheet.linkedEntities[0].templateRef.templateId, 'preset-scout');
 assert.equal(M1_S5_WEAPON_MASTERY_CATALOG['短弓'].effect.includes('下一次攻击检定具有优势'),true,'Vex 的关键收益必须进入常驻展示合同');

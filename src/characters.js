@@ -1,4 +1,4 @@
-export const CHARACTER_SHEET_SCHEMA_VERSION = '0.3.0-m1-s5';
+export const CHARACTER_SHEET_SCHEMA_VERSION = '0.3.0-m1-s6';
 
 export const M1_S5_RULES = {
   rogueMastery: 'local-markdown-anchor:Lore_01_核心玩家规则.md#游荡者-武器精通',
@@ -24,6 +24,29 @@ const integer = (value, fallback = 0) => Number.isFinite(Number(value)) ? Math.t
 const nonNegative = (value, fallback = 0) => Math.max(0, integer(value, fallback));
 const optionalText = value => String(value || '').trim();
 const ABILITY_KEYS = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'];
+
+const revivalBasisLabel = value => ({'verified-entry':'已核验条目','dm-ruling':'DM 明确裁定','unverified':'待核验记录'})[value] || '未标注';
+const revivalSoulLabel = value => ({confirmed:'已确认返回','not-applicable':'不适用'})[value] || '未标注';
+const revivalConditionLabel = value => ({preserve:'保留既有状态（仅移除 unconscious）',clear:'清空全部条件'})[value] || '未标注';
+const revivalMapLabel = value => ({'restore-original-token':'保留棋子并恢复原实例'})[value] || value || '未标注';
+const revivalInitiativeLabel = value => ({'restore-original-slot':'恢复原先攻槽位；已越过则下一轮'})[value] || value || '未标注';
+
+export function revivalNoteAppendText(resolution = {}) {
+  const resolutionId = optionalText(resolution.resolutionId);
+  const complete = resolution.type === 'pc-return-to-life'
+    && resolutionId
+    && Number.isInteger(resolution.hp) && resolution.hp > 0
+    && ['verified-entry','dm-ruling','unverified'].includes(resolution.basisStatus)
+    && optionalText(resolution.basisLabel)
+    && ['confirmed','not-applicable'].includes(resolution.soulReturn)
+    && optionalText(resolution.effectDisposition)
+    && ['preserve','clear'].includes(resolution.conditionHandling)
+    && resolution.mapOutcome === 'restore-original-token'
+    && resolution.initiativeOutcome === 'restore-original-slot'
+    && optionalText(resolution.reason);
+  if (!complete) throw new Error('复活备注候选缺少完整、有效的 S1 resolution。');
+  return `[v0.5.0 S1 复活记录 / ${resolutionId}] 第 ${resolution.round ?? '—'} 轮；依据：${revivalBasisLabel(resolution.basisStatus)} / ${optionalText(resolution.basisLabel) || '未标注'}；灵魂：${revivalSoulLabel(resolution.soulReturn)}；复活后 HP：${resolution.hp ?? '—'}；状态处理：${revivalConditionLabel(resolution.conditionHandling)}；状态、疾病、诅咒与力竭：${optionalText(resolution.effectDisposition) || '未标注'}；地图：${revivalMapLabel(resolution.mapOutcome)}；先攻：${revivalInitiativeLabel(resolution.initiativeOutcome)}；DM 原因：${optionalText(resolution.reason) || '未标注'}`;
+}
 
 function requireText(value, label) {
   const normalized = optionalText(value);
@@ -159,6 +182,41 @@ function normalizeLinkedEntities(entities = []) {
     templateRef: entity?.templateRef?.templateId ? { templateId: optionalText(entity.templateRef.templateId), templateRevision: integer(entity.templateRef.templateRevision, 1) } : null,
     combatMaterializationStatus: optionalText(entity?.combatMaterializationStatus) || 'available-in-m1-s5',
   }));
+}
+
+const CONTROLLED_ENTITY_STATUSES = new Set(['controlled', 'expired-uncontrolled', 'released', 'control-lost', 'permanent-controlled']);
+const CONTROL_DURATION_KINDS = new Set(['one-long-rest', 'permanent', 'custom']);
+const CONTROL_DURATION_UNITS = new Set(['rounds', 'encounters', 'long-rests']);
+
+function normalizeControlledDuration(raw = {}) {
+  const kind = CONTROL_DURATION_KINDS.has(optionalText(raw?.kind)) ? optionalText(raw.kind) : 'one-long-rest';
+  if (kind === 'permanent') return { kind: 'permanent', unit: null, remaining: null, initial: null };
+  if (kind === 'one-long-rest') return { kind: 'one-long-rest', unit: 'long-rests', remaining: Math.max(0, nonNegative(raw?.remaining, 1)), initial: 1 };
+  const unit = CONTROL_DURATION_UNITS.has(optionalText(raw?.unit)) ? optionalText(raw.unit) : 'rounds';
+  const remaining = Math.max(1, nonNegative(raw?.remaining, 1));
+  return { kind: 'custom', unit, remaining, initial: Math.max(remaining, nonNegative(raw?.initial, remaining)) };
+}
+
+export function normalizeControlledEntities(entities = []) {
+  const ids = new Set();
+  return (Array.isArray(entities) ? entities : []).map((entity, index) => {
+    const id = optionalText(entity?.id) || `controlled-${index + 1}`;
+    if (ids.has(id)) throw new Error(`受控生物 ID 重复：“${id}”。`); ids.add(id);
+    const status = CONTROLLED_ENTITY_STATUSES.has(optionalText(entity?.status)) ? optionalText(entity.status) : 'controlled';
+    const duration = normalizeControlledDuration(entity?.duration);
+    return {
+      id, name: requireText(entity?.name, '受控生物名称'),
+      templateRef: entity?.templateRef?.templateId ? { templateId: optionalText(entity.templateRef.templateId), templateRevision: integer(entity.templateRef.templateRevision, 1) } : null,
+      status: duration.kind === 'permanent' && status === 'controlled' ? 'permanent-controlled' : status,
+      commandRangeFeet: Math.max(0, nonNegative(entity?.commandRangeFeet, 0)),
+      duration, effectLabel: optionalText(entity?.effectLabel), sourceStatus: optionalText(entity?.sourceStatus) || 'dm-confirmed',
+      createdEventId: optionalText(entity?.createdEventId), sourceCombatantId: optionalText(entity?.sourceCombatantId), activeCombatantId: optionalText(entity?.activeCombatantId) || null,
+      history: Array.isArray(entity?.history) ? entity.history.map(item => ({
+        eventId: optionalText(item?.eventId), type: optionalText(item?.type) || 'dm-recorded', at: optionalText(item?.at), round: Number.isInteger(item?.round) ? item.round : null,
+        status: CONTROLLED_ENTITY_STATUSES.has(optionalText(item?.status)) ? optionalText(item.status) : status, reason: optionalText(item?.reason),
+      })) : [],
+    };
+  });
 }
 
 const SPELL_SOURCE_KINDS = new Set(['class', 'subclass', 'species', 'background-feat', 'item', 'custom']);
@@ -299,6 +357,7 @@ export function normalizeCharacterSheet(rawSheet = {}) {
     traits: Array.isArray(sheet.traits) ? copy(sheet.traits) : [], features: normalizeFeatures(sheet.features), equipment: normalizeEquipment(sheet.equipment),
     inventoryContainers: normalizeInventoryContainers(sheet.inventoryContainers),
     linkedEntities: normalizeLinkedEntities(sheet.linkedEntities),
+    controlledEntities: normalizeControlledEntities(sheet.controlledEntities),
     weaponMastery: {
       status: optionalText(sheet.weaponMastery?.status) || 'unknown',
       grants: Array.isArray(sheet.weaponMastery?.grants) ? copy(sheet.weaponMastery.grants) : [],
@@ -335,6 +394,52 @@ export function createCharacterRecord(sheet) {
     archivedAt: null,
     archivedReason: null,
   };
+}
+
+export const S2_SUCCESSOR_INHERITANCE_GROUPS = Object.freeze([
+  'identity', 'combat', 'abilities', 'proficiencies', 'capabilities', 'equipment', 'resources', 'notes',
+]);
+
+// S2 deliberately creates a fresh, ordinary CharacterSheet instead of adding a
+// predecessor/successor schema relation.  The caller stores the event-specific
+// human-readable trace in both cards' existing note fields.
+export function createIndependentSuccessorRecord(record, {
+  id, timestamp, name, hp, maxHp, inheritGroups = [], note = '', sourceNote = '',
+} = {}) {
+  if (typeof id !== 'function' || typeof timestamp !== 'function') throw new Error('创建独立后继角色卡需要 ID 与时间提供器。');
+  const source = currentCharacterSheet(record);
+  const groups = new Set((Array.isArray(inheritGroups) ? inheritGroups : []).map(optionalText));
+  const invalid = [...groups].filter(group => !S2_SUCCESSOR_INHERITANCE_GROUPS.includes(group));
+  if (invalid.length) throw new Error(`独立后继角色卡包含未知继承组：${invalid.join('、')}。`);
+  const nextMaxHp = Math.max(1, nonNegative(maxHp, groups.has('combat') ? source.hp.max : 1));
+  const nextHp = Math.min(nextMaxHp, Math.max(1, nonNegative(hp, nextMaxHp)));
+  const include = group => groups.has(group);
+  const draft = {
+    name: requireText(name, '新角色卡名称'), ruleVersion: source.ruleVersion,
+    ownerHint: include('identity') ? source.ownerHint : '',
+    totalLevel: include('identity') ? source.totalLevel : 0,
+    classes: include('identity') ? copy(source.classes) : [],
+    origin: include('identity') ? copy(source.origin) : { species:'', background:'', history:'' },
+    armorClass: include('combat') ? source.armorClass : 0,
+    hp: { current: nextHp, max: nextMaxHp }, speed: include('combat') ? source.speed : 30,
+    initiativeModifier: include('combat') ? source.initiativeModifier : 0,
+    proficiencyBonus: include('combat') ? source.proficiencyBonus : 0,
+    passivePerception: include('combat') ? source.passivePerception : 0,
+    footprint: include('combat') ? copy(source.footprint) : { widthCells:1, heightCells:1 },
+    combatState: include('combat') ? { ...copy(source.combatState), tempHp:0, conditions:[], concentration:'none' } : { tempHp:0, hitDice:'', heroicInspiration:false, conditions:[], concentration:'none' },
+    abilities: include('abilities') ? copy(source.abilities) : undefined,
+    saves: include('proficiencies') ? copy(source.saves) : [], skills: include('proficiencies') ? copy(source.skills) : [],
+    senses: include('proficiencies') ? copy(source.senses) : [], languages: include('proficiencies') ? copy(source.languages) : [],
+    attackProfiles: include('capabilities') ? copy(source.attackProfiles) : [], actions: include('capabilities') ? copy(source.actions) : [],
+    traits: include('capabilities') ? copy(source.traits) : [], features: include('capabilities') ? copy(source.features) : [],
+    spellcastingProfiles: include('capabilities') ? copy(source.spellcastingProfiles) : [], spellResourcePools: include('capabilities') ? copy(source.spellResourcePools) : [], spells: include('capabilities') ? copy(source.spells) : [],
+    equipment: include('equipment') ? copy(source.equipment) : [], inventoryContainers: include('equipment') ? copy(source.inventoryContainers) : [],
+    linkedEntities: include('equipment') ? copy(source.linkedEntities) : [], controlledEntities: [], weaponMastery: include('capabilities') ? copy(source.weaponMastery) : undefined,
+    resources: include('resources') ? copy(source.resources) : {},
+    note: [include('notes') ? optionalText(source.note) : '', optionalText(note)].filter(Boolean).join('\n\n'),
+    source: { kind:'manual', status:'dm-confirmed-s2-independent-card', entryIds:[], note:optionalText(sourceNote), mappings:[] },
+  };
+  return createCharacterRecord(createCharacterSheet(draft, { id, timestamp }));
 }
 
 export function normalizeCharacterRecord(record) {
@@ -388,6 +493,47 @@ export function reviseCharacterRecord(record, input, { timestamp } = {}) {
   });
   normalizedRecord.revisions.push(copy(next)); normalizedRecord.currentRevision = next.revision;
   return { record: normalizedRecord, revision: copy(next) };
+}
+
+export function settleControlledEntitiesAfterLongRest(record, { timestamp, eventId, reason = '', renewedEntityIds = [] } = {}) {
+  if (typeof timestamp !== 'function') throw new Error('登记受控生物长休需要时间提供器。');
+  const normalized = normalizeCharacterRecord(record);
+  if (normalized.status === 'archived') throw new Error('已归档角色不能登记受控生物的长休结算。');
+  const current = currentCharacterSheet(normalized), at = timestamp(), id = optionalText(eventId) || `long-rest:${at}`;
+  const changes = [], renewed = new Set((renewedEntityIds || []).map(optionalText).filter(Boolean));
+  const controlledEntities = (current.controlledEntities || []).map(entity => {
+    const duration = entity.duration || normalizeControlledDuration();
+    const consumesRest = entity.status === 'controlled' && (duration.kind === 'one-long-rest' || (duration.kind === 'custom' && duration.unit === 'long-rests'));
+    if (!consumesRest) return entity;
+    const renews = renewed.has(entity.id) && duration.kind === 'one-long-rest';
+    const remaining = renews ? Math.max(1, duration.initial || 1) : Math.max(0, (duration.remaining || 1) - 1);
+    const expired = remaining === 0;
+    const next = {
+      ...entity,
+      status: expired ? 'expired-uncontrolled' : entity.status,
+      duration: { ...duration, remaining },
+      history: [...(entity.history || []), { eventId:id, type:renews ? 'control-renewed' : 'long-rest-settled', at, round:null, status:expired ? 'expired-uncontrolled' : entity.status, reason:optionalText(reason) || (renews ? 'DM 确认：已在到期前续控一次' : 'DM 登记控制者完成一次长休') }],
+    };
+    changes.push({ id:entity.id, fromStatus:entity.status, toStatus:next.status, remaining, action:renews ? 'renewed' : (expired ? 'expired' : 'settled') });
+    return next;
+  });
+  if (!changes.length) throw new Error('当前没有需要以长休结算的有效受控生物。');
+  const result = reviseCharacterRecord(normalized, { ...current, controlledEntities }, { timestamp: () => at });
+  return { ...result, changes, settledAt:at };
+}
+
+export function recordControlledEntityRenewalRequested(record, controlledEntityId, { timestamp, eventId, reason = '' } = {}) {
+  if (typeof timestamp !== 'function') throw new Error('记录续控意图需要时间提供器。');
+  const normalized = normalizeCharacterRecord(record);
+  if (normalized.status === 'archived') throw new Error('已归档角色不能记录续控意图。');
+  const current = currentCharacterSheet(normalized), id = optionalText(controlledEntityId), at = timestamp();
+  const entity = (current.controlledEntities || []).find(candidate => candidate.id === id);
+  if (!entity) throw new Error('找不到受控生物关系。');
+  if (entity.status !== 'expired-uncontrolled') throw new Error('只有已到期失控的受控生物可以记录续控意图。');
+  const controlledEntities = current.controlledEntities.map(candidate => candidate.id !== id ? candidate : ({
+    ...candidate, history:[...(candidate.history || []), { eventId:optionalText(eventId) || `renewal-requested:${at}`, type:'renewal-requested', at, round:null, status:candidate.status, reason:optionalText(reason) || 'DM 记录：尝试通过未来获准法术续控' }],
+  }));
+  return reviseCharacterRecord(normalized, { ...current, controlledEntities }, { timestamp: () => at });
 }
 
 export function weaponMasteryEligibleAttacks(rawSheet) {
@@ -462,7 +608,7 @@ export function createCombatProjection(sheet, { id, timestamp } = {}) {
     resources: Object.fromEntries(Object.entries(snapshot.resources).map(([name, pool]) => [name, pool.current])),
     resourceMax: Object.fromEntries(Object.entries(snapshot.resources).map(([name, pool]) => [name, pool.max])),
     attackProfiles: copy(snapshot.attackProfiles), actions: copy(snapshot.actions), equipment: copy(snapshot.equipment),
-    weaponMastery: copy(snapshot.weaponMastery), linkedEntities: copy(snapshot.linkedEntities),
+    weaponMastery: copy(snapshot.weaponMastery), linkedEntities: copy(snapshot.linkedEntities), controlledEntities: copy(snapshot.controlledEntities),
     spellcastingProfiles: copy(snapshot.spellcastingProfiles), spellResourcePools: copy(snapshot.spellResourcePools), spells: copy(snapshot.spells),
     inventoryBalances: snapshot.equipment.filter(item => item.consumable || item.itemKind === 'item-charge').map(item => ({
       id: `inventory:${item.id}`, itemId: item.id, kind: item.itemKind === 'item-charge' ? 'item-charge' : (item.ammunitionOrResourceLink ? 'ammunition' : 'consumable'),
@@ -480,7 +626,7 @@ export function createEncounterMemberFromProjection(projection, { id, position =
     initiativeModifier: projection.initiativeModifier, footprint: [projection.footprint.widthCells, projection.footprint.heightCells],
     resources: copy(projection.resources), attackProfiles: copy(projection.attackProfiles || []), actions: copy(projection.actions || []),
     equipment: copy(projection.equipment || []), weaponMastery: copy(projection.weaponMastery || { status: 'unknown', grants: [], selections: [] }),
-    linkedEntities: copy(projection.linkedEntities || []), spellcastingProfiles: copy(projection.spellcastingProfiles || []),
+    linkedEntities: copy(projection.linkedEntities || []), controlledEntities: copy(projection.controlledEntities || []), spellcastingProfiles: copy(projection.spellcastingProfiles || []),
     spellResourcePools: copy(projection.spellResourcePools || []), spells: copy(projection.spells || []), inventoryBalances: copy(projection.inventoryBalances || []), sourceStatus: 'dm-authored-character-revision',
   };
   return {
@@ -491,7 +637,7 @@ export function createEncounterMemberFromProjection(projection, { id, position =
     hp: projection.hp.current, maxHp: projection.hp.max, tempHp: 0, speed: projection.speed, initiativeModifier: projection.initiativeModifier,
     legendaryActionMax: 0, resources: copy(projection.resources), resourceMax: copy(projection.resourceMax), slots: {}, slotsMax: {}, conditions: [],
     attackProfiles: copy(projection.attackProfiles || []), actions: copy(projection.actions || []), equipment: copy(projection.equipment || []),
-    weaponMastery: copy(projection.weaponMastery || { status: 'unknown', grants: [], selections: [] }), linkedEntities: copy(projection.linkedEntities || []),
+    weaponMastery: copy(projection.weaponMastery || { status: 'unknown', grants: [], selections: [] }), linkedEntities: copy(projection.linkedEntities || []), controlledEntities: copy(projection.controlledEntities || []),
     spellcastingProfiles: copy(projection.spellcastingProfiles || []), spellResourcePools: copy(projection.spellResourcePools || []), spells: copy(projection.spells || []), inventoryBalances: copy(projection.inventoryBalances || []),
     position: copy(position), footprint: copy(projection.footprint), facing: 'north', facingPort: null, elevationFeet: 0,
     deployment: 'field', deployedCombatantId: null,
@@ -560,6 +706,16 @@ export function buildPostCombatDiff(projection, combatant, { id, timestamp, sour
     const after = nonNegative(current?.current, balance.current);
     if (after !== balance.current) entries.push({ id: `inventory:${balance.id}`, kind: 'inventory', balanceId: balance.id, itemId: balance.itemId, label: `库存：${balance.label}`, before: balance.current, after, delta: after - balance.current, status: 'pending' });
   });
+  (combatant.deathRecord?.resolutions || []).filter(resolution => resolution?.type === 'pc-return-to-life').forEach(resolution => {
+    let appendText;
+    try { appendText = revivalNoteAppendText(resolution); }
+    catch { return; }
+    entries.push({
+      id: `note-append:pc-return-to-life:${resolution.resolutionId}`, kind: 'note-append', label: 'DM 备注：追加复活记录',
+      before: optionalText(projection.sheetSnapshot?.note), after: appendText, appendText,
+      resolutionId: resolution.resolutionId, resolutionRound: resolution.round ?? null, status: 'pending',
+    });
+  });
   return {
     schemaVersion: CHARACTER_SHEET_SCHEMA_VERSION, diffId: id(), createdAt: timestamp(), sourceSessionId, sourceEventSequence,
     combatantId: combatant.id, combatProjectionId: projection.projectionId, characterId: projection.characterId,
@@ -604,6 +760,16 @@ export function applyPostCombatDiff(record, diff, acceptedEntryIds, { timestamp 
       if (!item) throw new Error(`库存差异引用了不存在的长期物品“${entry.itemId}”。`);
       item.quantity = Math.max(0, nonNegative(entry.after));
     }
+    else if (entry.kind === 'note-append') {
+      const appendText = optionalText(entry.appendText || entry.after);
+      if (!appendText) throw new Error(`备注差异“${entry.id}”缺少可追加文本。`);
+      nextInput.note = [optionalText(nextInput.note), appendText].filter(Boolean).join('\n\n');
+    }
+    else if (entry.kind === 'controlled-entity') {
+      const entity = normalizeControlledEntities([entry.controlledEntity])[0];
+      if ((nextInput.controlledEntities || []).some(candidate => candidate.id === entity.id)) throw new Error(`受控生物关系“${entity.name}”已经写入长期角色卡。`);
+      nextInput.controlledEntities = [...(nextInput.controlledEntities || []), entity];
+    }
     else throw new Error(`差异字段“${entryId}”不能安全写入当前角色卡。`);
   }
   return { ...reviseCharacterRecord(recordSnapshot, nextInput, { timestamp }), acceptedEntryIds: [...accepted] };
@@ -618,6 +784,7 @@ export function applyPostCombatDecisions(record, diff, decisions, { timestamp } 
     const entry = entries.get(decision.entryId);
     if (!entry || !['accept', 'reject', 'correct'].includes(decision.action)) throw new Error('战后决定无效。');
     if (decision.action === 'correct') {
+      if (entry.kind === 'note-append' || entry.kind === 'controlled-entity') throw new Error('备注或受控生物候选只能接受或拒绝，不能数值更正。');
       if (decision.correctedValue === '' || decision.correctedValue === null || decision.correctedValue === undefined || !decision.reason) throw new Error('修正必须填写数值和原因。');
       overrides.set(entry.id, nonNegative(decision.correctedValue)); accepted.push(entry.id);
     } else if (decision.action === 'accept') accepted.push(entry.id);

@@ -39,7 +39,7 @@ const legacyRecord = normalizeCharacterRecord({
   }],
 });
 const migrated = currentCharacterSheet(legacyRecord);
-assert.equal(migrated.schemaVersion, '0.3.0-m1-s5');
+assert.equal(migrated.schemaVersion, '0.3.0-m1-s6');
 assert.equal(migrated.hp.current, 20, 'M1-S1 HP survives additive migration');
 assert.equal(migrated.resources.功力.current, 3, 'M1-S1 resources survive additive migration');
 assert.equal(migrated.weaponMastery.status, 'unknown', 'migration does not invent weapon mastery');
