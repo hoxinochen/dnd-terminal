@@ -1,11 +1,11 @@
 # DND Terminal 工程协作规范
 
-- **文档状态（Status）：** v0.3.0 / M1、v0.3.1 与 v0.4.0 Archived — Local Private
+- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0 与 v0.5.0 Archived — Local Private
 - **适用范围（Scope）：** DND Terminal 文档 Authority 与产品 Workspace
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
-- **当前交付（Current Delivery）：** `v0.4.0 — PC 0 HP、死亡豁免与稳定状态`（Archived — Local Private）
+- **当前交付（Current Delivery）：** `v0.5.0 — PC 死亡后复活、独立承接角色与受控亡灵`（Archived — Local Private）
 - **当前门禁（Current Gate）：** No Active Delivery Authorization
 - **ESG Core：** Downstream Documentation Schema `schema-v0.3.0`（与 Minimal Governance Framework `schema-v0.2.0` 兼容）
 - **v0.4.0 Profile 适用性：** Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` 与 Lightweight Archive Profile `schema-v0.1.2` 已选择并执行
@@ -68,6 +68,8 @@ v0.1.0 已 Released / Archived — Local Private，保持历史冻结。v0.2.0 �
 User 于 `2026-08-24` 将归档后的兼容性维护交付正式命名为 `v0.3.1`，随后明确批准并冻结 `version-work/v0.3.1/ABC.md`，并独立授权 Implementation。实施完成后，User 于同日明确确认“人工验收通过 v0.3.1”，并明确授权完成 Review、Local Private Release 与 Archive。八项 Archive Gate 均已通过，最终证据见 `version-work/v0.3.1/archive/ARCHIVE_SUMMARY.md`；分支、Commit、Push、部署和公开发布仍未授权。
 
 User 于 `2026-08-25` 确认 v0.4.0 采用“一份 ABC、一个主 Slice、一次 Implementation、一次综合验收”的范围方向，主能力为 PC `0 HP`、死亡豁免与稳定状态；最低迁移保护、针对性测试和两项不阻塞展示修复合入同一 Slice，不再建立原讨论中的四个独立 Step。原 S1 与 User 同日批准的 `version-work/v0.4.0/AMENDMENT_01.md` 均已获 User Human Acceptance；后者实现 d20 面板以及 PC 生命阶段与昏迷/倒地分离。User 已批准 Review、Local Private Release 与 Archive；v0.4.0 的 Lightweight Archive 八项 Gate 已通过，最终证据见 `version-work/v0.4.0/archive/ARCHIVE_SUMMARY.md`。PC 死亡后的复活/转化留待独立 v0.4.1。尚未授权分支、Commit、Push、部署、公开发布或再分发。
+
+User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与 Lightweight Archive。v0.5.0 的发布身份、34 文件快照、测试执行、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md`；分支、Commit、Push、部署、公开发布或再分发仍未授权。
 
 - 为 v0.4.0 创建/切换分支、Commit、Push、部署或公开发布；
 - 创建归档材料或将 v0.2.0 写成 Archived；

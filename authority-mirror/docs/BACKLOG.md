@@ -2,33 +2,34 @@
 
 - **Status：** Active Intent / Never Implementation Approval
 
-| ID | Item | State | Dependency / Reason |
-|---|---|---|---|
-| BL-001 | 全量怪物与 NPC 库 | Deferred | 先验证小型数据结构 |
-| BL-002 | 全职业与完整角色构筑 | Deferred | v0.1.0 仅两名验证角色 |
-| BL-003 | 完整规则搜索系统 | Deferred | 与战斗闭环职责分离 |
-| BL-004 | 完整规则引擎与合法性判断 | Deferred | DM 最终裁定权优先 |
-| BL-005 | 六角格实现 | Deferred | v0.1.0 只预留 `gridType` |
-| BL-006 | 3D、高度体积与垂直范围 | Deferred | v0.1.0 高度仅数值提示 |
-| BL-007 | 美术地图与复杂地图编辑器 | Deferred | 空白方格先验证 |
-| BL-008 | 墙体、碰撞、视线、遮挡、掩护 | Deferred | 需要独立几何与规则合同 |
-| BL-009 | 多人实时同步、账户、权限、房间 | Deferred | 单 DM 本地闭环优先 |
-| BL-010 | NAS 与正式部署 | Deferred | 未进入运行部署阶段 |
-| BL-011 | 公平性服务器骰子 | Deferred | v0.1.0 仅本地事件化骰子 |
-| BL-012 | 复杂动画与特效 | Deferred | 非基础闭环 |
-| BL-013 | 完整召唤物控制系统 | Deferred | v0.1.0 只验证 Effect/Instance 表达 |
-| BL-014 | 公共发布、内容授权与商标审计 | Blocked | 资料授权、翻译与再分发权 `unknown` |
-| BL-015 | Archive Contract/Profile 选择 | Complete / User | User 于 `2026-08-24` 为 v0.3.0 选择 `schema-v0.1.1` + `schema-v0.1.2` Lightweight；不代表 Gate 已通过 |
-| BL-016 | 数据 Schema 稳定化与迁移策略 | Planned | 先由 v0.1.0 真实数据验证 |
-| BL-017 | 多战斗 Campaign 与跨设备同步 | Deferred | 单场战斗与本地恢复尚未验证 |
-| BL-018 | Character Conversation, Import and Combat Projection | Candidate for v0.3.0（部分） | v0.3.0 ABC 草案仅候选长期角色卡、受控导入与战斗投影；对话式建卡、Agent Gateway 与自动完整建卡继续延期。 |
-| BL-019 | 战后长期角色结算、永久损伤与永久奖励 | Deferred / Later Candidate | 需要先建立独立、可修订的长期 `CharacterSheet`；不得把战斗 HP 或效果直接覆盖到长期角色数据。 |
-| BL-020 | 0 HP 生命周期、怪物死亡与角色死亡豁免 | Implemented in v0.4.0 / User Human Acceptance Pending | v0.4.0 只完成 PC `0 HP`、死亡豁免、稳定与死亡垂直闭环；v0.2.0 怪物/NPC DM 记录保持。复活、完整击晕及外围状态/伤害引擎仍延期。 |
-| BL-021 | 玩家端骰点触发与战斗效果提示框架 | Deferred / Later Candidate | 依赖多人账户与权限、权威骰点结果、触发候选合同及 DM 确认边界；不进入 v0.3.0 当前候选范围。 |
-| BL-022 | 全职业、多职业升级与合法性引擎 | Deferred / Committed Direction | v0.3.0 先建立多职业与多施法来源骨架；完整升级、选项资格、全部职业组合与自动合法性判断后续单独交付。 |
-| BL-023 | 全量法术内容与复杂法术执行引擎 | Deferred / Committed Direction | v0.3.0 只做法术档案、准备状态、资源与战斗投影；全量法术表、目标/范围/持续时间/专注及复杂效果自动结算后续实施。 |
-| BL-024 | 多规则版本角色兼容与转换 | Deferred / Committed Direction | v0.3.0 以 2024 可核验规则为自动计算候选，其他版本保留来源与手工覆写；跨版本自动换算、冲突处理和升级工具后续实施。 |
-| BL-025 | 角色详情术语本地化一致性 | Incidental Candidate in v0.4.0 / Non-blocking | v0.4.0 只允许顺手修复施法属性英文内部枚举和 footer 旧身份；稳定 ID 不变，若影响主能力进度则延期，不因此阻塞 v0.4.0。 |
+| ID     | Item                                                 | State                                                 | Dependency / Reason                                                                        |
+| ------ | ---------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| BL-001 | 全量怪物与 NPC 库                                          | Deferred                                              | 先验证小型数据结构                                                                                  |
+| BL-002 | 全职业与完整角色构筑                                           | Deferred                                              | v0.1.0 仅两名验证角色                                                                             |
+| BL-003 | 完整规则搜索系统                                             | Deferred                                              | 与战斗闭环职责分离                                                                                  |
+| BL-004 | 完整规则引擎与合法性判断                                         | Deferred                                              | DM 最终裁定权优先                                                                                 |
+| BL-005 | 六角格实现                                                | Deferred                                              | v0.1.0 只预留 `gridType`                                                                      |
+| BL-006 | 3D、高度体积与垂直范围                                         | Deferred                                              | v0.1.0 高度仅数值提示                                                                             |
+| BL-007 | 美术地图与复杂地图编辑器                                         | Deferred                                              | 空白方格先验证                                                                                    |
+| BL-008 | 墙体、碰撞、视线、遮挡、掩护                                       | Deferred                                              | 需要独立几何与规则合同                                                                                |
+| BL-009 | 多人实时同步、账户、权限、房间                                      | Deferred                                              | 单 DM 本地闭环优先                                                                                |
+| BL-010 | NAS 与正式部署                                            | Deferred                                              | 未进入运行部署阶段                                                                                  |
+| BL-011 | 公平性服务器骰子                                             | Deferred                                              | v0.1.0 仅本地事件化骰子                                                                            |
+| BL-012 | 复杂动画与特效                                              | Deferred                                              | 非基础闭环                                                                                      |
+| BL-013 | 完整召唤物控制系统                                            | Deferred                                              | v0.1.0 只验证 Effect/Instance 表达                                                              |
+| BL-014 | 公共发布、内容授权与商标审计                                       | Blocked                                               | 资料授权、翻译与再分发权 `unknown`                                                                     |
+| BL-015 | Archive Contract/Profile 选择                          | Complete / User                                       | User 于 `2026-08-24` 为 v0.3.0 选择 `schema-v0.1.1` + `schema-v0.1.2` Lightweight；不代表 Gate 已通过 |
+| BL-016 | 数据 Schema 稳定化与迁移策略                                   | Planned                                               | 先由 v0.1.0 真实数据验证                                                                           |
+| BL-017 | 多战斗 Campaign 与跨设备同步                                  | Deferred                                              | 单场战斗与本地恢复尚未验证                                                                              |
+| BL-018 | Character Conversation, Import and Combat Projection | Candidate for v0.3.0（部分）                              | v0.3.0 ABC 草案仅候选长期角色卡、受控导入与战斗投影；对话式建卡、Agent Gateway 与自动完整建卡继续延期。                           |
+| BL-019 | 战后长期角色结算、永久损伤与永久奖励                                   | Deferred / Later Candidate                            | 需要先建立独立、可修订的长期 `CharacterSheet`；不得把战斗 HP 或效果直接覆盖到长期角色数据。                                   |
+| BL-020 | 0 HP 生命周期、怪物死亡与角色死亡豁免                                | Implemented in v0.4.0 / User Human Acceptance Pending | v0.4.0 只完成 PC `0 HP`、死亡豁免、稳定与死亡垂直闭环；v0.2.0 怪物/NPC DM 记录保持。复活、完整击晕及外围状态/伤害引擎仍延期。            |
+| BL-021 | 玩家端骰点触发与战斗效果提示框架                                     | Deferred / Later Candidate                            | 依赖多人账户与权限、权威骰点结果、触发候选合同及 DM 确认边界；不进入 v0.3.0 当前候选范围。                                        |
+| BL-022 | 全职业、多职业升级与合法性引擎                                      | Deferred / Committed Direction                        | v0.3.0 先建立多职业与多施法来源骨架；完整升级、选项资格、全部职业组合与自动合法性判断后续单独交付。                                      |
+| BL-023 | 全量法术内容与复杂法术执行引擎                                      | Deferred / Committed Direction                        | v0.3.0 只做法术档案、准备状态、资源与战斗投影；全量法术表、目标/范围/持续时间/专注及复杂效果自动结算后续实施。                               |
+| BL-024 | 多规则版本角色兼容与转换                                         | Deferred / Committed Direction                        | v0.3.0 以 2024 可核验规则为自动计算候选，其他版本保留来源与手工覆写；跨版本自动换算、冲突处理和升级工具后续实施。                            |
+| BL-025 | 角色详情术语本地化一致性                                         | Incidental Candidate in v0.4.0 / Non-blocking         | v0.4.0 只允许顺手修复施法属性英文内部枚举和 footer 旧身份；稳定 ID 不变，若影响主能力进度则延期，不因此阻塞 v0.4.0。                    |
+| BL-026 | 受控生物的法术续控与规则档案                                       | Deferred / v0.5.0 Amendment 03 follow-up              | 当前仅建立长休到期与 `renewal-requested` 扩展点；具体法术续控、资格、材料、法术位、时机、目标上限和升环效果必须另行准入。                    |
 
 ## BL-022 至 BL-024 确定延期方向
 
@@ -39,6 +40,25 @@
 - **BL-024：** 支持同一角色在 2014、2024 或其他明确来源之间进行版本识别、差异预览、选择性转换和可逆迁移；不得把不同版本的同名字段静默合并，也不得把未经核验的内容自动升级。
 
 v0.3.0 只允许建立能够承载这些方向的稳定数据骨架和最小人工验证路径，不能用“结构已预留”宣称上述三项已经完成。
+
+## BL-026 受控生物的法术续控与规则档案
+
+### 想解决的问题
+
+在 `v0.5.0 Amendment 03` 已冻结的“受控生物”关系、命令 guard 和控制到期合同之上，使已获准的具体法术能够实际创建、续控或失去对受控生物的控制，而不是只记录 DM 的文字说明或 `renewal-requested` 意图。
+
+### 延期范围
+
+- 逐项建立并核验法术档案，例如 `Animate Dead` 与 `Create Undead` 的规则版本、目标遗体/遗骨、生成 Template、命令距离、24 小时控制、到期前重施、目标上限与升环变化；不得以法术名称跨版本混用。
+- 在 DM 明确发起续控时，校验或记录施法者资格、法术位、材料、目标数量、尸体/受控生物资格、施法时机与效果依据；证据不足时必须退回 DM 裁定，不得自动宣称施法成功。
+- 将 Amendment 03 的“是否尝试通过施法续控？”提示升级为真实、可审计的续控动作；成功时才延长控制，失败、取消、到期或条件不明时继续保持 `expired-uncontrolled`。
+- 如果未来引入可核验的 Campaign Time Authority，再决定是否把“24 小时（按一次长休结算）”替换、并列或映射为精确的战役时间期限；不得按现实时间自动推进。
+
+### 进入实施前必须满足
+
+- 单独的 ABC 或经用户重新批准的 Amendment，明确每个法术档案的规则准入、状态结果、失败恢复、Schema 与验收标准。
+- 重新核验 Rules Baseline 的实际 2024 定位与文件 hash；冲突、缺失或版本不明时停止自动化。
+- 明确该项与 BL-023 的关系：BL-026 是受控生物续控的具体产品切片，依赖 BL-023 的法术执行能力，但不因 BL-023 的存在而自动获得 Implementation 授权。
 
 ## BL-021 候选边界
 

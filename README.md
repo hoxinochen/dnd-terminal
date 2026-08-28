@@ -2,11 +2,11 @@
 
 - **项目名称（Project Name）：** DND Terminal
 - **项目 ID：** `dnd-terminal`
-- **当前产品版本：** `v0.4.0` PC 0 HP、死亡豁免与稳定状态
+- **当前产品版本：** `v0.5.0` PC 死亡后复活、独立承接角色与受控亡灵
 - **当前状态：** Archived — Local Private
-- **当前交付：** `v0.4.0 — PC 0 HP、死亡豁免与稳定状态`（Archived — Local Private）
+- **当前交付：** `v0.5.0 — PC 死亡后复活、独立承接角色与受控亡灵`（Archived — Local Private）
 - **当前门禁：** No Active Delivery Authorization
-- **Release Authorization：** v0.3.1 已完成 User Human Acceptance、Independent Review、User 授权的 Local Private Release 与 Archive
+- **Release Authorization：** User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与 Lightweight Archive；未授权 Commit、Push、部署或公开发布
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
@@ -58,6 +58,10 @@ User 于 `2026-08-25` 通过并随后明确批准冻结 v0.4.0 ABC：候选版�
 - [v0.4.0 Independent Review](authority-mirror/version-work/v0.4.0/REVIEW.md)
 - [v0.4.0 Release Notes](authority-mirror/version-work/v0.4.0/RELEASE_NOTES.md)
 - [v0.4.0 Archive Summary](authority-mirror/version-work/v0.4.0/archive/ARCHIVE_SUMMARY.md)
+- [v0.5.0 ABC](authority-mirror/version-work/v0.5.0/ABC.md)
+- [v0.5.0 Independent Review](authority-mirror/version-work/v0.5.0/REVIEW.md)
+- [v0.5.0 Release Notes](authority-mirror/version-work/v0.5.0/RELEASE_NOTES.md)
+- [v0.5.0 Archive Summary](authority-mirror/version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md)
 
 全部项目文档只保存在 Obsidian 文档 Authority。产品 Workspace 的 v0.4.0 技术起点为 `main@444cdce1248ab4173bbfd904b91a0cebb0000d38`，与 v0.3.1 的 25 文件冻结代码快照一致；私有 GitHub 同步只属于 post-archive 技术同步，不改变 v0.3.1 的正式 Release/Archive 身份。v0.4.0 Implementation 已在当前 `main` 工作树形成未提交的源码与测试变更；未创建分支、Commit、Push、部署或公开发布。
 

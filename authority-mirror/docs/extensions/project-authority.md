@@ -1,7 +1,7 @@
 # 项目 Authority（Project Authority）
 
 - **Extension ID：** `local.project-authority`
-- **Status：** Stable Local Extension；v0.4.0 Review Approved — User / Archived — Local Private
+- **Status：** Stable Local Extension；v0.4.0 与 v0.5.0 Archived — Local Private
 - **Owner / Selecting Authority：** User
 - **Created In Delivery：** `v0.1.0`
 - **Core Relationship：** Stable Local Extension under adopted Downstream Documentation Schema Core `schema-v0.3.0`
@@ -81,6 +81,11 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - 当前 canonical delivery record 为 `version-work/v0.4.0/ABC.md`，原 S1 与 Amendment 01 的 User Human Acceptance 均已通过。
 - User 已批准 Independent Review；`version-work/v0.4.0/REVIEW.md` 已完成证据复核并获 User 批准。
 - v0.4.0 Local Private Release 与 Lightweight Archive 已按 User 授权完成；八项 Archive Gate 均为 Pass。用户数据、分支、Commit、Push、部署与公开发布仍未授权改变。
+
+## v0.5.0 归档结论
+
+- User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与独立选择的 Lightweight Archive；`version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md` 记录发布身份、完整快照、测试执行与八项 Gate。
+- v0.5.0 已归档为 Local Private；分支、Commit、Push、部署、公开发布或再分发仍未授权。
 
 ## 决策与变更
 
