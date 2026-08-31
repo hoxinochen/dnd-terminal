@@ -1,7 +1,7 @@
 # D&D 规则基线（Rules Baseline）
 
 - **Extension ID：** `local.dnd-rules-baseline`
-- **Status：** Approved/Frozen historical Entries；v0.4.0 PC 0 HP Entries implemented within Approved/Frozen ABC，User Human Acceptance Passed / Review Approved — User / Archived — Local Private
+- **Status：** Approved/Frozen historical Entries；v0.6.0 复活、转生与受控不死生物提示 Entries approved for non-blocking local guidance，Implementation Not Authorized
 - **Owner：** User
 - **Evidence Date：** `2026-07-30`
 - **Ruleset Candidate：** `PHB 2024 + DMG 2024 + MM 2025`
@@ -34,6 +34,15 @@
 | 0 HP、死亡与死亡豁免（v0.2.0 限定 DM 记录） | `local-markdown-anchor: Lore_01_核心玩家规则.md#降至0生命值`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 9790–9827 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
 | PHB 2024 治疗、生命值与生命值降至 0（v0.4.0 ABC-scoped） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-治疗-生命值-0HP`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 21263–21317 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
 | PHB 2024 死亡、死亡豁免、稳定与昏迷术语（v0.4.0 ABC-scoped） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-死亡-死亡豁免-稳定-昏迷`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 35886–35895、36218–36221、36774–36783 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 回生术（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-回生术`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 23937–23945 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 死者复活（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-死者复活`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 25633–25648 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 复生术（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-复生术`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 23380–23390 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 完全复生术（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-完全复生术`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 24357–24366 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 转生术（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-转生术`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 25657–25665 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 克隆术（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-克隆术`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 25954–25963 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 活化死尸（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-活化死尸`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 23494–23502 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 唤起亡灵（v0.6.0 非阻塞提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-唤起亡灵`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 26198–26208 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
+| PHB 2024 遗体防腐（v0.6.0 辅助提示） | `local-markdown-anchor:Lore_01_核心玩家规则.md#PHB2024-遗体防腐`（原 Entry UUID `unknown`） | `Lore_01_核心玩家规则.md` 第 24751–24759 行 | `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8` |
 | 状态与持续时间 | `urn:uuid:a171312b-6e73-5bfc-8177-68c7b101c5dd` | `玩家手册2024/进行游戏/状态.htm` | `05aabf545f7c4a48971ddd452e32808852c3f87ce8fe23e089ef7d2dee164078` |
 | 效应区域形状 | `urn:uuid:dd3b98c8-f317-5910-aded-f00bc669851c` | `玩家手册2024/术语汇编/效应区域.htm` | `cb98c748a3404d30e0754b872b6c11142ca0c774a1aada65fa782aa0c0c4720a` |
 | 法术效应与 DM 边界 | `urn:uuid:52738c9b-d985-578a-8eb3-72c806d0531e` | `玩家手册2024/法术/法术效应.htm` | `184448330ff2291624c4623c5924282ee3a85e7e16187a8e0a799caac8b22136` |
@@ -64,6 +73,16 @@
 
 ## 规则结论与待决项
 
+### v0.6.0 复活、转生与受控不死生物提示 Entry
+
+- 上述八个法术 Entry 及遗体防腐辅助 Entry 已由 User 于 `2026-08-31` 随 `version-work/v0.6.0/ABC.md` 批准，只用于本地私有产品中的简短规则提示、建议值、详细参考和来源展示。
+- 产品先由 DM 选择实际结果，再显示适用法术；提示不得成为资格、材料、时间、灵魂、尸体或剧情身份的强制合法性 Gate。
+- DM 可以采用建议、明确改判、标记不适用、不追踪、未知或使用自定义依据；最终对象关系与 DM 确认值高于提示默认值。
+- 克隆术的 120 日、复活期限、遗体防腐有效区间和不死生物控制期限均不建立自动计时；不把一次长休等同于 24 小时。
+- 活化死尸与唤起亡灵的目标、Template、数量、升环、命令与控制期限只提供候选提示；系统不自动宣称施法合法。
+- 遗体防腐只作为尸体/死亡记录的辅助提示，不是第九个死亡后结果，不自动计算时间或阻止 DM 裁定。
+- **Status：** `Approved / Frozen for v0.6.0 non-blocking guidance / Implementation Not Authorized`。中文翻译、出版身份、许可与再分发权继续为 `unknown`。
+
 ### PC 0 HP、死亡豁免与稳定（v0.4.0 Approved ABC）
 
 - 本地 Markdown 已定位到明确标注为“玩家手册2024”的治疗、生命值、0 HP、死亡豁免、稳定、死亡和昏迷条目；文件 SHA-256 已于 `2026-08-25` 只读复核为 `b9c329141af1aecaa32dcb26bed6333d88b9ced935146dc9a5cef47888780be8`。
@@ -76,7 +95,7 @@
 
 - 本地 Markdown 锚点记载：生物死亡后不能恢复 HP，直到被复活；多数 DM 会在怪物 HP 降至 `0` 时判定其死亡，重要 NPC 可另作处理；角色 `0 HP` 涉及昏迷、即时死亡与死亡豁免。
 - **Status：** `Approved / v0.2.0 limited DM record`。本版本只允许怪物/NPC 在 HP 降至 `0` 时被明确记录为死亡、退出先攻并保留尸体棋子；DM 可用审计事件特许其以 1 HP 复起，或以新 `CombatantInstance` 作特殊复苏/转化。
-- 在 v0.2.0 的冻结限定范围内，不自动判断即时死亡、治疗/复活法术、材料、死亡豁免、稳定或角色 `0 HP`；当时角色显示“死亡豁免待后续实现”。当前 v0.4.0 候选已按其独立 Approved ABC 实现 PC 0 HP 状态机，不追溯改写 v0.2.0 历史范围。
+- 在 v0.2.0 的冻结限定范围内，不自动判断即时死亡、治疗/复活法术、材料、死亡豁免、稳定或角色 `0 HP`；当时角色显示“死亡豁免待后续实现”。后续 v0.4.0 已按独立 Approved ABC 实现并归档 PC 0 HP 状态机，不追溯改写 v0.2.0 历史范围。
 - 此锚点的原始 Entry UUID 不可得，故仅作为当前受限本地资料的可复核 Markdown 定位，不推导出版、翻译、授权或再分发结论。
 
 ### 斜向移动

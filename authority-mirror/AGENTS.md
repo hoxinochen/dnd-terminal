@@ -1,14 +1,14 @@
 # DND Terminal 工程协作规范
 
-- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0 与 v0.5.0 Archived — Local Private
+- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0 与 v0.5.0 Archived — Local Private；v0.6.0 ABC Approved/Frozen
 - **适用范围（Scope）：** DND Terminal 文档 Authority 与产品 Workspace
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
-- **当前交付（Current Delivery）：** `v0.5.0 — PC 死亡后复活、独立承接角色与受控亡灵`（Archived — Local Private）
-- **当前门禁（Current Gate）：** No Active Delivery Authorization
+- **当前交付（Current Delivery）：** `v0.6.0 — DM 裁定驱动的复活、转生与受控不死生物关联`（ABC Approved/Frozen）
+- **当前门禁（Current Gate）：** Awaiting Explicit Implementation Authorization
 - **ESG Core：** Downstream Documentation Schema `schema-v0.3.0`（与 Minimal Governance Framework `schema-v0.2.0` 兼容）
-- **v0.4.0 Profile 适用性：** Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` 与 Lightweight Archive Profile `schema-v0.1.2` 已选择并执行
+- **v0.6.0 Profile 适用性：** 单一主 Slice，Milestone Documentation Profile `Not Applicable`；Archive Contract/Profile `Not Selected`
 - **主要语言（Primary Language）：** 简体中文
 
 ## 1. 项目定位
@@ -74,19 +74,23 @@ Roadmap、Backlog、Draft、Candidate、测试计划或聊天记忆都不授予 
 
 ## 6. 当前批准门禁
 
-v0.1.0 已 Released / Archived — Local Private，保持历史冻结。v0.2.0 已完成 User 授权的 Local Private Release，尚未 Archive。v0.3.0 的 `M1-S1` 至 `M1-S5`、`M1-S5-STAB-1` 与 `M1-S5-STAB-2` 均已完成并通过 User Human Acceptance；Independent Review、Local Private Release 与 Archive 均已获 User 批准。`schema-v0.1.1` Archive Contract 与 `schema-v0.1.2` Lightweight Archive Profile 的八项 Gate 全部通过，最终证据见 `version-work/v0.3.0/archive/ARCHIVE_SUMMARY.md`。部署、公开发布和再分发仍未授权。以下仍不自动获批：
+v0.1.0 已 Released / Archived — Local Private，保持历史冻结。v0.2.0 已完成 User 授权的 Local Private Release，尚未 Archive。v0.3.0 的 `M1-S1` 至 `M1-S5`、`M1-S5-STAB-1` 与 `M1-S5-STAB-2` 均已完成并通过 User Human Acceptance；Independent Review、Local Private Release 与 Archive 均已获 User 批准。`schema-v0.1.1` Archive Contract 与 `schema-v0.1.2` Lightweight Archive Profile 的八项 Gate 全部通过，最终证据见 `version-work/v0.3.0/archive/ARCHIVE_SUMMARY.md`。部署、公开发布和再分发仍未授权。
 
-User 于 `2026-08-24` 将归档后的兼容性维护交付正式命名为 `v0.3.1`，随后明确批准并冻结 `version-work/v0.3.1/ABC.md`，并独立授权 Implementation。实施完成后，User 于同日明确确认“人工验收通过 v0.3.1”，并明确授权完成 Review、Local Private Release 与 Archive。八项 Archive Gate 均已通过，最终证据见 `version-work/v0.3.1/archive/ARCHIVE_SUMMARY.md`；分支、Commit、Push、部署和公开发布仍未授权。
+User 于 `2026-08-24` 将归档后的兼容性维护交付正式命名为 `v0.3.1`，随后明确批准并冻结 `version-work/v0.3.1/ABC.md`，并独立授权 Implementation。实施完成后，User 于同日明确确认“人工验收通过 v0.3.1”，并明确授权完成 Review、Local Private Release 与 Archive。八项 Archive Gate 均已通过，最终证据见 `version-work/v0.3.1/archive/ARCHIVE_SUMMARY.md`；其技术提交 `444cdce` 当前可由 `main` 与 `origin/main` 追溯，部署、公开发布和再分发仍未授权。
 
-User 于 `2026-08-25` 确认 v0.4.0 采用“一份 ABC、一个主 Slice、一次 Implementation、一次综合验收”的范围方向，主能力为 PC `0 HP`、死亡豁免与稳定状态；最低迁移保护、针对性测试和两项不阻塞展示修复合入同一 Slice，不再建立原讨论中的四个独立 Step。原 S1 与 User 同日批准的 `version-work/v0.4.0/AMENDMENT_01.md` 均已获 User Human Acceptance；后者实现 d20 面板以及 PC 生命阶段与昏迷/倒地分离。User 已批准 Review、Local Private Release 与 Archive；v0.4.0 的 Lightweight Archive 八项 Gate 已通过，最终证据见 `version-work/v0.4.0/archive/ARCHIVE_SUMMARY.md`。PC 死亡后的复活/转化留待独立 v0.4.1。尚未授权分支、Commit、Push、部署、公开发布或再分发。
+User 于 `2026-08-25` 确认 v0.4.0 采用“一份 ABC、一个主 Slice、一次 Implementation、一次综合验收”的范围方向，主能力为 PC `0 HP`、死亡豁免与稳定状态；最低迁移保护、针对性测试和两项不阻塞展示修复合入同一 Slice，不再建立原讨论中的四个独立 Step。原 S1 与 User 同日批准的 `version-work/v0.4.0/AMENDMENT_01.md` 均已获 User Human Acceptance；后者实现 d20 面板以及 PC 生命阶段与昏迷/倒地分离。User 已批准 Review、Local Private Release 与 Archive；v0.4.0 的 Lightweight Archive 八项 Gate 已通过，最终证据见 `version-work/v0.4.0/archive/ARCHIVE_SUMMARY.md`。当时延期的 PC 死亡后复活/转化已由独立 v0.5.0 完成并归档。尚未授权部署、公开发布或再分发。
 
-User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与 Lightweight Archive。v0.5.0 的发布身份、34 文件快照、测试执行、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md`。User 后续已授权并完成本地产品 Commit 与 Authority 技术镜像同步 Commit；Push、部署、公开发布或再分发仍未授权。
+User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与 Lightweight Archive。v0.5.0 的发布身份、34 文件快照、测试执行、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md`。产品提交 `370b92a`、Authority 镜像提交 `2f897a6` 与活文档治理提交 `ab82faf` 当前均已进入 `main` 与 `origin/main`；这些技术同步不改变归档身份，部署、公开发布或再分发仍未授权。
 
-- 为 v0.4.0 创建/切换分支、Commit、Push、部署或公开发布；
+User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC。当前唯一实施合同为 `version-work/v0.6.0/ABC.md`：三个顶层死亡后结果、八个中文法术的非阻塞提示、新身体/新形态三个子选项、旧 v0.5.0 S2C 兼容和 DM 最终裁定边界已冻结。Implementation、Testing、Review、Release、Archive、分支、Commit、Push、部署、公开发布或再分发均未授权。
+
+当前以下行为仍不自动获批：
+
+- 为 v0.6.0 实施产品代码、创建/切换分支、Commit、Push、部署或公开发布；
 - 创建归档材料或将 v0.2.0 写成 Archived；
 - 对现有 Released 身份之外的部署、公开发布或再分发作出主张。
 
-`M1-S2` 技术实施、自动测试、浏览器验证与 User Human Acceptance 已于 `2026-08-17` 完成。用户确认徒手打击缺失数据保持 `unknown / needs-review` 的原因可理解，并同意将重复 `unknown` 的显示文案作为非阻塞优化留待下一获授权切片处理。用户随后于 `2026-08-17` 明确要求“实施s3”，并在验收期授权补充莉亚的三级熟练、特性、主要装备/背包和 DM 武器精通选择；又于 `2026-08-18` 明确授权 M1-S3 的角色详情 UI 验收整改，以及“仅 Excel 明确导入 `武器精通` 职业特性时才请求 DM 选择”的泛化缺陷修复。用户于同日明确确认“M1-S3 人工验收通过”；`M1-S3` 已完成受控 Excel Profile、莉亚验证、`M1-S2-O1` 文案优化、页签式角色详情和资格泛化修复。导入特性只展示、不自动执行。用户随后明确“授权实施m1s4”；该 Slice 的多施法来源、多职业与多资源池骨架、测试和累计 Implementation/Testing 记录已完成，且用户已人工验收通过。`M1-S4-O1` 留待下一获授权实施；“仍不授权 M1-S5”的历史表述已被 2026-08-21 的 Amendment 1 取代，随后 Review 与 Local Private Release 已于 `2026-08-24` 获 User 依次批准；Archive、部署与公开发布仍未授权。
+`M1-S2` 至 `M1-S5` 的技术实施、自动测试、浏览器验证与 User Human Acceptance 均已完成；M1/v0.3.0 后续 Review、Local Private Release 与 Archive 也已获批并完成。导入特性只展示、不自动执行，未准入规则继续保持 `unknown / needs-review`；部署、公开发布与再分发仍未授权。
 
 ## 7. 规则与数据边界
 
@@ -106,8 +110,8 @@ User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与
 - `docs/ARCHITECTURE.md`：批准后实施的组件、数据 Authority 与状态边界；Draft 内容不得冒充实施事实。
 - `docs/ROADMAP.md`：跨交付方向；永不构成批准。
 - `docs/BACKLOG.md`：延期意图；永不构成批准。
-- `version-work/v0.1.0/ABC.md`：v0.1.0 批准范围合同。
-- `version-work/v0.1.0/TESTING.md`：测试计划、执行事实与固定遭遇。
+- `version-work/<delivery-id>/ABC.md`：对应交付的批准范围合同；当前为 `version-work/v0.6.0/ABC.md`。
+- `version-work/<delivery-id>/TESTING.md`：仅在该交付获准实施后记录测试计划与执行事实；v0.6.0 尚未创建。
 
 不得创建内容重复的状态文件、决策文件或一功能一文档。
 

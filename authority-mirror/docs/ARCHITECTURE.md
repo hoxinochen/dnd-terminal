@@ -1,12 +1,12 @@
 # Architecture
 
-- **Status：** v0.3.0 Archived — Local Private；v0.3.1 Archived — Local Private；v0.4.0 Archived — Local Private
-- **Applies To：** 当前 Workspace；v0.4.0 原 S1 与 Amendment 01 已通过 User Human Acceptance，Review、Local Private Release 与 Lightweight Archive 已获 User 批准并完成；历史冻结事实按各版本记录保留
+- **Status：** Implemented through v0.5.0 Archived — Local Private；v0.6.0 ABC Approved/Frozen / Not Implemented
+- **Applies To：** 当前 Workspace 的 v0.5.0 实施事实；v0.6.0 尚未获得 Implementation 授权，不得写成现有架构
 - **Authority：** Approved ABC after user approval; implementation facts after Implementation and Review
 - **Documentation Root：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **Implementation Root：** `/Users/chenzehao/Projects/DND Terminal`
 
-当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。Amendment 2 进一步加入角色归档生命周期、字段级防呆、过期候选阻断与可审计废除终态。上述实现已通过相应测试、User Human Acceptance、Independent Review 与 User 授权的 Local Private Release；规则、发布和 Archive 边界仍按各 Authority 记录严格限制。
+当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态，以及 v0.5.0 的原身体复活、独立后继 PC、受控不死生物、地图预览摆放、长期控制关系与 DM 续控记录。上述实现已通过对应测试、Independent Review 与 User 授权的 Local Private Release/Archive；规则与公开发布边界仍按各 Authority 记录严格限制。
 
 文档与实现使用双根目录：治理与交付文档只在 Documentation Root；源码、测试源码、依赖与构建配置只在 Implementation Root。两者通过版本身份、Workspace 相对路径和哈希建立证据引用，不复制内容。
 
@@ -16,7 +16,7 @@
 - 手动 JSON 导出以既有 `schemaVersion`/`appVersion` 保持 Session 兼容，并附加可选 `deliveryVersion` 作为来源元数据；导入仍只按 Session Schema 校验，未知未来 Schema 安全拒绝。
 - 浏览器自动保存继续使用既有 Envelope 形状和现有 localStorage key，不写入 `deliveryVersion`，不迁移、复制或删除用户数据。
 
-### v0.4.0 已实施架构（Released — Local Private）
+### v0.4.0 已实施架构（Archived — Local Private）
 
 User 于 `2026-08-25` 已批准 PC `0 HP`、死亡豁免与稳定状态 ABC；交付采用一个 `v0.4.0-S1`，最低迁移保护、针对性测试和不阻塞的展示修复不再拆成独立 Slice。唯一 Approved/Frozen 合同见 `version-work/v0.4.0/ABC.md`。
 
@@ -25,6 +25,20 @@ User 于 `2026-08-25` 已批准 PC `0 HP`、死亡豁免与稳定状态 ABC；�
 浏览器自动保存只写 `dnd-terminal.v0.4.0.session.current`。首次缺少新 key 时从 v0.3.1/v0.2 旧 key 读取副本，完整校验后才写新 key；旧 key 不移动、不删除、不覆盖。损坏的新 key 会阻断自动保存和旧键回退，页面要求用户明确导入或新建。导出使用 `schemaVersion/appVersion = 0.3.0` 与 `deliveryVersion = 0.4.0`。
 
 `unconscious` PC 保留先攻位置并在回合开始显示强制死亡豁免；普通动作、附赠动作、反应、移动、攻击、法术、资源和手工效果均被命令层阻断。`stable/dead/needs-review` 不取得普通回合。所有 v0.4.0 生命变化追加顺序事件并接入当前页面补偿撤销；持久化压缩仍删除完整 `before` 检查点，因此刷新后 UI 明确提示旧事件不可撤销，不伪造状态。
+
+### v0.5.0 已实施架构（Archived — Local Private）
+
+v0.5.0 在 v0.4.0 生命阶段上增加死亡后 DM 结果入口。`pc.return-to-life.confirmed` 恢复原 PC `CombatantInstance`；`pc.replacement.confirmed` 与 `pc.undead-successor.confirmed` 各自创建新的独立 PC `CharacterSheet`、`CombatProjection` 和 `CombatantInstance`；`combatant.controlled-undead.created` 创建独立 monster/NPC 实例与 `controllerLink`，不恢复原 PC，也不写回尸体来源角色卡。
+
+- 新实例路径先建立内存草稿并进入地图预览；确认前不创建角色卡、实例、先攻或事件。完整 footprint、越界和尸体/其他棋子占用检查通过后才原子提交。
+- S2A/S2C 只复制 DM 勾选的字段组。新旧角色卡拥有不同 `characterId`，用普通备注保存人类可读关联；不存在 schema 强继承、自动同步、自动归档或排他关系。
+- 受控生物使用独立 `controlledEntities` 长期集合。只有控制者具备匹配 CharacterSheet/CombatProjection 时，才生成默认拒绝的战后候选；接受后只修订控制者角色卡，不写回尸体来源角色卡。
+- 有效控制关系可在后续遭遇中由 DM 再次物化为新的独立实例。命令要求在场、存活、当前回合且满足记录的命令距离；实际行动仍由 DM 结算。失控关系保留对象、棋子、先攻和历史，不自动敌对、删除或行动。
+- v0.5.0 已实现的期限类型包括永久、自定义回合/战斗/长休，以及历史 `one-long-rest`。长休续控只记录 DM 确认并刷新计数，不验证法术位、材料、目标、资格或时机。
+- Session Envelope Schema 为 `0.4.1`，当前 key 为 `dnd-terminal.v0.5.0.controlled-entities.session.current`；启动按新 key 到旧 key 只读选择，迁移只写新 key。CharacterSheet Schema 为 `0.3.0-m1-s6`，缺失 `controlledEntities` 按空集合兼容。
+- 创建、复活、控制更新与续控均追加顺序事件；撤销使用补偿事件。创建后存在依赖事件时阻止破坏性撤销。
+
+v0.6.0 ABC 已批准把四个旧结果入口收敛为三个顶层结果，并把旧不死生物 PC 路径并入“以新身体或新形态继续冒险”。该内容目前只是冻结设计；在获得 Implementation 授权并形成实际代码/测试/Review 证据前，不属于本架构的已实施事实。
 
 ## 设计理由
 

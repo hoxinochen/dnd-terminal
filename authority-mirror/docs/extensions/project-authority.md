@@ -1,7 +1,7 @@
 # 项目 Authority（Project Authority）
 
 - **Extension ID：** `local.project-authority`
-- **Status：** Stable Local Extension；v0.4.0 与 v0.5.0 Archived — Local Private
+- **Status：** Stable Local Extension；v0.5.0 Archived — Local Private；v0.6.0 ABC Approved/Frozen
 - **Owner / Selecting Authority：** User
 - **Created In Delivery：** `v0.1.0`
 - **Core Relationship：** Stable Local Extension under adopted Downstream Documentation Schema Core `schema-v0.3.0`
@@ -20,7 +20,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - 项目文档与交付记录采用 Downstream Documentation Schema Core `schema-v0.3.0`，Core SHA-256 为 `4a95a932eba5e549fa96449c178ce18ecc049513a3697b041b08dbd8736f4f4d`。
 - 项目治理生命周期继续兼容 Minimal Governance Framework `schema-v0.2.0`，SHA-256 为 `84b0fbbe1dd5703acfcda63b297a115e725c79629647d807ae3664a55c4aa727`。
 - Milestone Documentation Profile `schema-v0.3.0` 曾为 `M1 ↔ v0.3.0` 的多 Slice 与跨 Slice Exit Gate 采纳；其适用范围不自动延伸到后续交付。
-- `v0.4.0` 只有一个实施 Slice，无跨 Slice 汇总或双轴 Milestone 退出门禁，因此当前适用性为 `Core Only / Milestone Profile Not Applicable`。
+- `v0.4.0`、`v0.5.0` 与 `v0.6.0` 均只有一个主 Slice，无跨 Slice 汇总或双轴 Milestone 退出门禁，因此适用性均为 `Core Only / Milestone Profile Not Applicable`；v0.6.0 尚未实施。
 - Archive Contract/Profile 只能在具体交付获得 Archive 方向授权并完成适用性选择后采用；历史版本的选择不得自动继承。
 
 ## 项目边界
@@ -60,6 +60,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 交付记录证明某一历史事实；活文档负责让人能够正确理解**现在**的项目状态。两者缺一不可，且不得互相替代。
 
 - Authority 中的 `AGENTS.md`、`README.md`、`docs/ROADMAP.md`、`docs/BACKLOG.md` 与本文件构成活文档集合；每次交付范围、生命周期、授权、当前门禁、延期依赖或技术同步发生变化时，必须由事实源驱动逐项核对。
+- `docs/ARCHITECTURE.md` 与 `docs/extensions/rules-baseline.md` 是持续维护的当前参考文档：前者只随已实施并复核的架构事实更新，后者随规则 Entry 准入更新。`docs/extensions/product-requirements.md` 保持冻结的 v0.1.0 长期需求基线，不为显示当前版本而改写。
 - 运行顺序固定为：交付事实源 → 活文档核对/更新 → `authority-mirror/` 单向生成 → 根 README 链接投影 → 差异与链接验证 → 经用户授权的技术同步 Commit/Push。不得跳过活文档而直接镜像或提交。
 - 每次收口报告必须说明：哪些活文档已更新、哪些已核对但不受影响、镜像是否与 Authority 一致、根 README 是否已投影、以及 Commit/Push 是否已执行。缺少任一项时，不得宣称“活文档同步完成”。
 - 该流程是治理和可见性要求，不会自动授予 ABC、Implementation、Review、Release、Archive、Commit 或 Push 权限，也不会允许改写冻结原件。
@@ -84,17 +85,24 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 
 不得互相推导这些状态。
 
-## 当前 v0.4.0 门禁
+## v0.4.0 归档结论
 
 - User 于 `2026-08-25` 已通过 v0.4.0 的范围讨论，决定只建立一个 `v0.4.0-S1`，不把支撑工作拆成四个独立 Slice。
-- 当前 canonical delivery record 为 `version-work/v0.4.0/ABC.md`，原 S1 与 Amendment 01 的 User Human Acceptance 均已通过。
+- canonical delivery record 为 `version-work/v0.4.0/ABC.md`，原 S1 与 Amendment 01 的 User Human Acceptance 均已通过。
 - User 已批准 Independent Review；`version-work/v0.4.0/REVIEW.md` 已完成证据复核并获 User 批准。
-- v0.4.0 Local Private Release 与 Lightweight Archive 已按 User 授权完成；八项 Archive Gate 均为 Pass。用户数据、分支、Commit、Push、部署与公开发布仍未授权改变。
+- v0.4.0 Local Private Release 与 Lightweight Archive 已按 User 授权完成；八项 Archive Gate 均为 Pass。技术提交 `d9c31b3` 当前可由 `main` 与 `origin/main` 追溯，不改变冻结归档身份；部署、公开发布与再分发仍未授权。
 
 ## v0.5.0 归档结论
 
 - User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与独立选择的 Lightweight Archive；`version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md` 记录发布身份、完整快照、测试执行与八项 Gate。
-- v0.5.0 已归档为 Local Private；User 后续已授权并完成本地产品 Commit 与 Authority 技术镜像同步 Commit。Push、部署、公开发布或再分发仍未授权。
+- v0.5.0 已归档为 Local Private；产品提交 `370b92a`、Authority 镜像提交 `2f897a6` 与后续活文档治理提交 `ab82faf` 当前均可由 `main` 与 `origin/main` 追溯。技术同步不改变归档身份；部署、公开发布或再分发仍未授权。
+
+## 当前 v0.6.0 门禁
+
+- User 于 `2026-08-31` 正式命名并批准冻结 `version-work/v0.6.0/ABC.md`。
+- 本交付采用一个主 Slice；三个顶层结果、八个中文法术的非阻塞提示、DM 最终裁定、旧 v0.5.0 S2C 兼容及测试/回退边界已冻结。
+- Rules Baseline 中相应 Entry 只授权本地提示和来源展示，不授权完整规则自动裁定或公开再分发。
+- 当前门禁为 `Awaiting Explicit Implementation Authorization`。Implementation、Testing、Review、Release、Archive、分支、Commit、Push、部署与公开发布均未授权。
 
 ## 决策与变更
 
