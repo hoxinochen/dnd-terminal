@@ -1,7 +1,7 @@
 # D&D 规则基线（Rules Baseline）
 
 - **Extension ID：** `local.dnd-rules-baseline`
-- **Status：** Approved/Frozen historical Entries；v0.6.0 复活、转生与受控不死生物提示 Entries approved for non-blocking local guidance，Implementation Not Authorized
+- **Status：** Approved/Frozen historical Entries；v0.6.0 复活、转生与受控不死生物提示 Entries implemented as non-blocking local guidance，Human Acceptance Pending
 - **Owner：** User
 - **Evidence Date：** `2026-07-30`
 - **Ruleset Candidate：** `PHB 2024 + DMG 2024 + MM 2025`
@@ -81,7 +81,7 @@
 - 克隆术的 120 日、复活期限、遗体防腐有效区间和不死生物控制期限均不建立自动计时；不把一次长休等同于 24 小时。
 - 活化死尸与唤起亡灵的目标、Template、数量、升环、命令与控制期限只提供候选提示；系统不自动宣称施法合法。
 - 遗体防腐只作为尸体/死亡记录的辅助提示，不是第九个死亡后结果，不自动计算时间或阻止 DM 裁定。
-- **Status：** `Approved / Frozen for v0.6.0 non-blocking guidance / Implementation Not Authorized`。中文翻译、出版身份、许可与再分发权继续为 `unknown`。
+- **Status：** `Approved / Frozen for v0.6.0 non-blocking guidance / Implemented / Human Acceptance Pending`。中文翻译、出版身份、许可与再分发权继续为 `unknown`。
 
 ### PC 0 HP、死亡豁免与稳定（v0.4.0 Approved ABC）
 

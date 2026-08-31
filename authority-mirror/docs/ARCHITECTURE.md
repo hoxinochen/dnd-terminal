@@ -1,12 +1,12 @@
 # Architecture
 
-- **Status：** Implemented through v0.5.0 Archived — Local Private；v0.6.0 ABC Approved/Frozen / Not Implemented
-- **Applies To：** 当前 Workspace 的 v0.5.0 实施事实；v0.6.0 尚未获得 Implementation 授权，不得写成现有架构
+- **Status：** Archived through v0.6.0 — Local Private
+- **Applies To：** 当前 Workspace 的已实施事实；v0.6.0 已完成浏览器与 User Human Acceptance、Review、Local Private Release 和 Lightweight Archive
 - **Authority：** Approved ABC after user approval; implementation facts after Implementation and Review
 - **Documentation Root：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **Implementation Root：** `/Users/chenzehao/Projects/DND Terminal`
 
-当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态，以及 v0.5.0 的原身体复活、独立后继 PC、受控不死生物、地图预览摆放、长期控制关系与 DM 续控记录。上述实现已通过对应测试、Independent Review 与 User 授权的 Local Private Release/Archive；规则与公开发布边界仍按各 Authority 记录严格限制。
+当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态、v0.5.0 的死亡后结果，以及 v0.6.0 的三结果卡、八法术非阻塞提示、后继形态子选项和 copy-on-write 会话迁移。历史归档交付已通过对应 Review/Release/Archive；v0.6.0 已完成 User 批准的 Review、浏览器与 Human Acceptance，并以 Local Private 身份发布，尚未归档。
 
 文档与实现使用双根目录：治理与交付文档只在 Documentation Root；源码、测试源码、依赖与构建配置只在 Implementation Root。两者通过版本身份、Workspace 相对路径和哈希建立证据引用，不复制内容。
 
@@ -38,7 +38,15 @@ v0.5.0 在 v0.4.0 生命阶段上增加死亡后 DM 结果入口。`pc.return-to
 - Session Envelope Schema 为 `0.4.1`，当前 key 为 `dnd-terminal.v0.5.0.controlled-entities.session.current`；启动按新 key 到旧 key 只读选择，迁移只写新 key。CharacterSheet Schema 为 `0.3.0-m1-s6`，缺失 `controlledEntities` 按空集合兼容。
 - 创建、复活、控制更新与续控均追加顺序事件；撤销使用补偿事件。创建后存在依赖事件时阻止破坏性撤销。
 
-v0.6.0 ABC 已批准把四个旧结果入口收敛为三个顶层结果，并把旧不死生物 PC 路径并入“以新身体或新形态继续冒险”。该内容目前只是冻结设计；在获得 Implementation 授权并形成实际代码/测试/Review 证据前，不属于本架构的已实施事实。
+### v0.6.0 已实施架构（Archived — Local Private）
+
+`src/life-cycle-v060.js` 定义 Session Envelope Schema `0.5.0`、Delivery `0.6.0` 和新 key `dnd-terminal.v0.6.0.death-outcomes.session.current`。启动优先读取新 key；缺失时仅验证并复制 v0.5.0/更早有效会话，绝不改写旧 key。损坏新 key 仍阻断保存和旧 key 回退。
+
+应用层将 PC 死亡后入口收敛为三种对象拓扑。后继路径以 `shape = normal | undead | custom` 记录普通新身体、不死生物形态或其他自定义形态，并统一追加 `pc.successor.confirmed`；旧 v0.5.0 S2A/S2C 事件保留读取与补偿兼容。受控不死生物继续是独立 monster/NPC 实例；默认期限为 DM 管理，控制者和长期候选只在 DM 主动选择时关联。
+
+法术目录按结果过滤八个中文法术；详细参考、遗体防腐、施法者、资源、材料、时间、灵魂和规则符合情况均为非阻塞记录。资源同步扣除在提交前预检；恢复原身体先显示原实例/HP/地图/先攻/资源预览，新对象继续使用地图预览与确认。重复来源要求 DM 明确覆写。该实现不构成自动合法性、时间、材料、灵魂、克隆准备或完整法术执行引擎。
+
+Amendment 01 将法术目录扩展为 `SpellRulingProfile`：Profile 定义简报、来源、推荐结果和裁定字段；应用层按当前结果过滤后动态渲染法术选择器、简报、视觉化分段裁定卡和实时预览。每个字段保存 DM 选择的状态及必要的改判值，Profile 与最终裁定随事件保存；新增 Profile 不改变死亡后对象拓扑或启动迁移。
 
 ## 设计理由
 

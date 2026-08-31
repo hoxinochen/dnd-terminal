@@ -5,13 +5,13 @@
 
 ## 当前交付状态
 
-`v0.4.0` 的 PC `0 HP`、死亡豁免、稳定与死亡闭环，及 `v0.5.0` 的 PC 死亡后 DM 复活、独立承接角色与受控亡灵窄流程，均已完成 Local Private Archive。User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC；当前等待独立的 Implementation 授权。
+`v0.4.0` 的 PC `0 HP`、死亡豁免、稳定与死亡闭环，及 `v0.5.0` 的 PC 死亡后 DM 复活、独立承接角色与受控亡灵窄流程，均已完成 Local Private Archive。User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC，随后授权完成 Implementation、Review、Local Private Release 与 Lightweight Archive；自动测试、浏览器完成流程和 User Human Acceptance 均已通过，八项 Archive Gate 均为 Pass。
 
 ## 当前批准方向：v0.6.0 DM 裁定驱动的复活、转生与受控不死生物关联
 
-当前 Approved/Frozen 合同为 `version-work/v0.6.0/ABC.md`。方向是把 v0.5.0 四张死亡后结果卡收敛为三个顶层结果；在“以新身体或新形态继续冒险”中复用普通新身体、不死生物形态并增加其他自定义形态；为八个中文法术提供结果过滤、简短非阻塞提示、DM 改判和变更预览；同时保留旧 v0.5.0 S2C 数据兼容。
+当前 Approved/Frozen 合同为 `version-work/v0.6.0/ABC.md` 与已批准的 `AMENDMENT_01.md`。方向是把 v0.5.0 四张死亡后结果卡收敛为三个顶层结果；为八个中文法术提供结果过滤、结构化裁定资料、简短非阻塞提示、DM 改判和变更预览；同时保留旧 v0.5.0 S2C 数据兼容。
 
-本交付不建设完整法术引擎、Campaign Time、材料库存、灵魂状态机或合法性判断。Implementation、Review、Release、Archive 与技术同步仍分别等待 User 授权。
+本交付不建设完整法术引擎、Campaign Time、材料库存、灵魂状态机或合法性判断。Implementation、Review、Local Private Release 与 Lightweight Archive 已完成；后续仅等待独立的技术同步授权。
 
 ## 已完成的基础方向（历史）
 

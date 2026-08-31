@@ -1,14 +1,14 @@
 # DND Terminal 工程协作规范
 
-- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0 与 v0.5.0 Archived — Local Private；v0.6.0 ABC Approved/Frozen
+- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0、v0.5.0 与 v0.6.0 Archived — Local Private
 - **适用范围（Scope）：** DND Terminal 文档 Authority 与产品 Workspace
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
-- **当前交付（Current Delivery）：** `v0.6.0 — DM 裁定驱动的复活、转生与受控不死生物关联`（ABC Approved/Frozen）
-- **当前门禁（Current Gate）：** Awaiting Explicit Implementation Authorization
+- **当前交付（Current Delivery）：** `v0.6.0 — DM 裁定驱动的复活、转生与受控不死生物关联`（Archived — Local Private）
+- **当前门禁（Current Gate）：** Archived — Local Private；Awaiting Technical Sync Authorization
 - **ESG Core：** Downstream Documentation Schema `schema-v0.3.0`（与 Minimal Governance Framework `schema-v0.2.0` 兼容）
-- **v0.6.0 Profile 适用性：** 单一主 Slice，Milestone Documentation Profile `Not Applicable`；Archive Contract/Profile `Not Selected`
+- **v0.6.0 Profile 适用性：** 单一主 Slice，Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` 与 Lightweight Archive Profile `schema-v0.1.2` 已选择并执行，八项 Gate 均为 Pass
 - **主要语言（Primary Language）：** 简体中文
 
 ## 1. 项目定位
@@ -57,7 +57,7 @@ Roadmap、Backlog、Draft、Candidate、测试计划或聊天记忆都不授予 
 3. `docs/extensions/project-authority.md`；
 4. 当前交付的 `ABC.md`；
 5. 与任务直接相关的 Rules Baseline、Product Requirements、Architecture 与 Testing；
-6. 仅在规划或范围核对时读取 Roadmap 与 Backlog。
+6. 仅在规划或范围核对时读取 Roadmap 与 Backlog；每次版本开始前审计还必须复核 `BL-027` 的 UI 技术债信号，并明确报告是否建议将其列为候选交付。
 
 规则结论必须回到 `rules-baseline.md` 固定的实际 Entry。不得用模型常识、聊天记忆或未提供的网络资料补齐规则。
 
@@ -82,12 +82,12 @@ User 于 `2026-08-25` 确认 v0.4.0 采用“一份 ABC、一个主 Slice、一�
 
 User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与 Lightweight Archive。v0.5.0 的发布身份、34 文件快照、测试执行、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md`。产品提交 `370b92a`、Authority 镜像提交 `2f897a6` 与活文档治理提交 `ab82faf` 当前均已进入 `main` 与 `origin/main`；这些技术同步不改变归档身份，部署、公开发布或再分发仍未授权。
 
-User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC。当前唯一实施合同为 `version-work/v0.6.0/ABC.md`：三个顶层死亡后结果、八个中文法术的非阻塞提示、新身体/新形态三个子选项、旧 v0.5.0 S2C 兼容和 DM 最终裁定边界已冻结。Implementation、Testing、Review、Release、Archive、分支、Commit、Push、部署、公开发布或再分发均未授权。
+User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC，并随后明确授权 Implementation 与 `version-work/v0.6.0/AMENDMENT_01.md`。三个顶层死亡后结果、八个中文法术的结构化裁定工作台、新身体/新形态三个子选项、旧 v0.5.0 S2C 兼容和 DM 最终裁定边界均已实现；自动测试、浏览器完成流程、User Human Acceptance 与 Review 均已通过。User 随后授权 Local Private Release 与 Archive；Archive Contract `schema-v0.1.1`、Lightweight Archive Profile `schema-v0.1.2` 的八项 Gate 均为 Pass，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。分支、Commit、Push、部署、公开发布或再分发仍未授权。
 
 当前以下行为仍不自动获批：
 
-- 为 v0.6.0 实施产品代码、创建/切换分支、Commit、Push、部署或公开发布；
-- 创建归档材料或将 v0.2.0 写成 Archived；
+- 为 v0.6.0 创建/切换分支、Commit、Push、部署或公开发布；
+- 将 v0.2.0 写成 Archived；
 - 对现有 Released 身份之外的部署、公开发布或再分发作出主张。
 
 `M1-S2` 至 `M1-S5` 的技术实施、自动测试、浏览器验证与 User Human Acceptance 均已完成；M1/v0.3.0 后续 Review、Local Private Release 与 Archive 也已获批并完成。导入特性只展示、不自动执行，未准入规则继续保持 `unknown / needs-review`；部署、公开发布与再分发仍未授权。
@@ -111,7 +111,7 @@ User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC。当前唯一实
 - `docs/ROADMAP.md`：跨交付方向；永不构成批准。
 - `docs/BACKLOG.md`：延期意图；永不构成批准。
 - `version-work/<delivery-id>/ABC.md`：对应交付的批准范围合同；当前为 `version-work/v0.6.0/ABC.md`。
-- `version-work/<delivery-id>/TESTING.md`：仅在该交付获准实施后记录测试计划与执行事实；v0.6.0 尚未创建。
+- `version-work/<delivery-id>/TESTING.md`：仅在该交付获准实施后记录测试计划与执行事实；v0.6.0 见 `version-work/v0.6.0/TESTING.md`。
 
 不得创建内容重复的状态文件、决策文件或一功能一文档。
 

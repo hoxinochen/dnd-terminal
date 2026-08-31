@@ -1,7 +1,7 @@
 # 项目 Authority（Project Authority）
 
 - **Extension ID：** `local.project-authority`
-- **Status：** Stable Local Extension；v0.5.0 Archived — Local Private；v0.6.0 ABC Approved/Frozen
+- **Status：** Stable Local Extension；v0.5.0 与 v0.6.0 Archived — Local Private
 - **Owner / Selecting Authority：** User
 - **Created In Delivery：** `v0.1.0`
 - **Core Relationship：** Stable Local Extension under adopted Downstream Documentation Schema Core `schema-v0.3.0`
@@ -20,7 +20,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - 项目文档与交付记录采用 Downstream Documentation Schema Core `schema-v0.3.0`，Core SHA-256 为 `4a95a932eba5e549fa96449c178ce18ecc049513a3697b041b08dbd8736f4f4d`。
 - 项目治理生命周期继续兼容 Minimal Governance Framework `schema-v0.2.0`，SHA-256 为 `84b0fbbe1dd5703acfcda63b297a115e725c79629647d807ae3664a55c4aa727`。
 - Milestone Documentation Profile `schema-v0.3.0` 曾为 `M1 ↔ v0.3.0` 的多 Slice 与跨 Slice Exit Gate 采纳；其适用范围不自动延伸到后续交付。
-- `v0.4.0`、`v0.5.0` 与 `v0.6.0` 均只有一个主 Slice，无跨 Slice 汇总或双轴 Milestone 退出门禁，因此适用性均为 `Core Only / Milestone Profile Not Applicable`；v0.6.0 尚未实施。
+- `v0.4.0`、`v0.5.0` 与 `v0.6.0` 均只有一个主 Slice，无跨 Slice 汇总或双轴 Milestone 退出门禁，因此适用性均为 `Core Only / Milestone Profile Not Applicable`；v0.6.0 已完成 User 授权的 Local Private Release 与 Lightweight Archive。
 - Archive Contract/Profile 只能在具体交付获得 Archive 方向授权并完成适用性选择后采用；历史版本的选择不得自动继承。
 
 ## 项目边界
@@ -100,9 +100,10 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 ## 当前 v0.6.0 门禁
 
 - User 于 `2026-08-31` 正式命名并批准冻结 `version-work/v0.6.0/ABC.md`。
-- 本交付采用一个主 Slice；三个顶层结果、八个中文法术的非阻塞提示、DM 最终裁定、旧 v0.5.0 S2C 兼容及测试/回退边界已冻结。
+- 本交付采用一个主 Slice；三个顶层结果、八个中文法术的非阻塞提示与结构化裁定资料、DM 最终裁定、旧 v0.5.0 S2C 兼容及测试/回退边界已冻结；增补见 `version-work/v0.6.0/AMENDMENT_01.md`。
 - Rules Baseline 中相应 Entry 只授权本地提示和来源展示，不授权完整规则自动裁定或公开再分发。
-- 当前门禁为 `Awaiting Explicit Implementation Authorization`。Implementation、Testing、Review、Release、Archive、分支、Commit、Push、部署与公开发布均未授权。
+- User 已明确授权并完成 Implementation；实施、自动测试、浏览器与 Human Acceptance 事实见 `version-work/v0.6.0/IMPLEMENTATION.md` 和 `version-work/v0.6.0/TESTING.md`。
+- `version-work/v0.6.0/REVIEW.md` 已获 User 批准，`version-work/v0.6.0/RELEASE_NOTES.md` 已记录 User 授权的 Local Private Release；User 随后授权 Archive，独立选择的 Lightweight Profile 已通过八项 Gate，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。分支、Commit、Push、部署与公开发布仍未授权。
 
 ## 决策与变更
 
