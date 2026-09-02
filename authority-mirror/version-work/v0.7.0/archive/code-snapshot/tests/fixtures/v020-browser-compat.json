@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "0.2.0",
+  "appVersion": "0.2.0",
+  "exportedAt": "2026-08-24T00:00:00.000Z",
+  "session": {
+    "schemaVersion": "0.2.0",
+    "sessionId": "browser-v020-fixture",
+    "name": "v0.2 浏览器兼容夹具",
+    "createdAt": "2026-08-24T00:00:00.000Z",
+    "updatedAt": "2026-08-24T00:00:00.000Z",
+    "settings": { "width": 24, "height": 18, "cellFeet": 5, "diagonalRule": "five-feet", "visibleTabs": ["战斗", "地图", "角色", "单位库", "日志", "掷骰", "设置"], "darkRolls": true, "mapMode": "fit" },
+    "characters": [],
+    "combatProjections": [],
+    "linkedEntityProjections": [],
+    "postCombatDiffs": [],
+    "masteryCandidates": [],
+    "combatants": [],
+    "turn": { "round": 0, "index": -1, "order": [], "started": false },
+    "effects": [],
+    "events": [],
+    "snapshotSequence": 0,
+    "encounter": { "id": "browser-v020-encounter", "phase": "preparation", "members": [], "preparationSnapshot": null, "confirmedAt": null, "migratedFrom": null },
+    "ui": { "tab": "战斗", "selectedId": null, "range": null, "message": "v0.2 浏览器兼容夹具已加载。" }
+  },
+  "checksum": "events:0"
+}

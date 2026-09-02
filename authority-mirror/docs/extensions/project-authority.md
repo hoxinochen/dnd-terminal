@@ -1,7 +1,7 @@
 # 项目 Authority（Project Authority）
 
 - **Extension ID：** `local.project-authority`
-- **Status：** Stable Local Extension；v0.5.0 与 v0.6.0 Archived — Local Private
+- **Status：** Stable Local Extension；v0.6.0 与 v0.7.0 Archived — Local Private
 - **Owner / Selecting Authority：** User
 - **Created In Delivery：** `v0.1.0`
 - **Core Relationship：** Stable Local Extension under adopted Downstream Documentation Schema Core `schema-v0.3.0`
@@ -21,6 +21,8 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - 项目治理生命周期继续兼容 Minimal Governance Framework `schema-v0.2.0`，SHA-256 为 `84b0fbbe1dd5703acfcda63b297a115e725c79629647d807ae3664a55c4aa727`。
 - Milestone Documentation Profile `schema-v0.3.0` 曾为 `M1 ↔ v0.3.0` 的多 Slice 与跨 Slice Exit Gate 采纳；其适用范围不自动延伸到后续交付。
 - `v0.4.0`、`v0.5.0` 与 `v0.6.0` 均只有一个主 Slice，无跨 Slice 汇总或双轴 Milestone 退出门禁，因此适用性均为 `Core Only / Milestone Profile Not Applicable`；v0.6.0 已完成 User 授权的 Local Private Release 与 Lightweight Archive。
+- `v0.7.0` 冻结 ABC 使用一个主 Slice 和五个内部 Implementation Phase，适用性为 `Core Only / Milestone Profile Not Applicable`。
+- `v0.7.0 Amendment 01` 于 `2026-09-02` 获 User 批准/冻结及 Implementation 授权，现已完成实施；User 已确认人工审核通过并授权 Review，Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成。它不改写原 ABC、Profile 适用性或已实施事实，也不自动授权 Commit、Push、部署或公开发布。
 - Archive Contract/Profile 只能在具体交付获得 Archive 方向授权并完成适用性选择后采用；历史版本的选择不得自动继承。
 
 ## 项目边界
@@ -46,7 +48,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 | 项目治理、采纳与门禁 | User | 本文件、`AGENTS.md`、Approved ABC |
 | 长期产品需求 | User | `product-requirements.md` |
 | D&D 规则结论 | 提供的规则资料；冲突由 User 决定 | `rules-baseline.md` |
-| 当前交付范围 | User | 当前 delivery 的 Approved/Frozen `ABC.md` |
+| 当前交付范围 | User | Approved/Frozen `ABC.md`；Draft 候选在明确批准前不是实施 Authority |
 | 已实施架构事实 | Implementation + Review | `docs/ARCHITECTURE.md` |
 | 战斗运行状态 | 战斗会话状态机 | 会话 Snapshot + 顺序 Event Log |
 | 测试事实 | 实际执行者 | `TESTING.md` 与引用证据 |
@@ -97,13 +99,21 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - User 于 `2026-08-28` 批准 v0.5.0 Review、Local Private Release 与独立选择的 Lightweight Archive；`version-work/v0.5.0/archive/ARCHIVE_SUMMARY.md` 记录发布身份、完整快照、测试执行与八项 Gate。
 - v0.5.0 已归档为 Local Private；产品提交 `370b92a`、Authority 镜像提交 `2f897a6` 与后续活文档治理提交 `ab82faf` 当前均可由 `main` 与 `origin/main` 追溯。技术同步不改变归档身份；部署、公开发布或再分发仍未授权。
 
-## 当前 v0.6.0 门禁
+## v0.6.0 归档结论
 
 - User 于 `2026-08-31` 正式命名并批准冻结 `version-work/v0.6.0/ABC.md`。
 - 本交付采用一个主 Slice；三个顶层结果、八个中文法术的非阻塞提示与结构化裁定资料、DM 最终裁定、旧 v0.5.0 S2C 兼容及测试/回退边界已冻结；增补见 `version-work/v0.6.0/AMENDMENT_01.md`。
 - Rules Baseline 中相应 Entry 只授权本地提示和来源展示，不授权完整规则自动裁定或公开再分发。
 - User 已明确授权并完成 Implementation；实施、自动测试、浏览器与 Human Acceptance 事实见 `version-work/v0.6.0/IMPLEMENTATION.md` 和 `version-work/v0.6.0/TESTING.md`。
-- `version-work/v0.6.0/REVIEW.md` 已获 User 批准，`version-work/v0.6.0/RELEASE_NOTES.md` 已记录 User 授权的 Local Private Release；User 随后授权 Archive，独立选择的 Lightweight Profile 已通过八项 Gate，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。分支、Commit、Push、部署与公开发布仍未授权。
+- `version-work/v0.6.0/REVIEW.md` 已获 User 批准，`version-work/v0.6.0/RELEASE_NOTES.md` 已记录 User 授权的 Local Private Release；User 随后授权 Archive，独立选择的 Lightweight Profile 已通过八项 Gate，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。本地技术同步基线为 `3464d17`；部署与公开发布仍未授权。
+
+## 当前 v0.7.0 冻结门禁
+
+- User 于 `2026-09-01` 正式授权生成、批准并冻结 `version-work/v0.7.0/ABC.md`；该文件现为 v0.7.0 唯一 Approved/Frozen 实施范围合同。
+- 冻结范围以一个主 Slice 收敛只读 Status/Workspace Projection、七个工作区、高密度信息架构、统一视觉系统、战斗/地图/角色的受控布局配置，以及从 v0.6.0 冻结基线开始的 copy-on-write 与回退保护。
+- 冻结范围不新增 D&D 规则 Entry、玩法、外部 UI 框架、多人服务或部署；DM 最终裁定、Domain Authority、Event Log、补偿撤销和战后审核回写边界不得被 UI 重构改变。
+- User 后续以“实施implementation”独立授权 v0.7.0 施工；Implementation、自动测试和浏览器烟雾验证均已完成，证据见 `version-work/v0.7.0/IMPLEMENTATION.md` 与 `version-work/v0.7.0/TESTING.md`。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成，分支、Commit、Push、部署、公开发布与再分发仍未获授权；任何扩张必须通过 Amendment 重新获得 User 批准。
+- User 于 `2026-09-02` 授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 并更新 Backlog，随后明确批准冻结并授权 Implementation。Amendment 自动测试、浏览器验证、Review、Local Private Release 与 Archive 已完成；Commit、Push、部署与公开发布仍未授权。
 
 ## 决策与变更
 

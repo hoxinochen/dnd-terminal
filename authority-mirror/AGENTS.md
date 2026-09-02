@@ -1,14 +1,14 @@
 # DND Terminal 工程协作规范
 
-- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0、v0.5.0 与 v0.6.0 Archived — Local Private
+- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0、v0.5.0、v0.6.0 与 v0.7.0 Archived — Local Private
 - **适用范围（Scope）：** DND Terminal 文档 Authority 与产品 Workspace
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
-- **当前交付（Current Delivery）：** `v0.6.0 — DM 裁定驱动的复活、转生与受控不死生物关联`（Archived — Local Private）
-- **当前门禁（Current Gate）：** Archived — Local Private；Awaiting Technical Sync Authorization
+- **当前交付（Current Delivery）：** `v0.7.0 — 高密度 DM 工作台、状态投影与统一视觉系统`（Implemented）
+- **当前门禁（Current Gate）：** v0.7.0 Archived — Local Private；下一交付尚未授权
 - **ESG Core：** Downstream Documentation Schema `schema-v0.3.0`（与 Minimal Governance Framework `schema-v0.2.0` 兼容）
-- **v0.6.0 Profile 适用性：** 单一主 Slice，Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` 与 Lightweight Archive Profile `schema-v0.1.2` 已选择并执行，八项 Gate 均为 Pass
+- **v0.7.0 Profile 适用性：** 一个主 Slice、五个内部 Implementation Phase 与一次综合验收；Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` / Lightweight Archive Profile `schema-v0.1.2` 已选择并完成
 - **主要语言（Primary Language）：** 简体中文
 
 ## 1. 项目定位
@@ -84,9 +84,17 @@ User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与
 
 User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC，并随后明确授权 Implementation 与 `version-work/v0.6.0/AMENDMENT_01.md`。三个顶层死亡后结果、八个中文法术的结构化裁定工作台、新身体/新形态三个子选项、旧 v0.5.0 S2C 兼容和 DM 最终裁定边界均已实现；自动测试、浏览器完成流程、User Human Acceptance 与 Review 均已通过。User 随后授权 Local Private Release 与 Archive；Archive Contract `schema-v0.1.1`、Lightweight Archive Profile `schema-v0.1.2` 的八项 Gate 均为 Pass，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。分支、Commit、Push、部署、公开发布或再分发仍未授权。
 
+User 于 `2026-09-01` 明确授权生成、批准并冻结 `version-work/v0.7.0/ABC.md`。该 ABC 是 v0.7.0 唯一实施范围合同：一个主 Slice 完成只读状态投影、七工作区 Shell、高密度信息架构、统一视觉系统、受控布局、copy-on-write 兼容及 v0.6.0 回退证明；不加入 BL-028、规则引擎或其他玩法能力。User 随后以“实施implementation”和“完成欠缺的部分”独立授权实施；实施、24/24 自动测试和隔离浏览器综合验证事实见 `version-work/v0.7.0/IMPLEMENTATION.md` 与 `version-work/v0.7.0/TESTING.md`。User 已确认人工审核通过并授权 Review；Review 已完成。User 于 `2026-09-02` 明确授权先后执行 Local Private Release 与 Archive；Release 已完成，Archive 正在 Finalization，分支、Commit、Push、部署与公开发布仍未授权。
+
+User 于 `2026-09-02` 先授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 与更新 Backlog，随后明确“批准冻结amendment01，并且授权执行implementation，顺序执行两个操作”。Amendment 01 已 Approved / Frozen，地图视口、100 条骰史、复合骰式/快捷输入、单一角色创建任务流与设置开发工具已完成 Implementation；地图图片和有符号四向热扩展继续属于 BL-007，不能混入本次施工。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 已完成，Archive 正在 Finalization，分支、Commit、Push、部署与公开发布仍未授权。
+
+状态收口更正（`2026-09-02`）：上述授权的 Local Private Release 与 Lightweight Archive 均已完成；分支、Commit、Push、部署与公开发布仍未授权。
+
 当前以下行为仍不自动获批：
 
-- 为 v0.6.0 创建/切换分支、Commit、Push、部署或公开发布；
+- 不经单独授权就从当前 v0.7.0 Review 结论进入 Local Private Release、Archive、分支、Commit、Push、部署或公开发布；
+- 将 Amendment 01 范围扩张到 BL-007 地图导入/动态边界、BL-029 搜索筛选或其他未冻结能力；
+- 改写 v0.6.0 冻结 ABC、Release、Archive、代码快照、发布包、校验记录或旧存储值；
 - 将 v0.2.0 写成 Archived；
 - 对现有 Released 身份之外的部署、公开发布或再分发作出主张。
 
@@ -110,8 +118,8 @@ User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC，并随后明确
 - `docs/ARCHITECTURE.md`：批准后实施的组件、数据 Authority 与状态边界；Draft 内容不得冒充实施事实。
 - `docs/ROADMAP.md`：跨交付方向；永不构成批准。
 - `docs/BACKLOG.md`：延期意图；永不构成批准。
-- `version-work/<delivery-id>/ABC.md`：对应交付的批准范围合同；当前为 `version-work/v0.6.0/ABC.md`。
-- `version-work/<delivery-id>/TESTING.md`：仅在该交付获准实施后记录测试计划与执行事实；v0.6.0 见 `version-work/v0.6.0/TESTING.md`。
+- `version-work/<delivery-id>/ABC.md`：对应交付的范围合同；当前 Approved/Frozen 合同为 `version-work/v0.7.0/ABC.md`。
+- `version-work/<delivery-id>/TESTING.md`：仅在该交付 ABC 获批且另行获得 Implementation 授权后记录测试计划与执行事实；v0.7.0 的执行事实见 `version-work/v0.7.0/TESTING.md`。
 
 不得创建内容重复的状态文件、决策文件或一功能一文档。
 

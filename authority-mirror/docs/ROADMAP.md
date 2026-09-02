@@ -1,21 +1,23 @@
 # Roadmap
 
-- **Status：** Active Direction / Not Implementation Approval
+- **Status：** Active Direction / v0.7.0 Archived — Local Private
 - **Naming Rule：** 产品交付使用 SemVer；自 v0.3.0 起，内部治理可在 ESG Milestone Documentation Profile 适用时使用独立 Milestone/Slice 身份。当前映射为 `M1 ↔ v0.3.0`、`M1-S1` 至 `M1-S5`；Milestone/Slice 不等于产品版本或 Release。
 
 ## 当前交付状态
 
-`v0.4.0` 的 PC `0 HP`、死亡豁免、稳定与死亡闭环，及 `v0.5.0` 的 PC 死亡后 DM 复活、独立承接角色与受控亡灵窄流程，均已完成 Local Private Archive。User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC，随后授权完成 Implementation、Review、Local Private Release 与 Lightweight Archive；自动测试、浏览器完成流程和 User Human Acceptance 均已通过，八项 Archive Gate 均为 Pass。
+`v0.4.0`、`v0.5.0`、`v0.6.0` 与 `v0.7.0` 均已完成 Local Private Archive。v0.6.0 的自动测试、浏览器完成流程、User Human Acceptance 与八项 Archive Gate 均已通过，冻结及本地技术同步基线为 `3464d17`。User 于 `2026-09-01` 授权生成、批准并冻结 `v0.7.0` ABC，随后独立授权并完成 Implementation、自动测试和浏览器烟雾验证。实施后复核形成 `v0.7.0 Amendment 01`，User 已批准冻结并授权 Implementation；Amendment 实施、自动测试和浏览器复验已完成。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成。
 
-## 当前批准方向：v0.6.0 DM 裁定驱动的复活、转生与受控不死生物关联
+## 当前批准方向：v0.7.0 高密度 DM 工作台、状态投影与统一视觉系统
 
-当前 Approved/Frozen 合同为 `version-work/v0.6.0/ABC.md` 与已批准的 `AMENDMENT_01.md`。方向是把 v0.5.0 四张死亡后结果卡收敛为三个顶层结果；为八个中文法术提供结果过滤、结构化裁定资料、简短非阻塞提示、DM 改判和变更预览；同时保留旧 v0.5.0 S2C 数据兼容。
+当前 Approved/Frozen 合同为 `version-work/v0.7.0/ABC.md`。方向是保留现有分离 Domain 与 Event Log Authority，建立只读、可重建的 Status/Workspace Projection；用稳定 Shell 承载战斗、地图、角色、单位库、日志、掷骰与设置七个工作区；同时建立高密度信息层级、统一视觉 Token/组件和战斗、地图、角色的受控布局偏好。
 
-本交付不建设完整法术引擎、Campaign Time、材料库存、灵魂状态机或合法性判断。Implementation、Review、Local Private Release 与 Lightweight Archive 已完成；后续仅等待独立的技术同步授权。
+本交付使用一个主 Slice 和五个内部风险阶段，不拆成 v0.7.1/v0.7.2 或 M3 Slice。它不新增 D&D 规则、玩法、外部 UI 框架、多人服务或部署；以 v0.6.0 冻结身份、copy-on-write 和 Legacy 对照作为回退保护。Implementation、User Human Acceptance、Review、Local Private Release 与 Archive 已完成。
+
+`version-work/v0.7.0/AMENDMENT_01.md` 已 Approved / Frozen 且完成 Implementation、Review、Local Private Release 与 Archive，收口地图视口越界、100 条骰史、复合骰式与快捷输入、角色创建任务流和设置开发验证工具。地图图片导入、`baseBounds / workingBounds` 与有符号四向热扩展强化为 BL-007 后续方向，不进入该 Amendment。
 
 ## 已完成的基础方向（历史）
 
-以下“项目基线、战斗闭环、地图与范围、事件与恢复、固定遭遇验收”记录 v0.1.0 至 v0.3.0 已建立并逐步扩展的基础方向，不是 v0.6.0 的待办或当前 Exit Gate。当前交付只受上方 v0.6.0 Approved/Frozen ABC 约束。
+以下“项目基线、战斗闭环、地图与范围、事件与恢复、固定遭遇验收”记录 v0.1.0 至 v0.3.0 已建立并逐步扩展的基础方向，不是 v0.7.0 的待办或当前 Exit Gate。v0.7.0 后续实施只能受已批准/冻结 ABC 约束。
 
 ### 项目基线
 
