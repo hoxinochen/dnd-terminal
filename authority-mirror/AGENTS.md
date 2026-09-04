@@ -5,7 +5,7 @@
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
-- **当前交付（Current Delivery）：** `v0.7.0 — 高密度 DM 工作台、状态投影与统一视觉系统`（Implemented）
+- **当前交付（Current Delivery）：** 无；最近归档交付为 `v0.7.0 — 高密度 DM 工作台、状态投影与统一视觉系统`
 - **当前门禁（Current Gate）：** v0.7.0 Archived — Local Private；下一交付尚未授权
 - **ESG Core：** Downstream Documentation Schema `schema-v0.3.0`（与 Minimal Governance Framework `schema-v0.2.0` 兼容）
 - **v0.7.0 Profile 适用性：** 一个主 Slice、五个内部 Implementation Phase 与一次综合验收；Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` / Lightweight Archive Profile `schema-v0.1.2` 已选择并完成
@@ -55,11 +55,31 @@ Roadmap、Backlog、Draft、Candidate、测试计划或聊天记忆都不授予 
 1. `AGENTS.md`；
 2. `README.md`；
 3. `docs/extensions/project-authority.md`；
-4. 当前交付的 `ABC.md`；
+4. 若存在当前交付，读取其 Approved/Frozen `ABC.md`；当前没有获批交付时，不得把最近归档 ABC 当作当前范围；
 5. 与任务直接相关的 Rules Baseline、Product Requirements、Architecture 与 Testing；
-6. 仅在规划或范围核对时读取 Roadmap 与 Backlog；每次版本开始前审计还必须复核 `BL-027` 的 UI 技术债信号，并明确报告是否建议将其列为候选交付。
+6. 在规划、范围核对或新交付方向审查时读取 Roadmap 与 Backlog；审计 P1 条目、依赖、AI 推进建议与 Backlog Inbox，不再把单一 BL 永久指定为固定候选。
 
 规则结论必须回到 `rules-baseline.md` 固定的实际 Entry。不得用模型常识、聊天记忆或未提供的网络资料补齐规则。
+
+### 4.1 新交付立项前方向审查（Pre-Delivery Direction Review）
+
+开始新交付方向讨论前，Agent 必须重新读取当前 Authority、最近归档事实、Architecture、Roadmap、Backlog 总览、P1 条目及其依赖。随后先提交实施方向报告，至少包括：
+
+1. 当前项目事实与尚未授权的边界；
+2. 两至三个候选方向；
+3. 一个明确推荐项及理由；
+4. 依赖、风险与建议版本尺寸；
+5. 哪些相关 BL 不应进入同一交付。
+
+方向报告、Backlog 优先级和 AI 推荐均不构成 ABC 或 Implementation 授权。只有 User 明确选择方向后才可起草 ABC；只有 ABC 获批准冻结且 User 另行授权 Implementation 后才可修改产品。
+
+### 4.2 Backlog v2 本地试行
+
+- `docs/BACKLOG.md` 当前使用 Backlog v2 Local Trial；完整格式规则只保存在 Backlog 内，本文件不重复模板。
+- 新增或更新正式 BL 时必须遵守中英文完成状态、优先级及 Authority、自然语言摘要、背景、来源追踪、范围、依赖与下一步规则。
+- 版本进行中的临时想法先进入 Backlog Inbox；写入 Inbox 不改变当前 ABC。
+- 版本收口时必须将 Inbox 条目提升、归并、拆分、转移或删除，不得让临时记录无限累积。
+- 该格式尚不是 ESG Released Profile；不得宣称本项目已经采纳不存在的上游规范。
 
 ## 5. 活文档治理与交付收口
 
@@ -72,9 +92,32 @@ Roadmap、Backlog、Draft、Candidate、测试计划或聊天记忆都不授予 
 
 任一项缺失时，交付可以保留其已有 Release/Archive 身份，但“活文档与 GitHub 技术同步完成”的结论不得成立。产品代码 Commit、技术同步 Commit 和 Push 仍分别需要用户授权；技术同步不得反向改变冻结交付身份。
 
-## 6. 当前批准门禁
+### 5.1 归档后活文档收口门禁（Post-Archive Active-Document Closure Gate）
 
-v0.1.0 已 Released / Archived — Local Private，保持历史冻结。v0.2.0 已完成 User 授权的 Local Private Release，尚未 Archive。v0.3.0 的 `M1-S1` 至 `M1-S5`、`M1-S5-STAB-1` 与 `M1-S5-STAB-2` 均已完成并通过 User Human Acceptance；Independent Review、Local Private Release 与 Archive 均已获 User 批准。`schema-v0.1.1` Archive Contract 与 `schema-v0.1.2` Lightweight Archive Profile 的八项 Gate 全部通过，最终证据见 `version-work/v0.3.0/archive/ARCHIVE_SUMMARY.md`。部署、公开发布和再分发仍未授权。
+某个版本的 Archive 成功完成后，User 长期授权 Agent 在同一任务中继续执行受限的活文档收口，无需再次请求文档修改授权。该授权只包括：
+
+1. 核对并按事实更新 `AGENTS.md`、Authority `README.md`、`docs/extensions/project-authority.md`、`docs/ROADMAP.md` 与 `docs/BACKLOG.md`；
+2. 已实施架构发生变化时更新 `docs/ARCHITECTURE.md`；功能地图发生变化时核对并按需更新 `docs/PROJECT_CONTROL_REPORT.md`；
+3. 从 Authority 单向生成 `authority-mirror/` 与 Workspace 根 `README.md` 投影；
+4. 验证状态、链接、镜像差异和 Markdown，并报告每份活文档“已更新”或“已核对、无变更”。
+
+该长期授权不包括修改冻结记录、产品代码、创建下一版本、Commit、Push、部署或公开发布。Archive 已完成但本门禁失败时，Archive 身份保持成立，最终报告必须写明 `Active Documents Closure: Pending` 或 `Failed`，不得宣称整次版本工作已经完全收口。
+
+完整收口报告必须分别给出：`Archive`、`Active Documents Closure`、`Technical Projection`、`Commit / Push` 四项状态。
+
+### 5.2 待向 ESG 提交的本地实践
+
+以下三项先在 DND Terminal 真实运行，不具有 ESG Released Authority：
+
+1. Backlog Management 格式；
+2. Post-Archive Active-Document Closure Gate；
+3. Pre-Delivery Direction Review。
+
+试运行证明稳定后，可作为三个相互关联但职责独立的 ESG 候选方案提交：Backlog Management、Post-Archive Active-Document Closure Gate、Pre-Delivery Direction Review。ESG 是否保持三个方案、合并其中部分、拆分、发布或采用何种版本，仍须由 ESG 自身生命周期决定。
+
+## 6. 当前生命周期与门禁
+
+v0.1.0 已 Released / Archived — Local Private，保持历史冻结。v0.2.0 保持 Released — Local Private，User 已决定不补做追溯 Archive。v0.3.0 的 `M1-S1` 至 `M1-S5`、`M1-S5-STAB-1` 与 `M1-S5-STAB-2` 均已完成并通过 User Human Acceptance；Independent Review、Local Private Release 与 Archive 均已获 User 批准。`schema-v0.1.1` Archive Contract 与 `schema-v0.1.2` Lightweight Archive Profile 的八项 Gate 全部通过，最终证据见 `version-work/v0.3.0/archive/ARCHIVE_SUMMARY.md`。部署、公开发布和再分发仍未授权。
 
 User 于 `2026-08-24` 将归档后的兼容性维护交付正式命名为 `v0.3.1`，随后明确批准并冻结 `version-work/v0.3.1/ABC.md`，并独立授权 Implementation。实施完成后，User 于同日明确确认“人工验收通过 v0.3.1”，并明确授权完成 Review、Local Private Release 与 Archive。八项 Archive Gate 均已通过，最终证据见 `version-work/v0.3.1/archive/ARCHIVE_SUMMARY.md`；其技术提交 `444cdce` 当前可由 `main` 与 `origin/main` 追溯，部署、公开发布和再分发仍未授权。
 
@@ -84,15 +127,15 @@ User 于 `2026-08-28` 明确批准 v0.5.0 的 Review、Local Private Release 与
 
 User 于 `2026-08-31` 正式命名并批准冻结 `v0.6.0` ABC，并随后明确授权 Implementation 与 `version-work/v0.6.0/AMENDMENT_01.md`。三个顶层死亡后结果、八个中文法术的结构化裁定工作台、新身体/新形态三个子选项、旧 v0.5.0 S2C 兼容和 DM 最终裁定边界均已实现；自动测试、浏览器完成流程、User Human Acceptance 与 Review 均已通过。User 随后授权 Local Private Release 与 Archive；Archive Contract `schema-v0.1.1`、Lightweight Archive Profile `schema-v0.1.2` 的八项 Gate 均为 Pass，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。分支、Commit、Push、部署、公开发布或再分发仍未授权。
 
-User 于 `2026-09-01` 明确授权生成、批准并冻结 `version-work/v0.7.0/ABC.md`。该 ABC 是 v0.7.0 唯一实施范围合同：一个主 Slice 完成只读状态投影、七工作区 Shell、高密度信息架构、统一视觉系统、受控布局、copy-on-write 兼容及 v0.6.0 回退证明；不加入 BL-028、规则引擎或其他玩法能力。User 随后以“实施implementation”和“完成欠缺的部分”独立授权实施；实施、24/24 自动测试和隔离浏览器综合验证事实见 `version-work/v0.7.0/IMPLEMENTATION.md` 与 `version-work/v0.7.0/TESTING.md`。User 已确认人工审核通过并授权 Review；Review 已完成。User 于 `2026-09-02` 明确授权先后执行 Local Private Release 与 Archive；Release 已完成，Archive 正在 Finalization，分支、Commit、Push、部署与公开发布仍未授权。
+User 于 `2026-09-01` 明确授权生成、批准并冻结 `version-work/v0.7.0/ABC.md`。该 ABC 是 v0.7.0 唯一实施范围合同：一个主 Slice 完成只读状态投影、七工作区 Shell、高密度信息架构、统一视觉系统、受控布局、copy-on-write 兼容及 v0.6.0 回退证明；不加入 BL-028、规则引擎或其他玩法能力。User 随后独立授权实施，并完成自动测试、隔离浏览器验证、User Human Acceptance、Review、Local Private Release 与 Lightweight Archive；冻结证据见 `version-work/v0.7.0/archive/ARCHIVE_SUMMARY.md`。
 
-User 于 `2026-09-02` 先授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 与更新 Backlog，随后明确“批准冻结amendment01，并且授权执行implementation，顺序执行两个操作”。Amendment 01 已 Approved / Frozen，地图视口、100 条骰史、复合骰式/快捷输入、单一角色创建任务流与设置开发工具已完成 Implementation；地图图片和有符号四向热扩展继续属于 BL-007，不能混入本次施工。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 已完成，Archive 正在 Finalization，分支、Commit、Push、部署与公开发布仍未授权。
+User 于 `2026-09-02` 先授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 与更新 Backlog，随后批准冻结并授权 Implementation。地图视口、100 条骰史、复合骰式/快捷输入、单一角色创建任务流与设置开发工具均已完成；地图图片和有符号四向热扩展继续属于 BL-007。Amendment 的测试、浏览器验证、Review、Local Private Release 与 Archive 均已完成。
 
-状态收口更正（`2026-09-02`）：上述授权的 Local Private Release 与 Lightweight Archive 均已完成；分支、Commit、Push、部署与公开发布仍未授权。
+当前没有 Approved/Frozen 的下一交付 ABC。分支、Commit、Push、部署、公开发布或再分发均不因本次活文档收口自动获批。
 
 当前以下行为仍不自动获批：
 
-- 不经单独授权就从当前 v0.7.0 Review 结论进入 Local Private Release、Archive、分支、Commit、Push、部署或公开发布；
+- 不经 User 选择方向和批准 ABC 就创建或实施下一交付；
 - 将 Amendment 01 范围扩张到 BL-007 地图导入/动态边界、BL-029 搜索筛选或其他未冻结能力；
 - 改写 v0.6.0 冻结 ABC、Release、Archive、代码快照、发布包、校验记录或旧存储值；
 - 将 v0.2.0 写成 Archived；
@@ -116,9 +159,10 @@ User 于 `2026-09-02` 先授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 与�
 - `docs/extensions/product-requirements.md`：长期产品需求与 v0.1.0 需求基线。
 - `docs/extensions/rules-baseline.md`：规则来源、版本、Entry、冲突与规则决定。
 - `docs/ARCHITECTURE.md`：批准后实施的组件、数据 Authority 与状态边界；Draft 内容不得冒充实施事实。
+- `docs/PROJECT_CONTROL_REPORT.md`：面向项目负责人的功能地图、工程术语与阅读入口；帮助理解，但不替代 Architecture、Backlog、规则基线或交付证据。
 - `docs/ROADMAP.md`：跨交付方向；永不构成批准。
 - `docs/BACKLOG.md`：延期意图；永不构成批准。
-- `version-work/<delivery-id>/ABC.md`：对应交付的范围合同；当前 Approved/Frozen 合同为 `version-work/v0.7.0/ABC.md`。
+- `version-work/<delivery-id>/ABC.md`：对应交付的范围合同；当前没有 Approved/Frozen 的进行中合同，`version-work/v0.7.0/ABC.md` 仅是最近归档交付的冻结历史。
 - `version-work/<delivery-id>/TESTING.md`：仅在该交付 ABC 获批且另行获得 Implementation 授权后记录测试计划与执行事实；v0.7.0 的执行事实见 `version-work/v0.7.0/TESTING.md`。
 
 不得创建内容重复的状态文件、决策文件或一功能一文档。

@@ -1,12 +1,12 @@
 # Architecture
 
-- **Status：** Archived through v0.6.0 — Local Private
-- **Applies To：** 当前 Workspace 的已实施事实；v0.6.0 已完成浏览器与 User Human Acceptance、Review、Local Private Release 和 Lightweight Archive
+- **Status：** Archived through v0.7.0 — Local Private
+- **Applies To：** 当前 Workspace 的已实施事实；v0.7.0 已完成 Implementation、自动测试、浏览器验证、User Human Acceptance、Review、Local Private Release 和 Lightweight Archive
 - **Authority：** Approved ABC after user approval; implementation facts after Implementation and Review
 - **Documentation Root：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **Implementation Root：** `/Users/chenzehao/Projects/DND Terminal`
 
-当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态、v0.5.0 的死亡后结果，以及 v0.6.0 的三结果卡、八法术非阻塞提示、后继形态子选项和 copy-on-write 会话迁移。历史归档交付已通过对应 Review/Release/Archive；v0.6.0 已完成 User 批准的 Review、浏览器与 Human Acceptance，并以 Local Private 身份发布，尚未归档。
+当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态、v0.5.0 的死亡后结果、v0.6.0 的三结果卡与八法术非阻塞提示，以及 v0.7.0 的七工作区、只读状态投影、Panel Registry、独立 UI 偏好和 copy-on-write 会话迁移。v0.1.0 至 v0.7.0 的对应 Review/Release/Archive 事实由各版本冻结记录承担。
 
 文档与实现使用双根目录：治理与交付文档只在 Documentation Root；源码、测试源码、依赖与构建配置只在 Implementation Root。两者通过版本身份、Workspace 相对路径和哈希建立证据引用，不复制内容。
 
@@ -47,6 +47,20 @@ v0.5.0 在 v0.4.0 生命阶段上增加死亡后 DM 结果入口。`pc.return-to
 法术目录按结果过滤八个中文法术；详细参考、遗体防腐、施法者、资源、材料、时间、灵魂和规则符合情况均为非阻塞记录。资源同步扣除在提交前预检；恢复原身体先显示原实例/HP/地图/先攻/资源预览，新对象继续使用地图预览与确认。重复来源要求 DM 明确覆写。该实现不构成自动合法性、时间、材料、灵魂、克隆准备或完整法术执行引擎。
 
 Amendment 01 将法术目录扩展为 `SpellRulingProfile`：Profile 定义简报、来源、推荐结果和裁定字段；应用层按当前结果过滤后动态渲染法术选择器、简报、视觉化分段裁定卡和实时预览。每个字段保存 DM 选择的状态及必要的改判值，Profile 与最终裁定随事件保存；新增 Profile 不改变死亡后对象拓扑或启动迁移。
+
+### v0.7.0 已实施架构（Archived — Local Private）
+
+`src/workbench-v070.js` 建立七个稳定工作区：战斗、地图、角色、单位库、日志、掷骰和设置。工作区只组织已有领域能力，不建立第二份可保存的战斗状态；Hash 导航、当前工作区和面板偏好只影响显示。
+
+`WORKSPACES` 与 `PANEL_REGISTRY` 声明工作区、面板职责、默认顺序、默认宽度、是否核心以及是否可隐藏。核心面板和不可隐藏面板在偏好归一化时始终恢复可见；面板宽度只接受 `narrow | standard | full`，排序冲突会被确定性归一化。战斗、地图和角色是当前可配置工作区，其余工作区使用固定布局。
+
+`UiPreferences` 使用独立存储键 `dnd-terminal.v0.7.0.ui-preferences`，保存密度、最近工作区、角色详情页签、归档角色显示、布局编辑状态和面板偏好。损坏偏好回退为默认值；UI 偏好不进入 `CombatSession`、事件日志、战斗 JSON 或角色长期数据。
+
+`projectCombatantStatus()` 与 `projectWorkspaceStatus()` 从 `CombatSession` 计算冻结的只读 Projection，统一表达生命、在场、参战、回合、行动、效果、控制关系、待处理事项、阻塞和置信度。未知或无法识别的领域值保留原值并标记 `unknown / needs-review`，不会由 UI 自动修正 Domain。
+
+`src/life-cycle-v070.js` 保持 v0.6.0 Session Schema 语义不变，只增加 Delivery `0.7.0` 与会话存储键 `dnd-terminal.v0.7.0.workbench.session.current`。启动优先读取新键；新键缺失时只读验证 v0.6.0 或更早会话并复制写入新键。损坏的新键阻止回退和覆盖，旧键不修改、不删除。
+
+Amendment 01 在既有边界内收口地图视口、100 条骰史、复合骰式与快捷输入、单一角色创建任务流和设置中的开发验证工具。地图图片、动态边界、负坐标、单位库搜索和自由比例布局均未成为 v0.7.0 已实施架构。
 
 ## 设计理由
 
@@ -259,6 +273,17 @@ Combatant 的 `facing` 与 `facingPort` 是战斗实例事实，不写回角色�
 位置、行动轮、临时战斗效果和敌对状态默认不回写。回写失败不得破坏已结束战斗的日志与 Snapshot。
 
 长期角色卡在当前战斗仍有投影，或仍有 `pending` 战后候选时不得归档；UI 禁用入口，命令层再次校验。该限制只保护当前战斗/回写闭环，不改变投影和实例的独立行动能力。战斗结束且候选均已确认、拒绝或废除后，角色可正常归档。
+
+## 当前已知架构限制
+
+- `src/app.js` 当前约 1735 行，同时承担应用装配、DOM 渲染/绑定、Command 包装、事件、保存和多项领域编排；这是已确认的职责集中风险，但当前仍是实际运行入口。
+- `src/encounter.js` 已承担模板到遭遇成员、再到战斗实例的主要转换，但先攻、移动、战时投入等编排仍有一部分留在 `app.js`；当前尚未形成独立 Encounter 子系统。
+- 当前撤销依赖页面内存中的操作前快照；持久化会话会剥离完整 `before` 快照，因此刷新后不能撤销上一步。
+- 当前 `CharacterRecord` 保存完整 `CharacterSheet` revision；尚未建立 `CharacterProfile / AdventureState / CombatantInstance` 三层模型，也没有战中长期卡同时变化时的三方合并。
+- 当前 Excel 导入只支持固定 Profile 和允许单元格；结构探测、多 Profile 推荐和 AI CharacterDraft 均未实现。
+- 当前只支持单 DM 浏览器 Authority；账户、房间、PlayerProjection、服务端顺序事件、断线恢复和玩家权限均未实现。
+
+上述限制只陈述当前事实。候选解决方向、优先级和依赖由 `docs/BACKLOG.md` 管理，不因写入 Architecture 获得实施授权。
 
 ## 版本与迁移
 

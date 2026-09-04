@@ -1,74 +1,99 @@
 # Roadmap
 
-- **Status：** Active Direction / v0.7.0 Archived — Local Private
-- **Naming Rule：** 产品交付使用 SemVer；自 v0.3.0 起，内部治理可在 ESG Milestone Documentation Profile 适用时使用独立 Milestone/Slice 身份。当前映射为 `M1 ↔ v0.3.0`、`M1-S1` 至 `M1-S5`；Milestone/Slice 不等于产品版本或 Release。
+- **状态（Status）：** Active Direction / No Current Delivery
+- **最近归档版本：** v0.7.0 Archived — Local Private
+- **当前门禁：** 下一交付尚未选择；不存在 Approved/Frozen ABC
+- **Naming Rule：** 产品交付使用 SemVer；Milestone/Slice 只在已采纳 ESG Profile 的适用条件成立时使用，不自动继承历史选择。
 
-## 当前交付状态
+## 当前项目位置
 
-`v0.4.0`、`v0.5.0`、`v0.6.0` 与 `v0.7.0` 均已完成 Local Private Archive。v0.6.0 的自动测试、浏览器完成流程、User Human Acceptance 与八项 Archive Gate 均已通过，冻结及本地技术同步基线为 `3464d17`。User 于 `2026-09-01` 授权生成、批准并冻结 `v0.7.0` ABC，随后独立授权并完成 Implementation、自动测试和浏览器烟雾验证。实施后复核形成 `v0.7.0 Amendment 01`，User 已批准冻结并授权 Implementation；Amendment 实施、自动测试和浏览器复验已完成。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成。
+v0.1.0 至 v0.7.0 已完成七个大版本的本地产品演进。v0.7.0 的 Implementation、自动测试、浏览器验证、User Human Acceptance、Independent Review、Local Private Release 与 Lightweight Archive 均已完成。
 
-## 当前批准方向：v0.7.0 高密度 DM 工作台、状态投影与统一视觉系统
+项目已经具备本地单 DM 战斗闭环、二维方格与范围候选、顺序事件、自动保存与导入导出、长期角色修订与受控 Excel 导入、战斗投影、战后审核回写、PC 生命阶段和死亡后窄结果，以及七工作区、只读状态投影和受控布局。
 
-当前 Approved/Frozen 合同为 `version-work/v0.7.0/ABC.md`。方向是保留现有分离 Domain 与 Event Log Authority，建立只读、可重建的 Status/Workspace Projection；用稳定 Shell 承载战斗、地图、角色、单位库、日志、掷骰与设置七个工作区；同时建立高密度信息层级、统一视觉 Token/组件和战斗、地图、角色的受控布局偏好。
+当前没有正在实施或已经批准的下一版本。Backlog、优先级和 AI 推荐只为方向选择提供依据。
 
-本交付使用一个主 Slice 和五个内部风险阶段，不拆成 v0.7.1/v0.7.2 或 M3 Slice。它不新增 D&D 规则、玩法、外部 UI 框架、多人服务或部署；以 v0.6.0 冻结身份、copy-on-write 和 Legacy 对照作为回退保护。Implementation、User Human Acceptance、Review、Local Private Release 与 Archive 已完成。
+## User 已确认的战略优先方向
 
-`version-work/v0.7.0/AMENDMENT_01.md` 已 Approved / Frozen 且完成 Implementation、Review、Local Private Release 与 Archive，收口地图视口越界、100 条骰史、复合骰式与快捷输入、角色创建任务流和设置开发验证工具。地图图片导入、`baseBounds / workingBounds` 与有符号四向热扩展强化为 BL-007 后续方向，不进入该 Amendment。
+User 于 2026-09-04 确认 Backlog 的首次整体优先级。当前跨交付方向为：
 
-## 已完成的基础方向（历史）
+1. 先恢复工程控制力，避免 app.js 继续成为业务黑箱；
+2. 建立更可靠的本地恢复和灾备；
+3. 尽早完成长期角色、冒险状态和单场战斗实例的分层；
+4. 在基础稳定后交付团务记录、确定性报告和角色能力扩展；
+5. 保留多人 Authority 为高重要性的长期核心，但在权限、持久历史和同步合同成熟前不启动。
 
-以下“项目基线、战斗闭环、地图与范围、事件与恢复、固定遭遇验收”记录 v0.1.0 至 v0.3.0 已建立并逐步扩展的基础方向，不是 v0.7.0 的待办或当前 Exit Gate。v0.7.0 后续实施只能受已批准/冻结 ABC 约束。
+BL-016 的 Schema、兼容与迁移纪律持续适用于所有改变持久化数据的交付，不一定单独成为产品版本。
 
-### 项目基线
+## 当前 P1 方向
 
-退出条件：
+| 方向 | Roadmap 位置 | 当前判断 |
+| --- | --- | --- |
+| BL-032 app.js 渐进式模块化 | 近期候选 | AI 明确建议首先审查；User 尚未选择为下一版本。 |
+| BL-035 本地恢复点与灾备 | 近期方向 | 应在大规模数据演进前建立安全网。 |
+| BL-033 角色状态分层与版本化回写 | 近期核心架构 | 应尽早完成，避免角色复杂度继续建立在当前结构上。 |
+| BL-030 团务记录与确定性报告 | 近期产品价值 | 可在基础稳定后形成独立、可见的用户收益。 |
+| BL-009 多人 Authority | 长期核心、当前暂缓 | 重要性高，但依赖和实施成本尚未满足近期启动条件。 |
+| BL-016 Schema 与迁移 | 持续门禁 | 每次相关交付必须执行。 |
 
-- Authority、产品需求、规则基线、Architecture、ABC、Testing 与 Backlog 职责清楚；
-- ESG 采纳与 Profile 适用性由用户批准；
-- 阻塞规则分支有明确决定；
-- `v0.1.0` ABC 获得或未获得明确结论。
+“近期候选”不表示版本号、范围或 Implementation 已获批准。
 
-### 战斗闭环
+## AI 推进参考
 
-方向：
+以下是当前 AI 建议，不是 User 已批准的交付顺序：
 
-- 模板与实例；
-- 先攻、回合、行动经济；
-- HP、资源、法术位、状态；
-- 单一权威战斗会话。
+~~~text
+BL-032 工程结构
+  ⇢ BL-035 数据恢复
+  ⇢ BL-033 角色状态架构
+       ├─→ BL-018 多 Profile 导入
+       ├─→ BL-034 武器精通
+       ├─→ BL-036 可逆变身
+       └─→ BL-019 永久损伤与奖励
 
-退出条件：不依赖地图也能完成可保存、可撤销、可复盘的基本战斗。
+BL-030 确定性团务报告
+  └─→ BL-031 AI 报告草稿
 
-### 地图与范围
+BL-035 本地恢复基础
+  └─→ BL-009 多人 Authority
+       ├─→ BL-011 服务端公平骰
+       ├─→ BL-021 玩家受限命令
+       └─→ BL-017 Campaign / 跨设备同步
+~~~
 
-方向：
+Backlog 保存完整条目、优先级、来源和依赖；Roadmap 只保存跨交付方向。User 选定下一方向后，应先完成新交付立项前方向审查，再起草 ABC。
 
-- 空白方格地图、棋子、多格占位、高度；
-- 路径与距离；
-- Circle/Cone/Line/Square 范围预览与 DM 目标确认。
+## 版本尺寸原则
 
-退出条件：固定遭遇中的全部几何与批量目标用例通过。
+后续版本默认采用可独立验收的正常尺寸，不重复 v0.1.0/v0.2.0 一次建立整套大框架的节奏。
 
-### 事件与恢复
+- 一个版本应有一个清楚的主目标；
+- 相关 BL 可以共享接口和依赖，但不因此自动进入同一版本；
+- 工程准备只做到当前主目标真正需要的范围；
+- 完整规则引擎、多人服务、角色架构和地图体系不得在同一版本同时展开；
+- 需要多个风险阶段时，阶段只是施工边界，不自动变成多个产品版本或 Milestone。
 
-方向：
+## 已完成的能力阶段
 
-- 自动保存、刷新恢复、完整 JSON 导入导出；
-- 补偿式撤销与人工修正；
-- 结束战斗差异与选择性角色卡回写。
+| 阶段 | 主要结果 |
+| --- | --- |
+| v0.1.0 | 单 DM 战斗、地图、事件、保存与撤销最小闭环 |
+| v0.2.0 | 遭遇、单位模板、先攻与战斗实例链路 |
+| v0.3.0 / v0.3.1 | 长期角色、受控导入、战斗投影、资源与战后回写 |
+| v0.4.0 | PC 0 HP、死亡豁免、稳定与死亡 |
+| v0.5.0 | 死亡后恢复、后继角色和受控不死生物窄流程 |
+| v0.6.0 | 三类死亡后结果与八项非阻塞法术裁定资料 |
+| v0.7.0 | 七工作区、状态投影、统一视觉系统与受控布局 |
 
-退出条件：Event Log 与 Snapshot 一致，恢复与重放不产生意外差异。
+详细实施、测试和冻结事实由各版本 version-work 记录承担，本 Roadmap 不重复。
 
-### 固定遭遇验收
+## 下一门禁
 
-方向：
+下一步不是直接编写代码，也不是自动生成 ABC，而是：
 
-- 完成自动测试、浏览器、触屏、规则核对；
-- 由真实 DM 执行固定遭遇；
-- 独立 Review 对照 Approved ABC 给出结论。
-
-退出条件：所有阻塞验收项通过，或失败/延期被如实记录并重新批准。
-
-## 后续方向
-
-完整规则引擎、全量内容库、复杂地图、墙体/视线/掩护、多用户、账户、房间、NAS、3D、AI 地图与公平性服务器骰子都只能从 Backlog 经新的 ABC 进入未来交付。
+1. 重新读取当前 Authority、Architecture、Roadmap 与 Backlog；
+2. 审计 P1 条目、依赖、风险和建议版本尺寸；
+3. 给出两至三个候选方向及一个明确推荐；
+4. 等待 User 选择方向；
+5. 方向选定后才可起草 ABC；
+6. ABC 批准冻结后仍需独立的 Implementation 授权。

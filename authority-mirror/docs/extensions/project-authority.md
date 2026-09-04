@@ -24,6 +24,8 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - `v0.7.0` 冻结 ABC 使用一个主 Slice 和五个内部 Implementation Phase，适用性为 `Core Only / Milestone Profile Not Applicable`。
 - `v0.7.0 Amendment 01` 于 `2026-09-02` 获 User 批准/冻结及 Implementation 授权，现已完成实施；User 已确认人工审核通过并授权 Review，Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成。它不改写原 ABC、Profile 适用性或已实施事实，也不自动授权 Commit、Push、部署或公开发布。
 - Archive Contract/Profile 只能在具体交付获得 Archive 方向授权并完成适用性选择后采用；历史版本的选择不得自动继承。
+- 当前没有 Approved/Frozen 的进行中交付；`v0.7.0` 是最近归档事实，不是当前实施 Authority。
+- Backlog v2、归档后活文档收口门禁与新交付立项前方向审查均为 DND Terminal 本地试行实践，尚不是 ESG Released Profile，也未改变当前 ESG 采纳矩阵。
 
 ## 项目边界
 
@@ -49,6 +51,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 | 长期产品需求 | User | `product-requirements.md` |
 | D&D 规则结论 | 提供的规则资料；冲突由 User 决定 | `rules-baseline.md` |
 | 当前交付范围 | User | Approved/Frozen `ABC.md`；Draft 候选在明确批准前不是实施 Authority |
+| Backlog 优先级与交付方向选择 | User | `docs/BACKLOG.md` 保存优先级及来源；`docs/ROADMAP.md` 保存跨交付方向；两者均不授予实施权限 |
 | 已实施架构事实 | Implementation + Review | `docs/ARCHITECTURE.md` |
 | 战斗运行状态 | 战斗会话状态机 | 会话 Snapshot + 顺序 Event Log |
 | 测试事实 | 实际执行者 | `TESTING.md` 与引用证据 |
@@ -62,6 +65,7 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 交付记录证明某一历史事实；活文档负责让人能够正确理解**现在**的项目状态。两者缺一不可，且不得互相替代。
 
 - Authority 中的 `AGENTS.md`、`README.md`、`docs/ROADMAP.md`、`docs/BACKLOG.md` 与本文件构成活文档集合；每次交付范围、生命周期、授权、当前门禁、延期依赖或技术同步发生变化时，必须由事实源驱动逐项核对。
+- Archive 完成后，`AGENTS.md` 中的 Post-Archive Active-Document Closure Gate 自动触发受限活文档更新与单向技术投影；该长期授权不包括冻结记录、产品代码、下一版本、Commit、Push、部署或公开发布。
 - `docs/ARCHITECTURE.md` 与 `docs/extensions/rules-baseline.md` 是持续维护的当前参考文档：前者只随已实施并复核的架构事实更新，后者随规则 Entry 准入更新。`docs/extensions/product-requirements.md` 保持冻结的 v0.1.0 长期需求基线，不为显示当前版本而改写。
 - 运行顺序固定为：交付事实源 → 活文档核对/更新 → `authority-mirror/` 单向生成 → 根 README 链接投影 → 差异与链接验证 → 经用户授权的技术同步 Commit/Push。不得跳过活文档而直接镜像或提交。
 - 每次收口报告必须说明：哪些活文档已更新、哪些已核对但不受影响、镜像是否与 Authority 一致、根 README 是否已投影、以及 Commit/Push 是否已执行。缺少任一项时，不得宣称“活文档同步完成”。
@@ -107,13 +111,15 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - User 已明确授权并完成 Implementation；实施、自动测试、浏览器与 Human Acceptance 事实见 `version-work/v0.6.0/IMPLEMENTATION.md` 和 `version-work/v0.6.0/TESTING.md`。
 - `version-work/v0.6.0/REVIEW.md` 已获 User 批准，`version-work/v0.6.0/RELEASE_NOTES.md` 已记录 User 授权的 Local Private Release；User 随后授权 Archive，独立选择的 Lightweight Profile 已通过八项 Gate，冻结证据见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`。本地技术同步基线为 `3464d17`；部署与公开发布仍未授权。
 
-## 当前 v0.7.0 冻结门禁
+## 最近归档交付：v0.7.0
 
-- User 于 `2026-09-01` 正式授权生成、批准并冻结 `version-work/v0.7.0/ABC.md`；该文件现为 v0.7.0 唯一 Approved/Frozen 实施范围合同。
+- User 于 `2026-09-01` 正式授权生成、批准并冻结 `version-work/v0.7.0/ABC.md`；该文件是 v0.7.0 的历史 Approved/Frozen 实施范围合同，不是当前交付。
 - 冻结范围以一个主 Slice 收敛只读 Status/Workspace Projection、七个工作区、高密度信息架构、统一视觉系统、战斗/地图/角色的受控布局配置，以及从 v0.6.0 冻结基线开始的 copy-on-write 与回退保护。
 - 冻结范围不新增 D&D 规则 Entry、玩法、外部 UI 框架、多人服务或部署；DM 最终裁定、Domain Authority、Event Log、补偿撤销和战后审核回写边界不得被 UI 重构改变。
-- User 后续以“实施implementation”独立授权 v0.7.0 施工；Implementation、自动测试和浏览器烟雾验证均已完成，证据见 `version-work/v0.7.0/IMPLEMENTATION.md` 与 `version-work/v0.7.0/TESTING.md`。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成，分支、Commit、Push、部署、公开发布与再分发仍未获授权；任何扩张必须通过 Amendment 重新获得 User 批准。
+- User 后续独立授权 v0.7.0 施工；Implementation、自动测试和浏览器验证均已完成，证据见 `version-work/v0.7.0/IMPLEMENTATION.md` 与 `version-work/v0.7.0/TESTING.md`。User 已确认人工审核通过并授权 Review；Review、Local Private Release 与 Lightweight Archive 均已完成。
 - User 于 `2026-09-02` 授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 并更新 Backlog，随后明确批准冻结并授权 Implementation。Amendment 自动测试、浏览器验证、Review、Local Private Release 与 Archive 已完成；Commit、Push、部署与公开发布仍未授权。
+
+当前下一门禁是新交付立项前方向审查。User 尚未选定下一交付，也没有批准新的 ABC；Backlog 的 P1、AI 推进建议和 Roadmap 方向均不得被解释为当前施工范围。
 
 ## 决策与变更
 
