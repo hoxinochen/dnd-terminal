@@ -221,23 +221,70 @@
   transition: grid-template-columns 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Explicit track placement to prevent auto-placement shifts when siblings are hidden */
+.wb-col-left,
+.wb-dock-left {
+  grid-column: 1;
+}
+
+.wb-col-center {
+  grid-column: 2;
+}
+
+.wb-col-right,
+.wb-dock-right {
+  grid-column: 3;
+}
+
 /* Sub-mode variations */
 .mode-combat .wb-layout-container {
-  grid-template-columns: 1fr 0px 1.1fr;
+  grid-template-columns: 1fr 1fr;
+}
+
+.mode-combat .wb-col-left {
+  grid-column: 1;
+}
+
+.mode-combat .wb-col-right {
+  grid-column: 2;
 }
 
 .mode-combat .wb-col-center,
 .mode-combat .wb-dock-strip {
-  display: none;
+  display: none !important;
 }
 
 .mode-map .wb-layout-container {
-  grid-template-columns: 0px minmax(0, 1fr) 0px;
+  grid-template-columns: 1fr;
+}
+
+.mode-map .wb-col-center {
+  grid-column: 1;
 }
 
 .mode-map .wb-col-left,
-.mode-map .wb-col-right {
-  display: none;
+.mode-map .wb-col-right,
+.mode-map .wb-dock-strip {
+  display: none !important;
+}
+
+/* Shell theme integration */
+[data-theme="parchment"] .shell,
+[data-theme="parchment"] .workbench-main,
+[data-theme="parchment"] .workbench-rail,
+[data-theme="parchment"] .workbench-topbar {
+  background-color: var(--wb-bg-surface);
+  color: var(--wb-text-primary);
+  border-color: var(--wb-border-subtle);
+}
+
+[data-theme="light"] .shell,
+[data-theme="light"] .workbench-main,
+[data-theme="light"] .workbench-rail,
+[data-theme="light"] .workbench-topbar {
+  background-color: var(--wb-bg-surface);
+  color: var(--wb-text-primary);
+  border-color: var(--wb-border-subtle);
 }
 
 /* Independent Manual Collapses */
