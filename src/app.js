@@ -1437,7 +1437,19 @@ function unifiedWorkbenchView(){
   const status=ended?(cleanup?'本场战斗已结束；当前为只读战后清理，可撤下棋子但不能行动、进入先攻或再入场。':`本场战斗已结束于第 ${state.turn.round} 轮；记录已封存为只读。`):state.turn.started?(a?`第 ${state.turn.round} 轮 · 当前：${esc(displayName(a))}`:`第 ${state.turn.round} 轮 · 等待增援，可投入单位或结束战斗`):'尚未开始：确认遭遇后可掷先攻。';
   const overlays=`${initiativeTimeline()}${initiativeResolver()}${entryDraftPanel()}${entryPlacementPanel()}${reentryDraftPanel()}${reservesPanel()}${deathResolutionPanel()}`;
   const combatControls=ended?(cleanup?`<button data-action="cleanup-enemies">撤下全部敌对单位</button><button class="danger" data-action="finish-cleanup">清空战场并新建遭遇</button>`:''):`<button class="primary" data-action="initiative">掷先攻</button><button data-action="next">下一回合</button><button data-action="undo">撤销上一步</button><button class="danger" data-action="end-combat">结束战斗</button>`;
-  const turnMarkup=`${overlays}<div class="card" data-panel-id="turn"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="row">${combatControls}</div></div>`;
+  const prepMarkup = state.encounter?.phase === 'preparation' ? `
+    <div class="card" data-panel-id="prep-controls">
+      <h2>遭遇准备阶段</h2>
+      <p class="notice warn">尚未开始战斗。可从单位库加入单位，或一键载入测试场景；确认后进入先攻。</p>
+      <div class="row">
+        <button class="primary" data-v2-action="open-library">从单位库加入单位</button>
+        <button data-load-fixtures-request>载入测试战斗场景</button>
+        <button class="primary" data-v2-action="confirm-encounter" ${state.encounter?.members?.length ? '' : 'disabled'}>确认遭遇，进入先攻</button>
+      </div>
+      ${state.encounter?.members?.length ? `<div class="combatants">${state.encounter.members.map(member=>`<article class="combatant ${member.relation}"><div class="combatant-summary"><b>${esc(member.name)}</b><span class="pill">${member.deployment==='reserve'?'场外预备':'准备投入'}</span></div></article>`).join('')}</div>` : ''}
+    </div>
+  ` : '';
+  const turnMarkup=`${overlays}${prepMarkup}<div class="card" data-panel-id="turn"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="row">${combatControls}</div></div>`;
   const rosterMarkup=`<div class="card" data-panel-id="roster"><h3>单位态势</h3><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(combatantRow).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div>`;
   const recentResultMarkup=`<div class="situation-grid" data-panel-id="recent-result">${battleSituationMarkup(currentStatusProjection())}</div>`;
   const r=state.ui.range,cells=r&&r.phase==='preview'?coveredCells(r):[],w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit',s2Draft=s2PlacementDraft;
@@ -1481,13 +1493,9 @@ function unifiedWorkbenchView(){
 function view(){
   const workspaceId=currentWorkspaceId();
   const domainTab=currentDomainTab();
-  const content=state.encounter?.phase==='preparation'&&domainTab==='战斗'
-    ?preparationView()
-    :state.encounter?.phase==='preparation'&&domainTab==='地图'
-      ?preparationMapView()
-      :['战斗','地图'].includes(domainTab)
-        ?unifiedWorkbenchView()
-        :({'角色':characterView,'单位库':libraryViewV2,'日志':logView,'掷骰':diceView,'设置':settingsView}[domainTab]||combatView)();
+  const content=['战斗','地图'].includes(domainTab)
+    ?unifiedWorkbenchView()
+    :({'角色':characterView,'单位库':libraryViewV2,'日志':logView,'掷骰':diceView,'设置':settingsView}[domainTab]||combatView)();
   return workspaceChromeMarkup(workspaceId,content);
 }
 function injectPcLifePanel(){
