@@ -78,7 +78,7 @@ assert.match(appSource, /const SESSION_ENVELOPE_SCHEMA_VERSION = V070_SESSION_SC
 assert.match(appSource, /const DELIVERY_VERSION = V070_DELIVERY_VERSION;/);
 assert.match(appSource, /from '\.\/encounter\.js\?v=20260825-3';/, 'the Amendment 01 encounter module receives a fresh cache revision');
 assert.match(indexSource, /<title>DND Terminal v0\.7\.0 — DM Workbench<\/title>/, 'the browser tab identity remains delivery-level, not Slice-level');
-assert.match(indexSource, /src="src\/app\.js\?v=20260902-5"/, 'the HTML entry revision invalidates the completed v0.7 workbench cache');
+assert.match(indexSource, /src="src\/app\.js\?v=20260907-exp-ux-gemini-001-1"/, 'the HTML entry revision invalidates the v0.7 UX candidate cache');
 assert.match(appSource, /from '\.\/characters\.js\?v=20260828-1';/, 'the Amendment 03 module invalidates the CharacterSheet module cache before adding controlled relationships');
 assert.match(appSource, /const STORAGE_KEY = V070_STORAGE_KEY;/);
 assert.match(appSource, /chooseV070StartupSession\(localStorage,uid,now\)/,'legacy storage lookup is centralized in the v0.7.0 migration boundary');

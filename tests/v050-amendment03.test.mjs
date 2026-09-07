@@ -34,6 +34,6 @@ assert.match(app, /function materializeControlledEntity/, 'controlled entities r
 assert.match(app, /data-controlled-materialize/, 'eligible controlled entities can be added to a new encounter');
 assert.match(app, /CONTROLLED_ASSOCIATED_TOKEN_COLOR='#c69bf7'/, 'controlled associated creatures have a dedicated violet token color');
 assert.match(app, /controlled-associated/, 'controlled creature token styling is distinct from its monster template relation');
-assert.match(index, /src="src\/app\.js\?v=20260902-5"/);
+assert.match(index, /src="src\/app\.js\?v=20260907-exp-ux-gemini-001-1"/);
 
 console.log('v050-amendment03.test.mjs: pass');

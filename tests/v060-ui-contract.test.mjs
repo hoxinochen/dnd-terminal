@@ -14,6 +14,6 @@ assert.match(app,/const SESSION_ENVELOPE_SCHEMA_VERSION = V070_SESSION_SCHEMA_VE
 assert.match(app,/const STORAGE_KEY = V070_STORAGE_KEY;/);
 assert.match(domain,/V060_SESSION_SCHEMA_VERSION = '0\.5\.0'/);
 assert.match(index,/DND Terminal v0\.7\.0 — DM Workbench/);
-assert.match(index,/src\/app\.js\?v=20260902-5/);
+assert.match(index,/src\/app\.js\?v=20260907-exp-ux-gemini-001-1/);
 
 console.log('v060-ui-contract.test.mjs: pass');

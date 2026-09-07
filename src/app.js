@@ -7,7 +7,7 @@ import { V040_RULE_REFERENCES, applyPcDamage, correctPcLifeState, hasCondition, 
 import { returnPcToLife } from './life-cycle-v050.js?v=20260828-1';
 import { V060_GENTLE_REPOSE, V060_RULING_MODES, spellForV060, spellsForV060 } from './life-cycle-v060.js?v=20260831-2';
 import { V070_DELIVERY_VERSION, V070_SESSION_SCHEMA_VERSION, V070_STORAGE_KEY, chooseV070StartupSession, createV070Envelope, normalizeV070Session, validateV070Envelope } from './life-cycle-v070.js?v=20260901-1';
-import { PANEL_REGISTRY, WORKSPACES, domainTabForWorkspace, loadUiPreferences, movePanelPreference, panelsForWorkspace, projectWorkspaceStatus, resetAllUiPreferences, resetWorkspacePreferences, saveUiPreferences, updatePanelPreference, workspaceForDomainTab, workspaceFromHash } from './workbench-v070.js?v=20260901-2';
+import { PANEL_REGISTRY, WORKSPACES, domainTabForWorkspace, loadUiPreferences, movePanelPreference, panelsForWorkspace, projectWorkspaceStatus, resetAllUiPreferences, resetWorkspacePreferences, saveUiPreferences, updatePanelPreference, workspaceForDomainTab, workspaceFromHash } from './workbench-v070.js?v=20260907-exp-ux-gemini-001-1';
 import { parseDiceFormula, parseDiceShortcut, rollDiceFormula } from './dice.js?v=20260902-1';
 import { battleWorkbenchMarkup, bindBattleWorkbenchInteractions } from './battle-workbench.js';
 
@@ -1839,10 +1839,13 @@ function bindBattleWorkbench(shell = document){
         persist();
       }
       else if (action === 'delta') current = Math.max(0.5, Math.min(2.5, current + value));
+      else if (action === 'direct') current = value;
       uiPreferences = { ...uiPreferences, workbenchZoom: Math.round(current * 100) / 100 };
       persistUiPreferences();
       const vp = document.querySelector('[data-map-viewport]');
       if (vp) vp.style.setProperty('--map-scale', uiPreferences.workbenchZoom);
+      const canvas = document.querySelector('[data-map-canvas]');
+      if (canvas) canvas.style.transform = `scale(${uiPreferences.workbenchZoom})`;
       const label = document.querySelector('[data-map-zoom-label]');
       if (label) label.textContent = `${Math.round(uiPreferences.workbenchZoom * 100)}%`;
     }

@@ -162,4 +162,13 @@ import {
   assert.match(css, /\.token\.controlled-associated/);
 }
 
+// 6. Chrome cache invalidation for the v0.7.0-derived candidate
+{
+  const index = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+  assert.match(index, /src\/styles\.css\?v=20260907-exp-ux-gemini-001-1/, 'candidate stylesheet must not reuse the released v0.7.0 cache key');
+  assert.match(index, /src\/app\.js\?v=20260907-exp-ux-gemini-001-1/, 'candidate app bundle must not reuse the released v0.7.0 cache key');
+  assert.match(app, /workbench-v070\.js\?v=20260907-exp-ux-gemini-001-1/, 'modified workbench module must use the candidate cache key');
+}
+
 console.log('candidate-unified-workbench.test.mjs: pass');

@@ -2,7 +2,7 @@ export const UI_PREFERENCES_STORAGE_KEY = 'dnd-terminal.v0.7.0.ui-preferences';
 export const UI_PREFERENCES_VERSION = 1;
 
 export const WORKSPACES = Object.freeze([
-  { id: 'battle', label: '战斗', domainTab: '战斗', configurable: true, description: '轮次、行动、异常与待裁定事项' },
+  { id: 'battle', label: '工作台', domainTab: '战斗', configurable: true, description: '统一工作台 · 行动轮、地图沙盘与战术检视' },
   { id: 'map', label: '地图', domainTab: '地图', configurable: true, description: '位置、范围、朝向与投入确认' },
   { id: 'characters', label: '角色', domainTab: '角色', configurable: true, description: '长期角色、修订、投影与战后回写' },
   { id: 'library', label: '单位库', domainTab: '单位库', configurable: false, description: '模板来源、归档、编辑与投入' },
