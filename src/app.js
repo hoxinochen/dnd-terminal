@@ -1440,12 +1440,23 @@ function unifiedWorkbenchView(){
   const prepMarkup = state.encounter?.phase === 'preparation' ? `
     <div class="card" data-panel-id="prep-controls">
       <h2>遭遇准备阶段</h2>
-      <p class="notice warn">尚未开始战斗。可从单位库加入单位，或一键载入测试场景；确认后进入先攻。</p>
-      <div class="row">
-        <button class="primary" data-v2-action="open-library">从单位库加入单位</button>
-        <button data-load-fixtures-request>载入测试战斗场景</button>
-        <button class="primary" data-v2-action="confirm-encounter" ${state.encounter?.members?.length ? '' : 'disabled'}>确认遭遇，进入先攻</button>
-      </div>
+      ${fixtureLoadConfirmation ? `
+        <div class="notice warn">
+          <p>将载入固定战斗验证场景并替换当前 CombatSession。请选择：</p>
+          <div class="row">
+            <button class="primary" data-load-fixtures-confirm="nosave">直接载入（不导出）</button>
+            <button data-load-fixtures-confirm="export">导出后载入</button>
+            <button data-load-fixtures-cancel>取消</button>
+          </div>
+        </div>
+      ` : `
+        <p class="notice warn">尚未开始战斗。可从单位库加入单位，或一键载入测试场景；确认后进入先攻。</p>
+        <div class="row">
+          <button class="primary" data-v2-action="open-library">从单位库加入单位</button>
+          <button data-load-fixtures-request>一键载入演示遭遇</button>
+          <button class="primary" data-v2-action="confirm-encounter" ${state.encounter?.members?.length ? '' : 'disabled'}>确认遭遇，进入先攻</button>
+        </div>
+      `}
       ${state.encounter?.members?.length ? `<div class="combatants">${state.encounter.members.map(member=>`<article class="combatant ${member.relation}"><div class="combatant-summary"><b>${esc(member.name)}</b><span class="pill">${member.deployment==='reserve'?'场外预备':'准备投入'}</span></div></article>`).join('')}</div>` : ''}
     </div>
   ` : '';
@@ -1639,9 +1650,9 @@ function bind(){
   document.querySelectorAll('[data-character-create-switch]').forEach(button=>button.onclick=()=>{if(button.dataset.characterCreateSwitch==='discard'){if(characterCreateDiscardMode==='import')characterImportDraft=null;else characterManualDraft=null;}characterCreateMode=characterCreatePendingMode||'chooser';characterCreatePendingMode=null;characterCreateDiscardMode=null;render();});
   document.querySelectorAll('[data-character-create-continue]').forEach(button=>button.onclick=()=>{characterCreateMode=characterCreateDiscardMode||characterCreatePendingMode||'chooser';characterCreatePendingMode=null;characterCreateDiscardMode=null;render();});
   document.querySelectorAll('[data-m1-s4-fixture]').forEach(button=>button.onclick=()=>createM1S4Fixture(button.dataset.m1S4Fixture));
-  document.querySelector('[data-load-fixtures-request]')?.addEventListener('click',requestFixtureLoad);
+  document.querySelectorAll('[data-load-fixtures-request]').forEach(button=>button.onclick=requestFixtureLoad);
   document.querySelectorAll('[data-load-fixtures-confirm]').forEach(button=>button.onclick=()=>loadFixtureSession(button.dataset.loadFixturesConfirm==='export'));
-  document.querySelector('[data-load-fixtures-cancel]')?.addEventListener('click',()=>{fixtureLoadConfirmation=false;render();});
+  document.querySelectorAll('[data-load-fixtures-cancel]').forEach(button=>button.onclick=()=>{fixtureLoadConfirmation=false;render();});
   document.querySelectorAll('[data-character-project]').forEach(button=>button.onclick=()=>addCharacterProjection(button.dataset.characterProject));
   document.querySelectorAll('[data-linked-add]').forEach(button=>button.onclick=()=>{const editor=button.closest('[data-linked-editor]');button.insertAdjacentHTML('beforebegin',linkedEntityRowMarkup({},editor?.querySelectorAll('[data-linked-row]').length||0));});
   document.querySelectorAll('[data-linked-remove]').forEach(button=>button.onclick=()=>{const row=button.closest('[data-linked-row]');row?.remove();});
