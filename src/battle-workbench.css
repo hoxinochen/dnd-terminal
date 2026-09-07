@@ -269,20 +269,88 @@
 }
 
 /* Shell theme integration */
-[data-theme="parchment"] .shell,
-[data-theme="parchment"] .workbench-main,
-[data-theme="parchment"] .workbench-rail,
-[data-theme="parchment"] .workbench-topbar {
-  background-color: var(--wb-bg-surface);
-  color: var(--wb-text-primary);
-  border-color: var(--wb-border-subtle);
+html[data-theme="parchment"] body,
+html[data-theme="parchment"] .shell,
+html[data-theme="parchment"] .workbench-shell,
+html[data-theme="parchment"] .workbench-main,
+html[data-theme="parchment"] .workbench-rail,
+html[data-theme="parchment"] .workbench-topbar {
+  background-color: #ede1c7 !important;
+  color: #291509 !important;
+  border-color: #d6c5a8 !important;
 }
 
-[data-theme="light"] .shell,
-[data-theme="light"] .workbench-main,
-[data-theme="light"] .workbench-rail,
-[data-theme="light"] .workbench-topbar {
-  background-color: var(--wb-bg-surface);
+html[data-theme="light"] body,
+html[data-theme="light"] .shell,
+html[data-theme="light"] .workbench-shell,
+html[data-theme="light"] .workbench-main,
+html[data-theme="light"] .workbench-rail,
+html[data-theme="light"] .workbench-topbar {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Cards, combatants and notices inside battle-workbench inherit theme vars */
+.battle-workbench-root .card,
+.battle-workbench-root .combatant,
+.battle-workbench-root .character-region,
+.battle-workbench-root .character-fact-card,
+.battle-workbench-root .notice,
+.battle-workbench-root .economy-column {
+  background: var(--wb-bg-surface) !important;
+  color: var(--wb-text-primary) !important;
+  border-color: var(--wb-border-subtle) !important;
+}
+
+.battle-workbench-root .card .card {
+  background: var(--wb-bg-elevated) !important;
+}
+
+.battle-workbench-root .combatant:hover {
+  background: var(--wb-bg-elevated) !important;
+}
+
+.battle-workbench-root .combatant.active {
+  border-color: var(--wb-accent-gold) !important;
+  box-shadow: inset 3px 0 0 var(--wb-accent-gold), 0 0 0 1px var(--wb-accent-gold-glow) !important;
+}
+
+.battle-workbench-root .notice {
+  background: var(--wb-bg-elevated) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+}
+
+.battle-workbench-root .notice.warn {
+  background: rgba(217, 119, 6, 0.12) !important;
+  border-color: var(--wb-accent-gold) !important;
+}
+
+.battle-workbench-root h1,
+.battle-workbench-root h2,
+.battle-workbench-root h3,
+.battle-workbench-root h4,
+.battle-workbench-root strong,
+.battle-workbench-root b {
+  color: var(--wb-text-primary);
+}
+
+.battle-workbench-root .muted,
+.battle-workbench-root small {
+  color: var(--wb-text-secondary);
+}
+
+.battle-workbench-root select,
+.battle-workbench-root input[type="text"],
+.battle-workbench-root input[type="number"],
+.battle-workbench-root textarea {
+  background: var(--wb-bg-elevated) !important;
+  color: var(--wb-text-primary) !important;
+  border-color: var(--wb-border-prominent) !important;
+}
+
+.battle-workbench-root button:not(.primary):not(.danger):not(.wb-mode-btn):not(.wb-theme-btn):not(.wb-dice-roll-btn):not(.wb-dice-preset-chip) {
+  background: var(--wb-bg-elevated);
   color: var(--wb-text-primary);
   border-color: var(--wb-border-subtle);
 }
