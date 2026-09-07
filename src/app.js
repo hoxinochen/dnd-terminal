@@ -9,6 +9,7 @@ import { V060_GENTLE_REPOSE, V060_RULING_MODES, spellForV060, spellsForV060 } fr
 import { V070_DELIVERY_VERSION, V070_SESSION_SCHEMA_VERSION, V070_STORAGE_KEY, chooseV070StartupSession, createV070Envelope, normalizeV070Session, validateV070Envelope } from './life-cycle-v070.js?v=20260901-1';
 import { PANEL_REGISTRY, WORKSPACES, domainTabForWorkspace, loadUiPreferences, movePanelPreference, panelsForWorkspace, projectWorkspaceStatus, resetAllUiPreferences, resetWorkspacePreferences, saveUiPreferences, updatePanelPreference, workspaceForDomainTab, workspaceFromHash } from './workbench-v070.js?v=20260901-2';
 import { parseDiceFormula, parseDiceShortcut, rollDiceFormula } from './dice.js?v=20260902-1';
+import { battleWorkbenchMarkup, bindBattleWorkbenchInteractions } from './battle-workbench.js';
 
 const SESSION_ENVELOPE_SCHEMA_VERSION = V070_SESSION_SCHEMA_VERSION;
 const DELIVERY_VERSION = V070_DELIVERY_VERSION;
@@ -397,21 +398,21 @@ function loadFixtureSession(exportFirst=false){
   message('已载入 v0.1 固定战斗验证场景；请在战斗页确认并开始先攻。','warn');
 }
 function injectSpellResourcePanel(){
-  if(currentDomainTab()!=='战斗'||document.querySelector('[data-spell-resource-panel]'))return;
+  if(!['战斗','地图'].includes(currentDomainTab())||document.querySelector('[data-spell-resource-panel]'))return;
   const focus=getCombatant(state.ui.selectedId)||active(),pools=focus?.spellResourcePools||[];if(!focus||!pools.length)return;
   const canOperate=active()?.id===focus.id&&!combatEnded()&&ordinaryActionsAllowed(focus);
   const spells=focus.spells||focus.templateSnapshot?.spells||[];
   const markup=`<section class="card" data-spell-resource-panel><h2>施法来源与资源</h2><p class="notice warn">法术位/资源变化必须由 DM 在下方“确认施放”记录；不会自动判断法术效果、施放资格、目标或跨来源支付。</p>${pools.map(pool=>`<article class="character-fact-card"><b>${esc(pool.label)}</b><span class="pill">${esc(pool.kind)}</span><p>${(pool.balances||[]).map(balance=>`${esc(balance.label)} ${esc(balance.current)}/${esc(balance.max)}`).join(' · ')||'无余额'}</p><div class="row">${(pool.balances||[]).map(balance=>`<button data-spell-resource="${esc(pool.id)}" data-spell-balance="${esc(balance.id)}" data-spell-amount="-1" ${canOperate?'':'disabled'}>手动消耗 ${esc(balance.label)}</button><button data-spell-resource="${esc(pool.id)}" data-spell-balance="${esc(balance.id)}" data-spell-amount="1" ${canOperate?'':'disabled'}>恢复</button>`).join('')}</div><small>${esc(pool.sourceStatus)} · ${esc(pool.note||'无备注')}</small></article>`).join('')}${spells.length?`<h3>确认施放</h3><div class="row">${spells.map(spell=>`<button data-spell-cast="${esc(spell.id||spell.name)}" data-spell-name="${esc(spell.name)}" ${canOperate?'':'disabled'}>确认施放 ${esc(spell.name)}</button>`).join('')}</div>`:'<p class="muted">当前投影没有可确认的法术清单；仍可由 DM 手动记录资源变化。</p>'}</section>`;
-  const host=document.querySelector('.panel.two');if(!host)return;host.insertAdjacentHTML('beforeend',markup);
+  const host=document.querySelector('.panel.two')||document.querySelector('[data-panel-id="current-action"]')?.closest('.wb-column-content')||document.querySelector('.wb-col-right .wb-column-content');if(!host)return;host.insertAdjacentHTML('beforeend',markup);
   document.querySelectorAll('[data-spell-resource]').forEach(button=>button.onclick=()=>{const combatant=active(),poolId=button.dataset.spellResource,balanceId=button.dataset.spellBalance,amount=Number(button.dataset.spellAmount);if(!combatant||!ordinaryActionsAllowed(combatant))return message('当前生命状态不能使用或恢复施法资源。','warn');const payload={id:combatant.id,poolId,balanceId,amount};command('combatant.spell-resource.changed',payload,()=>Object.assign(payload,applyCombatSpellResourceChange(combatant,poolId,balanceId,amount)),{reason:'战斗实例施法资源变化；不直接改写长期角色卡'});});
   document.querySelectorAll('[data-spell-cast]').forEach(button=>button.onclick=()=>{const combatant=active(),spell=(combatant?.spells||combatant?.templateSnapshot?.spells||[]).find(item=>(item.id||item.name)===button.dataset.spellCast);if(!combatant||!spell||!ordinaryActionsAllowed(combatant))return message('当前生命状态不能确认施放法术。','warn');const option=(spell.castingOptions||[]).find(item=>item.resourcePoolId&&item.balanceId);if(!option)return message(`${spell.name} 没有已结构化的资源支付选项；请使用手动资源变化并由 DM 说明。`,'warn');const payload={id:combatant.id,spellId:spell.id||spell.name,spellName:spell.name,poolId:option.resourcePoolId,balanceId:option.balanceId,amount:-1,targetIds:[],paymentOptionId:option.id};command('spell.cast.confirmed',payload,()=>Object.assign(payload,applyCombatSpellResourceChange(combatant,payload.poolId,payload.balanceId,payload.amount)),{manual:true,rulesReference:[],reason:'DM 确认施放与资源支付；效果、目标及合法性不自动结算'});});
 }
 function injectInventoryBalancePanel(){
-  if(currentDomainTab()!=='战斗'||document.querySelector('[data-inventory-balance-panel]'))return;
+  if(!['战斗','地图'].includes(currentDomainTab())||document.querySelector('[data-inventory-balance-panel]'))return;
   const focus=getCombatant(state.ui.selectedId)||active(),balances=focus?.inventoryBalances||[];if(!focus||!balances.length)return;
   const canOperate=active()?.id===focus.id&&!combatEnded()&&ordinaryActionsAllowed(focus);
   const markup=`<section class="card" data-inventory-balance-panel><h2>战斗库存余额</h2><p class="notice warn">只记录 DM 确认的箭矢、消耗品或物品充能变化；候选差异默认不回写长期角色卡。</p>${balances.map(balance=>`<div class="row"><span>${esc(balance.label)} ${balance.current}/${balance.max} <small>${esc(balance.kind)}</small></span><button data-inventory-balance="${esc(balance.id)}" data-inventory-amount="-1" ${canOperate?'':'disabled'}>消耗</button><button data-inventory-balance="${esc(balance.id)}" data-inventory-amount="1" ${canOperate?'':'disabled'}>恢复</button></div>`).join('')}</section>`;
-  const host=document.querySelector('.panel.two');if(!host)return;host.insertAdjacentHTML('beforeend',markup);
+  const host=document.querySelector('.panel.two')||document.querySelector('[data-panel-id="current-action"]')?.closest('.wb-column-content')||document.querySelector('.wb-col-right .wb-column-content');if(!host)return;host.insertAdjacentHTML('beforeend',markup);
   document.querySelectorAll('[data-inventory-balance]').forEach(button=>button.onclick=()=>{const combatant=active(),balanceId=button.dataset.inventoryBalance,amount=Number(button.dataset.inventoryAmount);if(!combatant||!ordinaryActionsAllowed(combatant))return message('当前生命状态不能使用或恢复战斗库存。','warn');const payload={id:combatant.id,balanceId,amount};command('combatant.inventory-balance.changed',payload,()=>Object.assign(payload,applyCombatInventoryBalanceChange(combatant,balanceId,amount)),{manual:true,reason:'DM 确认战斗库存余额变化；不直接改写长期角色卡'});});
 }
 
@@ -1072,6 +1073,17 @@ function roll() {
     message(`${mode==='advantage'?'优势':mode==='disadvantage'?'劣势':'普通'} · ${result.canonical} = [${result.dice.join(', ')}]${result.modifier?` ${result.modifier>0?'+':''}${result.modifier}`:''} = ${result.total}`);
   } catch(error) { message(error.message,'warn'); }
 }
+function rollWorkbenchDice(formula='1d20',mode='normal',darkRoll=false){
+  const parsed=parseDiceFormula(formula);
+  if(!parsed.ok)return message(parsed.error,'error');
+  try{
+    const result=rollDiceFormula(parsed,mode);
+    recordNonReversibleEvent('dice.rolled',{...result,visibility:darkRoll?'dm-only':'public'},{reason:'随机骰果不可由撤销重演；事件仅保留已产生的结果。'});
+    message(`${mode==='advantage'?'优势':mode==='disadvantage'?'劣势':'普通'} · ${result.canonical} = [${result.dice.join(', ')}]${result.modifier?` ${result.modifier>0?'+':''}${result.modifier}`:''} = ${result.total}`);
+    persist();
+    render();
+  }catch(error){message(error.message,'warn');}
+}
 function exportJson(){try{const exportSession=sessionForStorage(state,clone),blob=new Blob([JSON.stringify(createV070Envelope(exportSession,{exportedAt:now()}),null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`dnd-terminal-v0.7.0-${state.sessionId}.json`;a.click();URL.revokeObjectURL(a.href);message(`已生成 v0.7.0 / Session Schema ${SESSION_ENVELOPE_SCHEMA_VERSION} JSON 导出；UI 偏好未进入文件。`);return true;}catch(error){message(`导出失败：${error.message}`,'error');return false;}}
 function writeback(){message('M1-S2 只允许在战斗结束后，由 DM 从候选差异中逐项确认 HP 与既有资源余额。装备消费扩展、永久损伤、奖励、诅咒与祝福仍不自动回写。','warn');}
 
@@ -1233,7 +1245,7 @@ function reentryDraftPanel(){
 function reservesPanel(){const pendingReserveIds=new Set(entryPlacementItems().map(item=>item.reserveMemberId).filter(Boolean)),reserves=state.encounter.members.filter(member=>member.deployment==='reserve'&&!member.deployedCombatantId&&!pendingReserveIds.has(member.id));if(!reserves.length||combatEnded())return '';return `<section class="card"><h2>场外预备</h2><p class="muted">预备单位尚未获得先攻位置；投入时由 DM 设置位置与先攻。</p><div class="row">${reserves.map(member=>`<button data-reserve-deploy="${member.id}">投入 ${esc(member.name)}</button>`).join('')}</div></section>`;}
 function deathResolutionPanel(){const resolution=state.ui.deathResolution,c=getCombatant(resolution?.combatantId);if(!resolution||!isDead(c)||isPc(c)||combatEnded())return '';if(resolution.mode!=='transform')return `<section class="card death-resolution"><h2>处理死亡：${esc(displayName(c))}</h2><p class="notice warn">该怪物 / NPC 已记录为死亡，已退出先攻与再入场。以下均为 DM 手动事件，不自动裁定法术、材料、即时死亡或复活规则。</p><div class="row"><button class="primary" data-death-dm-revive="${c.id}">DM 特许复起</button><button data-death-special="${c.id}">特殊复苏 / 转化</button><button data-death-close>取消</button></div><p class="death-help">DM 指定极端特殊情况，以 1 HP 复起；不恢复资源、法术位、临时 HP、状态或效果。</p>${c.kind==='npc'?s2ControlledUndeadPanel(c):''}</section>`;const templates=transformationTemplates(),suggestedName=templates.length?`${templates[0].name}化${c.name}`:'';return `<section class="card death-resolution"><h2>特殊复苏 / 转化：${esc(displayName(c))}</h2><p class="notice warn">选择一个怪物或 NPC 模板，系统会保留原死亡实例，并创建新的参战实例。请由 DM 裁定其叙事与规则来源。</p>${templates.length?`<form data-death-transform-form><div class="row"><label>转化模板<select name="templateId" required data-transform-template data-source-name="${esc(c.name)}">${templates.map(template=>`<option value="${template.id}" data-template-name="${esc(template.name)}">${esc(template.name)} · ${esc(template.sourceType||'custom')}</option>`).join('')}</select></label><label>显示名<input name="name" data-transform-name data-suggested-name="${esc(suggestedName)}" value="${esc(suggestedName)}" placeholder="可由 DM 自行修订"/></label><label>关系<select name="relation"><option value="enemy" ${c.relation==='enemy'?'selected':''}>敌对</option><option value="ally" ${c.relation==='ally'?'selected':''}>友方</option><option value="neutral" ${c.relation==='neutral'?'selected':''}>中立</option></select></label><label>当前 HP<input name="hp" type="number" min="1" value="" placeholder="默认最大 HP"/></label></div><div class="row"><label>先攻<select name="initiativeMode"><option value="keep">沿用死亡单位先攻</option><option value="reroll">重新投 1d20</option><option value="manual">DM 手动填写</option></select></label><label>手动先攻<input name="initiative" type="number" min="0" value="${c.initiative??0}"/></label><label>同值顺序<select name="tiePlacement"><option value="after">同值单位之后</option><option value="before">同值单位之前</option></select></label></div><div class="row"><button class="primary" type="submit" data-transform-action="direct">确认并在原位置转化</button><button type="submit" data-transform-action="map">进入地图批量摆放</button><button type="button" data-death-close>取消</button></div></form>`:'<p class="notice warn">单位库中没有可用于特殊转化的怪物或 NPC 模板。</p>'}</section>`;}
 function endCombatPanel(){const ending=state.ui.endCombatConfirm;if(!ending||combatEnded())return '';return `<section class="card end-combat-confirm"><h2>确认结束战斗</h2><p class="notice warn">在场 ${ending.onField} · 临时离场 ${ending.away} · 未投入预备 ${ending.reserves} · 未确认草稿 ${ending.draft}。确认后会结束所有已参战实例并放弃未确认草稿；长期角色只生成待审核候选，不会直接回写。</p>${ending.hasLinkedCharacters?'<p class="muted">本场含角色投影：将进入只读战后清理，完成候选审核后才能新建遭遇。</p>':'<p class="muted">将进入只读战后清理；可随后清空战场并新建遭遇。</p>'}<div class="row"><button class="primary" data-end-combat-confirm="save">结束并导出 JSON</button><button data-end-combat-confirm="nosave">结束但不导出</button><button data-end-combat-cancel>继续战斗</button></div></section>`;}
-function injectEndCombatPanel(){const markup=endCombatPanel(),host=document.querySelector('.panel.two');if(markup&&host&&!document.querySelector('.end-combat-confirm'))host.insertAdjacentHTML('beforebegin',markup);}
+function injectEndCombatPanel(){const markup=endCombatPanel(),host=document.querySelector('.panel.two')||document.querySelector('[data-panel-id="turn"]')?.closest('.wb-column-content')||document.querySelector('.wb-col-left .wb-column-content');if(markup&&host&&!document.querySelector('.end-combat-confirm'))host.insertAdjacentHTML('beforebegin',markup);}
 function actionEconomyMarkup(focus,canOperate,canRestoreEconomy){
   const items=[['actionAvailable','动作'],['bonusActionAvailable','附赠动作'],['reactionAvailable','反应']];
   const canSpend=canOperate&&ordinaryActionsAllowed(focus);
@@ -1402,7 +1414,7 @@ function settingsView(){return `<section class="settings-grid"><section class="w
 function preparationView(){const members=state.encounter.members;return `<section class="panel two"><div class="card"><h2>第 0 回合：遭遇准备</h2><p class="notice warn">尚未投先攻。可把增援标为“场外预备”：其数据会保存，但不摆上地图也不进入先攻，战斗中再投入。</p><div class="row"><button class="primary" data-v2-action="open-library">从单位库加入</button><button data-v2-action="open-prep-map">摆放棋子</button><button class="danger" data-v2-action="abandon-preparation">放弃准备</button></div><div class="combatants">${members.map(member=>`<article class="combatant ${member.relation}"><div class="combatant-summary"><b>${esc(member.name)}</b><span class="pill">${member.deployment==='reserve'?'场外预备':esc(member.templateSnapshot?.sourceType||'template')}</span><span>${member.deployment==='reserve'?'未摆放':`${member.footprint.widthCells}×${member.footprint.heightCells} · ${member.position.x+1},${member.position.y+1}`}</span></div><div class="row"><label>显示名<input data-v2-member-id="${member.id}" data-v2-member-field="name" value="${esc(member.name)}"/></label><label>初始 HP<input type="number" min="0" max="${member.maxHp}" data-v2-member-id="${member.id}" data-v2-member-field="hp" value="${member.hp}"/></label><label>关系<select data-v2-member-id="${member.id}" data-v2-member-field="relation"><option value="enemy" ${member.relation==='enemy'?'selected':''}>敌对</option><option value="ally" ${member.relation==='ally'?'selected':''}>友方</option><option value="neutral" ${member.relation==='neutral'?'selected':''}>中立</option></select></label><label>开战部署<select data-v2-member-id="${member.id}" data-v2-member-field="deployment"><option value="field" ${member.deployment!=='reserve'?'selected':''}>投入战场</option><option value="reserve" ${member.deployment==='reserve'?'selected':''}>场外预备</option></select></label><label>资源<input data-v2-member-id="${member.id}" data-v2-member-field="resources" value="${esc(Object.entries(member.resources||{}).map(([name,amount])=>`${name}:${amount}`).join('，'))}" placeholder="名称:数量"/></label><label>状态<input data-v2-member-id="${member.id}" data-v2-member-field="conditions" value="${esc(member.conditions.join('，'))}" placeholder="例如：隐形，中毒"/></label><button class="danger" data-v2-action="remove-member" data-member-id="${member.id}">移出遭遇</button></div></article>`).join('')||'<p class="muted">尚未加入单位。请先从单位库选取参考、自定义或变体模板。</p>'}</div><div class="row"><button class="primary" data-v2-action="confirm-encounter" ${members.length?'':'disabled'}>确认遭遇，进入先攻</button></div></div><div class="card"><h2>准备边界</h2><ul><li>此阶段可改名称、初始 HP、关系、资源、状态、棋子位置、朝向和发射口。</li><li>场外预备不占地图、不提前获得先攻。</li><li>确认会复制投入单位为独立 CombatantInstance；之后的战斗变化不会回写成员或模板。</li></ul></div></section>`;}
 function preparationMapView(){const w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit',deployed=roster().filter(member=>member.deployment!=='reserve');let grid='';for(let y=0;y<h;y++)for(let x=0;x<w;x++){const token=deployed.find(c=>c.position.x===x&&c.position.y===y);grid+=`<div class="cell" data-cell="${x},${y}">${token?tokenMarkup(token):''}</div>`;}return `<section class="panel"><div class="map-layout"><div class="card map-wrap"><h2>第 0 回合地图 <small>${w}×${h} / 每格 ${state.settings.cellFeet} 尺</small></h2><div class="row map-mode"><button data-map-mode="fit" class="${mode==='fit'?'active':''}">适应屏幕</button><button data-map-mode="tactical" class="${mode==='tactical'?'active':''}">战术操作</button><button data-map-focus="origin">回到原点</button><button data-v2-action="open-preparation">返回准备清单</button></div><div id="movement-preview" class="notice">拖动棋子摆放；场外预备不占地图。第 0 回合不消耗移动力，也不记录战斗事件；重叠或越界不可提交。</div><div class="map-viewport" data-map-viewport><div class="map-canvas"><div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div></div></div></div><aside class="card map-inspector-panel">${mapInspector()}</aside><aside class="card"><h2>摆放说明</h2><p class="muted">每个单位的整块占位都必须在地图内且不与其他单位重叠；大型单位按全部占位格检查。</p></aside></div></section>`;}
 function isControlledAssociatedToken(token){return ['controlled','permanent-controlled'].includes(token?.controllerLink?.status);}
-function tokenMarkup(token,{pending=false,s2Draft=false}={}){const fx=token.footprint.widthCells||1,fy=token.footprint.heightCells||1;ensureFacing(token);const data=s2Draft?`data-s2-placement-token="${token.id}"`:pending?`data-entry-placement-token="${token.id}"`:`data-token="${token.id}"`;const dead=isDead(token),controlled=isControlledAssociatedToken(token);return `<div class="token ${token.relation} ${controlled?'controlled-associated':''} facing-${token.facing} ${pending||s2Draft?'pending-placement':''} ${dead?'dead-token':''} ${active()?.id===token.id?'active':''} ${state.ui.selectedId===token.id?'selected':''}" ${data} title="${esc(s2Draft?`${displayName(token)} · 临时摆放预览`:dead?`${displayName(token)} · 死亡`:controlled?`${displayName(token)} · 受控关联生物`:displayName(token))}" style="width:calc(${fx*100}% + ${fx-1}px);height:calc(${fy*100}% + ${fy-1}px)">${dead?'☠':esc(shortLabel(token))}</div>`;}
+function tokenMarkup(token,{pending=false,s2Draft=false}={}){const fx=token.footprint.widthCells||1,fy=token.footprint.heightCells||1;ensureFacing(token);const data=s2Draft?`data-s2-placement-token="${token.id}"`:pending?`data-entry-placement-token="${token.id}"`:`data-token="${token.id}"`;const dead=isDead(token),controlled=isControlledAssociatedToken(token),kindClass=`kind-${token.kind||'monster'}`;return `<div class="token ${token.relation} ${kindClass} ${controlled?'controlled-associated':''} facing-${token.facing} ${pending||s2Draft?'pending-placement':''} ${dead?'dead-token':''} ${active()?.id===token.id?'active':''} ${state.ui.selectedId===token.id?'selected':''}" ${data} title="${esc(s2Draft?`${displayName(token)} · 临时摆放预览`:dead?`${displayName(token)} · 死亡`:controlled?`${displayName(token)} · 受控关联生物`:displayName(token))}" style="${token.colorMode==='custom'&&token.color?`background-color:${esc(token.color)};`:''}width:calc(${fx*100}% + ${fx-1}px);height:calc(${fy*100}% + ${fy-1}px)">${dead?'☠':esc(shortLabel(token))}</div>`;}
 function mapViewV2(){
   const r=state.ui.range,cells=r&&r.phase==='preview'?coveredCells(r):[],w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit';
   const s2Draft=s2PlacementDraft;
@@ -1420,6 +1432,52 @@ function mapViewV2(){
     : `<p class="muted">棋子：按住拖动、松开提交。范围：选择形状后在地图按住并拖动；预览本身不写入事件。</p><div class="row"><button data-range="circle">圆形</button><button data-range="cone">锥形</button><button data-range="line">直线</button><button data-range="square">方形</button><button data-action="undo">撤销上一步</button></div>${preview||'<div class="notice warn">选择形状后，在地图按住并拖动：圆形/方形决定中心和大小，锥形/直线以当前行动者已选发射口为源点决定朝向和长度。</div>'}`;
   return `<section class="panel"><div class="map-layout"><div class="card map-wrap"><h2>二维战术地图 <small>${w}×${h} / 每格 ${state.settings.cellFeet} 尺</small></h2><div class="row map-mode"><span>显示：</span><button data-map-mode="fit" class="${mode==='fit'?'active':''}">适应屏幕</button><button data-map-mode="tactical" class="${mode==='tactical'?'active':''}">战术操作</button><button data-map-focus="origin">回到原点</button><button data-map-focus="active" ${active()?'':'disabled'}>定位当前行动者</button></div><div id="movement-preview" class="notice ${s2Draft||pendingPlacements.length?'warn':''}">${s2Draft?`正在摆放 ${esc(s2Draft.item.combatant.name)}：拖动预览棋子可无限调整；确认后才会生成。`:pendingPlacements.length?`正在摆放本批 ${pendingPlacements.length} 个单位：逐个拖动后一次性确认投入；未确认前不会加入先攻或写入事件。`:'按住棋子并拖动；松开后才记录移动。黄色提示表示超过移动力，重叠和越界不可提交。'}</div><div class="map-viewport" data-map-viewport><div class="map-canvas"><div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div></div></div><p class="muted">棋子正面边以金色标示；点选棋子可设置朝向和发射口。</p></div><aside class="card map-inspector-panel">${mapInspector()}</aside><aside class="card"><h2>地图与范围</h2>${sidebar}</aside></div></section>`;
 }
+function unifiedWorkbenchView(){
+  const a=active(),focus=getCombatant(state.ui.selectedId)||a,ended=combatEnded(),cleanup=!!state.ui.postCombatCleanup,hasSelected=!!getCombatant(state.ui.selectedId),canOperate=!!focus&&focus.id===a?.id&&!ended&&!isDead(focus),canRestoreEconomy=!!focus&&!ended&&!isDead(focus)&&focus.presenceStatus==='on-field'&&focus.participationStatus==='active';
+  const status=ended?(cleanup?'本场战斗已结束；当前为只读战后清理，可撤下棋子但不能行动、进入先攻或再入场。':`本场战斗已结束于第 ${state.turn.round} 轮；记录已封存为只读。`):state.turn.started?(a?`第 ${state.turn.round} 轮 · 当前：${esc(displayName(a))}`:`第 ${state.turn.round} 轮 · 等待增援，可投入单位或结束战斗`):'尚未开始：确认遭遇后可掷先攻。';
+  const overlays=`${initiativeTimeline()}${initiativeResolver()}${entryDraftPanel()}${entryPlacementPanel()}${reentryDraftPanel()}${reservesPanel()}${deathResolutionPanel()}`;
+  const combatControls=ended?(cleanup?`<button data-action="cleanup-enemies">撤下全部敌对单位</button><button class="danger" data-action="finish-cleanup">清空战场并新建遭遇</button>`:''):`<button class="primary" data-action="initiative">掷先攻</button><button data-action="next">下一回合</button><button data-action="undo">撤销上一步</button><button class="danger" data-action="end-combat">结束战斗</button>`;
+  const turnMarkup=`${overlays}<div class="card" data-panel-id="turn"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="row">${combatControls}</div></div>`;
+  const rosterMarkup=`<div class="card" data-panel-id="roster"><h3>单位态势</h3><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(combatantRow).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div>`;
+  const recentResultMarkup=`<div class="situation-grid" data-panel-id="recent-result">${battleSituationMarkup(currentStatusProjection())}</div>`;
+  const r=state.ui.range,cells=r&&r.phase==='preview'?coveredCells(r):[],w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit',s2Draft=s2PlacementDraft;
+  const pendingTransformSources=new Set(entryPlacementItems().filter(item=>item.kind==='transformation').map(item=>item.sourceCombatantId));
+  const mapCombatants=(ended?state.combatants.filter(c=>c.presenceStatus==='on-field'&&!c.cleanupRemoved&&c.corpseTokenVisible!==false):onFieldTokens()).filter(c=>!pendingTransformSources.has(c.id));
+  const pendingPlacements=pendingPlacementCombatants();
+  let grid='';
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const token=mapCombatants.find(c=>c.position.x===x&&c.position.y===y),pending=pendingPlacements.find(c=>c.position.x===x&&c.position.y===y),draftToken=s2Draft?.item.combatant.position.x===x&&s2Draft?.item.combatant.position.y===y?s2Draft.item.combatant:null;grid+=`<div class="cell ${cells.includes(`${x},${y}`)?'preview':''}" data-cell="${x},${y}">${token?tokenMarkup(token):pending?tokenMarkup(pending,{pending:true}):draftToken?tokenMarkup(draftToken,{s2Draft:true}):''}</div>`;}
+  const movementNotice=`<div id="movement-preview" class="notice ${s2Draft||pendingPlacements.length?'warn':''}">${s2Draft?`正在摆放 ${esc(s2Draft.item.combatant.name)}：拖动预览棋子可无限调整；确认后才会生成。`:pendingPlacements.length?`正在摆放本批 ${pendingPlacements.length} 个单位：逐个拖动后一次性确认投入；未确认前不会加入先攻或写入事件。`:'按住棋子并拖动；松开后才记录移动。黄色提示表示超过移动力，重叠和越界不可提交。'}</div>`;
+  const mapGridMarkup=`${movementNotice}<div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div>`;
+  const actionMarkup=`<div class="card" data-panel-id="current-action"><h2>当前选中者状态</h2><p class="muted density-standard-only">${hasSelected?`正在查看：${esc(displayName(focus))}`:'未手动选择，默认显示当前行动者。'}</p>${focus?`${actionEconomyMarkup(focus,canOperate,canRestoreEconomy)}${canOperate?'':`<p class="notice warn">${ended?'战斗已结束，状态只读。':isDead(focus)?'该单位已死亡，不能行动、治疗、再入场或以普通方式修改状态。':'当前查看单位不是行动者；行动、资源与手动效果操作仅对当前行动者开放。'}</p>`}${isDead(focus)&&!ended?`<section class="death-controls"><h3>死亡处理</h3><p class="muted">尸体棋子保留在地图；可由 DM 决定特许复起或特殊复苏 / 转化。</p><button class="primary" data-death-resolve="${focus.id}">处理死亡</button></section>`:''}<h3>资源</h3>${Object.entries(focus.resources).map(([k,v])=>`<div class="row"><span>${esc(k)} ${v}/${focus.resourceMax[k]??v}</span><button data-resource="${k}" data-amount="-1" ${canOperate?'':'disabled'}>消耗</button><button data-resource="${k}" data-amount="1" ${canOperate?'':'disabled'}>恢复</button></div>`).join('')||'<span class="muted">无次数资源</span>'}<h3>法术位</h3>${Object.entries(focus.slots).map(([k,v])=>`<span class="pill">${k}环 ${v}/${focus.slotsMax[k]}</span>`).join(' ')||'<span class="muted">非玩家法术位模型或未配置</span>'}<h3>状态、Buff 与专注</h3><div class="effect-list">${effectCards(focus.id)}</div>${masteryStatusPanel(focus)}${canOperate?manualEffectMarkup():''}`:ended?'<span class="muted">战斗内 HP、资源与状态没有自动回写长期角色卡；长期结算仍延期。</span>':'<span class="muted">选择单位后显示操作。</span>'}<section class="reference-section">${referenceActionPanel(focus)}</section></div>`;
+  const inspectorMarkup=`<aside class="card map-inspector-panel" data-panel-id="map-inspector">${mapInspector()}</aside>`;
+  const candidates=r&&r.phase==='preview'?rangeTargets(cells):[];
+  const preview=r?`<div id="range-live" class="notice ${r.phase==='armed'?'warn':''}">${r.phase==='armed'?`已选择${rangeLabel(r.shape)}：请在地图按住并拖动。`:`${rangeLabel(r.shape)}预览：${cells.length} 格；候选 ${candidates.length} 个。松开后可编辑。`}</div>${r.phase==='preview'?`<div class="row"><label>尺寸（尺）<input id="range-size" type="number" min="5" step="5" value="${r.size}" /></label><label>结算<select id="range-mode"><option value="damage">伤害</option><option value="healing">治疗</option><option value="buff">Buff</option><option value="condition">状态</option></select></label><label>数值<input id="range-amount" type="number" min="1" value="8" /></label></div><div class="row"><label>效果名称<input id="effect-name" placeholder="例如：祝福 / 中毒" /></label><label>持续轮数<input id="effect-duration" type="number" min="1" value="1" /></label><label><input id="effect-concentration" type="checkbox"/> 专注</label></div><h3>候选与 DM 覆写</h3>${state.combatants.map(c=>`<div class="row"><label><input type="checkbox" data-target="${c.id}" ${([...candidates.map(x=>x.id),...r.manualAdd].includes(c.id)&&!r.manualRemove.includes(c.id))?'checked':''}/> ${esc(c.name)}</label></div>`).join('')}<div class="row"><button class="primary" data-action="apply-range">确认并批量结算</button><button data-action="cancel-range">取消预览</button></div>`:''}`:'';
+  const sidebar=s2Draft
+    ? `<h3>摆放新躯体</h3><p class="notice warn">正在为“${esc(s2Draft.item.combatant.name)}”摆放。拖动半透明预览棋子到空格；可反复调整。确认前不会创建任何实例。</p><p class="muted">已有棋子（含尸体）、完整 footprint 越界或重叠都会拒绝确认。</p><div class="row"><button class="primary" data-s2-placement-confirm>确认摆放并生成</button><button data-s2-placement-cancel>取消摆放</button></div>`
+    : pendingPlacements.length
+    ? `<p>正在一次性摆放本批 ${pendingPlacements.length} 个单位。每个单位的整块占位必须落在空格内，且本批单位之间也不能重叠；再次入场单位在确认前仍不会进入先攻。</p><div class="entry-placement-list">${pendingPlacements.map(c=>`<span class="pill">${esc(displayName(c))} · ${c.position.x+1},${c.position.y+1}</span>`).join('')}</div><div class="row"><button class="primary" data-action="confirm-entry-placement">确认本批全部投入</button><button data-action="cancel-entry-placement">取消整批投入</button></div>`
+    : `<p class="muted">棋子：按住拖动、松开提交。范围：选择形状后在地图按住并拖动；预览本身不写入事件。</p><div class="row"><button data-range="circle">圆形</button><button data-range="cone">锥形</button><button data-range="line">直线</button><button data-range="square">方形</button><button data-action="undo">撤销上一步</button></div>${preview||'<div class="notice warn">选择形状后，在地图按住并拖动：圆形/方形决定中心和大小，锥形/直线以当前行动者已选发射口为源点决定朝向和长度。</div>'}`;
+  const rangeMarkup=`<aside class="card" data-panel-id="range"><h2>地图与范围</h2>${sidebar}</aside>`;
+  return battleWorkbenchMarkup({
+    state,
+    activeCombatant: a,
+    selectedCombatant: focus,
+    subMode: uiPreferences.workbenchSubMode||'full',
+    theme: uiPreferences.theme||'dark',
+    leftCollapsed: !!uiPreferences.workbenchLeftCollapsed,
+    rightCollapsed: !!uiPreferences.workbenchRightCollapsed,
+    diceDockOpen: !!uiPreferences.workbenchDiceDockOpen,
+    zoomLevel: uiPreferences.workbenchZoom||1.0,
+    esc,
+    rosterMarkup,
+    turnMarkup,
+    actionMarkup,
+    inspectorMarkup,
+    rangeMarkup,
+    mapGridMarkup,
+    recentResultMarkup,
+  });
+}
 function view(){
   const workspaceId=currentWorkspaceId();
   const domainTab=currentDomainTab();
@@ -1427,11 +1485,13 @@ function view(){
     ?preparationView()
     :state.encounter?.phase==='preparation'&&domainTab==='地图'
       ?preparationMapView()
-      :({'战斗':combatView,'地图':mapViewV2,'角色':characterView,'单位库':libraryViewV2,'日志':logView,'掷骰':diceView,'设置':settingsView}[domainTab]||combatView)();
+      :['战斗','地图'].includes(domainTab)
+        ?unifiedWorkbenchView()
+        :({'角色':characterView,'单位库':libraryViewV2,'日志':logView,'掷骰':diceView,'设置':settingsView}[domainTab]||combatView)();
   return workspaceChromeMarkup(workspaceId,content);
 }
 function injectPcLifePanel(){
-  if(currentDomainTab()!=='战斗'||state.encounter?.phase==='preparation')return;
+  if(!['战斗','地图'].includes(currentDomainTab())||state.encounter?.phase==='preparation')return;
   const heading=[...document.querySelectorAll('h2')].find(node=>node.textContent==='当前选中者状态'),host=heading?.closest('.card'),focus=getCombatant(state.ui.selectedId)||active();
   if(!host||!isPc(focus))return;
   host.querySelectorAll('[data-death-resolve]').forEach(button=>button.closest('.death-controls')?.remove());
@@ -1714,6 +1774,57 @@ function bind(){
   document.querySelectorAll('[data-action="finish-cleanup"]').forEach(button=>button.onclick=()=>{if(pendingPostCombatDiffs().length)return message('仍有待审核的战后候选差异；请先在角色页逐项确认或全部拒绝。','warn');state=emptySession();persist();render();});
   document.querySelector('#import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const candidate=validateEnvelope(JSON.parse(await file.text()));state=normalizeV070Session(candidate.session);storageBlocked=false;persist();message('导入成功：已恢复会话、PC 生命状态与事件日志；仅写入 v0.7.0 工作台新键。');}catch(err){message(err.message,'error');}e.target.value='';};
   document.querySelector('#character-import-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;message('正在以受控 Profile 读取 Excel；不会执行公式、宏、脚本或外链。');characterImportDraft=await parseBeilingXlsxFile(file);e.target.value='';render();};
+  bindBattleWorkbench();
+}
+function bindBattleWorkbench(shell = document){
+  const wb = shell.querySelector?.('[data-battle-workbench]');
+  if (!wb) return;
+  document.documentElement.dataset.theme = uiPreferences.theme || 'dark';
+  bindBattleWorkbenchInteractions(shell, {
+    onSubModeChange: nextMode => {
+      uiPreferences = { ...uiPreferences, workbenchSubMode: nextMode };
+      persistUiPreferences();
+      render();
+    },
+    onThemeChange: nextTheme => {
+      uiPreferences = { ...uiPreferences, theme: nextTheme };
+      document.documentElement.dataset.theme = nextTheme;
+      persistUiPreferences();
+      render();
+    },
+    onCollapseChange: (side, collapsed) => {
+      if (side === 'left') uiPreferences = { ...uiPreferences, workbenchLeftCollapsed: collapsed };
+      if (side === 'right') uiPreferences = { ...uiPreferences, workbenchRightCollapsed: collapsed };
+      persistUiPreferences();
+      render();
+    },
+    onDiceDockToggle: () => {
+      uiPreferences = { ...uiPreferences, workbenchDiceDockOpen: !uiPreferences.workbenchDiceDockOpen };
+      persistUiPreferences();
+      render();
+    },
+    onDiceRoll: (formula, mode, darkRoll) => {
+      rollWorkbenchDice(formula, mode, darkRoll);
+    },
+    onZoomChange: (action, value) => {
+      let current = uiPreferences.workbenchZoom || 1.0;
+      if (action === 'in') current = Math.min(2.5, current + 0.15);
+      else if (action === 'out') current = Math.max(0.5, current - 0.15);
+      else if (action === 'reset') current = 1.0;
+      else if (action === 'fit') {
+        state.settings.mapMode = 'fit';
+        current = 1.0;
+        persist();
+      }
+      else if (action === 'delta') current = Math.max(0.5, Math.min(2.5, current + value));
+      uiPreferences = { ...uiPreferences, workbenchZoom: Math.round(current * 100) / 100 };
+      persistUiPreferences();
+      const vp = document.querySelector('[data-map-viewport]');
+      if (vp) vp.style.setProperty('--map-scale', uiPreferences.workbenchZoom);
+      const label = document.querySelector('[data-map-zoom-label]');
+      if (label) label.textContent = `${Math.round(uiPreferences.workbenchZoom * 100)}%`;
+    }
+  });
 }
 function libraryViewV2(){
   const editing=templateEditorId?templateById(templateEditorId):null;

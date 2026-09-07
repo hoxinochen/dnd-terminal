@@ -47,9 +47,18 @@ export function defaultUiPreferences() {
     characterDetailTab: 'combat',
     showArchivedCharacters: false,
     layoutEditing: false,
+    theme: 'dark',
+    workbenchSubMode: 'full',
+    workbenchLeftCollapsed: false,
+    workbenchRightCollapsed: false,
+    workbenchDiceDockOpen: false,
+    workbenchZoom: 1.0,
     panels: Object.fromEntries(PANEL_REGISTRY.map(panel => [panel.id, { visible: true, width: panel.width, order: panel.order }])),
   };
 }
+
+const validThemes = new Set(['dark', 'light', 'parchment']);
+const validSubModes = new Set(['full', 'combat', 'map']);
 
 export function normalizeUiPreferences(value) {
   const defaults = defaultUiPreferences();
@@ -60,6 +69,12 @@ export function normalizeUiPreferences(value) {
   next.characterDetailTab = characterTabs.has(next.characterDetailTab) ? next.characterDetailTab : 'combat';
   next.showArchivedCharacters = next.showArchivedCharacters === true;
   next.layoutEditing = next.layoutEditing === true;
+  next.theme = validThemes.has(value?.theme) ? value.theme : 'dark';
+  next.workbenchSubMode = validSubModes.has(value?.workbenchSubMode) ? value.workbenchSubMode : 'full';
+  next.workbenchLeftCollapsed = value?.workbenchLeftCollapsed === true;
+  next.workbenchRightCollapsed = value?.workbenchRightCollapsed === true;
+  next.workbenchDiceDockOpen = value?.workbenchDiceDockOpen === true;
+  next.workbenchZoom = Number.isFinite(value?.workbenchZoom) && value.workbenchZoom >= 0.4 && value.workbenchZoom <= 2.5 ? value.workbenchZoom : 1.0;
   for (const workspace of WORKSPACES) {
     const panels = PANEL_REGISTRY.filter(panel => panel.workspace === workspace.id);
     const claimedOrders = new Set();
