@@ -174,40 +174,61 @@ html[data-theme="parchment"] .workbench-topbar {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 }
 
-/* Status Pills in Topbar */
+/* Status Pills in Topbar (Enlarged & Prominent Center Data Display) */
 .wb-topbar-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 .wb-status-pill {
-  font-size: 0.76rem;
-  font-weight: 500;
-  padding: 3px 9px;
-  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 4px 13px;
+  border-radius: 6px;
   background-color: var(--wb-bg-elevated);
   border: 1px solid var(--wb-border-subtle);
   color: var(--wb-text-secondary);
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
 }
 
 .wb-status-round {
-  font-weight: 600;
-  color: var(--wb-text-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--wb-accent-gold);
+  border-color: var(--wb-accent-gold);
+  background-color: rgba(230, 180, 80, 0.12);
 }
 
 .wb-status-actor {
-  background-color: var(--wb-accent-gold-glow);
+  font-size: 1.02rem;
+  font-weight: 700;
+  background-color: rgba(230, 180, 80, 0.2);
   border-color: var(--wb-accent-gold);
-  color: var(--wb-accent-gold);
-  font-weight: 600;
+  color: #ffffff;
+}
+
+.theme-light .wb-status-actor {
+  color: #1a2233;
+}
+
+.theme-parchment .wb-status-actor {
+  color: #3b2814;
 }
 
 .wb-status-distance {
+  font-size: 0.92rem;
   border-color: var(--wb-accent-cyan);
   color: var(--wb-accent-cyan);
+  background-color: rgba(94, 234, 212, 0.1);
   font-weight: 600;
 }
 

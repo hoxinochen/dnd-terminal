@@ -49,7 +49,7 @@ function renderWorkbenchTopbar(options = {}) {
     : '<span class="wb-status-pill wb-status-idle">未开始先攻</span>';
 
   const actorBadge = activeName
-    ? `<span class="wb-status-pill wb-status-actor">当前：${activeName}</span>`
+    ? `<span class="wb-status-pill wb-status-actor">当前行动：${activeName}</span>`
     : '';
 
   const distanceBadge = tacticalDistanceFeet !== null
@@ -236,7 +236,6 @@ export function battleWorkbenchMarkup(data = {}) {
           </div>
           <div class="wb-column-content">
             ${turnMarkup}
-            ${recentResultMarkup}
             ${rosterMarkup}
           </div>
         </aside>

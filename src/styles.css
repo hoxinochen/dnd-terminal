@@ -181,9 +181,17 @@ code,pre,.eyebrow,[data-workbench-version] { font-family:var(--wb-font-mono); }
 .workbench-nav button.active::before { background:var(--wb-gold); }
 .rail-meta { display:grid; gap:var(--wb-space-1); padding:var(--wb-space-3) var(--wb-space-2); border-top:1px solid #25354b; color:var(--wb-muted); font-size:var(--wb-text-xs); overflow-wrap:anywhere; }
 .workbench-main { min-width:0; padding:var(--wb-space-4) clamp(14px,2.2vw,34px) var(--wb-space-5); }
-.workbench-topbar { min-height:74px; display:flex; align-items:center; justify-content:space-between; margin:0 0 var(--wb-space-3); padding:var(--wb-space-4) var(--wb-space-5); border:1px solid var(--wb-border); border-radius:var(--wb-radius-lg); background:#101a2b; box-shadow:none; }
+.workbench-topbar { min-height:74px; display:flex; align-items:center; justify-content:space-between; margin:0 0 var(--wb-space-3); padding:var(--wb-space-4) var(--wb-space-5); border:1px solid var(--wb-border); border-radius:var(--wb-radius-lg); background:#101a2b; box-shadow:none; transition:min-height .2s ease, padding .2s ease, margin .2s ease; }
+.workbench-topbar-main { min-width:0; }
 .workbench-topbar h1 { margin:2px 0 0; font-size:clamp(1.25rem,2vw,1.75rem); }
 .workbench-session { display:grid; justify-items:end; gap:var(--wb-space-1); text-align:right; }
+.topbar-collapse-btn { appearance:none; background:rgba(125,125,125,.08); border:1px solid currentColor; border-radius:var(--wb-radius-sm,4px); color:inherit; opacity:.75; cursor:pointer; padding:4px 8px; font-size:.8rem; line-height:1; transition:all .2s ease; margin-left:12px; flex-shrink:0; }
+.topbar-collapse-btn:hover { opacity:1; color:var(--wb-gold); border-color:var(--wb-gold); background:rgba(230,180,80,.12); }
+.workbench-topbar.header-collapsed { min-height:38px !important; height:38px !important; padding:4px 16px !important; margin-bottom:6px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; gap:12px !important; border-radius:var(--wb-radius-sm) !important; cursor:pointer; }
+.workbench-topbar.header-collapsed .eyebrow { display:none !important; }
+.workbench-topbar.header-collapsed .workbench-session { display:none !important; }
+.workbench-topbar.header-collapsed h1 { font-size:.92rem !important; margin:0 !important; font-weight:600 !important; color:inherit !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+.workbench-topbar.header-collapsed h1::before { content:"会话："; opacity:.65; font-weight:400; font-size:.85rem; }
 .global-notice:empty { display:none; }.global-notice .notice { margin:0 0 var(--wb-space-3); }
 .mobile-workspace-nav { display:none; }
 .workspace { display:grid; gap:var(--wb-space-3); }

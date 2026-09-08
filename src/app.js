@@ -1543,7 +1543,7 @@ function injectPcLifePanel(){
 function ensureWorkbenchShell(){
   const app=document.querySelector('#app');
   if(app.querySelector('[data-workbench-shell]'))return app;
-  app.innerHTML=`<div class="shell workbench-shell" data-workbench-shell><div class="workbench-layout"><aside class="workbench-rail"><div class="rail-brand"><span class="brand-mark" data-rail-toggle title="收起/展开导航侧栏">DT</span><div><p class="eyebrow">DM WORKBENCH</p><b>DND Terminal</b></div></div><button type="button" class="rail-collapse-btn" data-rail-toggle title="收起导航侧栏 (释放战术视野)" aria-label="收起侧边栏">◀</button><nav class="workbench-nav" aria-label="工作区导航" data-workbench-nav></nav><div class="rail-meta"><small data-workbench-version></small><span>本地私有</span></div></aside><div class="workbench-main"><header class="topbar workbench-topbar"><div><p class="eyebrow">CURRENT SESSION</p><h1 data-workbench-session></h1></div><div class="workbench-session"><b data-workbench-phase></b><small data-workbench-summary></small></div></header><details class="mobile-workspace-nav"><summary>切换工作区</summary><nav class="workbench-nav" aria-label="窄屏工作区导航" data-workbench-nav></nav></details><div class="global-notice" data-workbench-notice></div><main data-workbench-view></main><footer class="footer">CharacterSheet（长期只读） · CombatProjection · CombatantInstance · CombatEvent · PostCombatDiff</footer></div></div></div>`;
+  app.innerHTML=`<div class="shell workbench-shell" data-workbench-shell><div class="workbench-layout"><aside class="workbench-rail"><div class="rail-brand"><span class="brand-mark" data-rail-toggle title="收起/展开导航侧栏">DT</span><div><p class="eyebrow">DM WORKBENCH</p><b>DND Terminal</b></div></div><button type="button" class="rail-collapse-btn" data-rail-toggle title="收起导航侧栏 (释放战术视野)" aria-label="收起侧边栏">◀</button><nav class="workbench-nav" aria-label="工作区导航" data-workbench-nav></nav><div class="rail-meta"><small data-workbench-version></small><span>本地私有</span></div></aside><div class="workbench-main"><header class="topbar workbench-topbar" data-workbench-topbar><div class="workbench-topbar-main"><p class="eyebrow">CURRENT SESSION</p><h1 data-workbench-session></h1></div><div class="workbench-session"><b data-workbench-phase></b><small data-workbench-summary></small></div><button type="button" class="topbar-collapse-btn" data-header-toggle title="向上收起会话标题栏 (保留名称并释放战术视野)" aria-label="收起会话标题栏">▲</button></header><details class="mobile-workspace-nav"><summary>切换工作区</summary><nav class="workbench-nav" aria-label="窄屏工作区导航" data-workbench-nav></nav></details><div class="global-notice" data-workbench-notice></div><main data-workbench-view></main><footer class="footer">CharacterSheet（长期只读） · CombatProjection · CombatantInstance · CombatEvent · PostCombatDiff</footer></div></div></div>`;
   return app;
 }
 function applyPanelPreferences(root){
@@ -1578,6 +1578,8 @@ function bindWorkbenchShell(shell){
   shell.querySelector('[data-layout-reset-all]')?.addEventListener('click',()=>{uiPreferences=resetAllUiPreferences(uiPreferences);persistUiPreferences();render();});
   shell.querySelector('.layout-controls')?.addEventListener('toggle',event=>{uiPreferences={...uiPreferences,layoutEditing:event.currentTarget.open};persistUiPreferences();});
   shell.querySelectorAll('[data-rail-toggle]').forEach(button=>button.onclick=()=>{uiPreferences={...uiPreferences,workbenchRailCollapsed:!uiPreferences.workbenchRailCollapsed};persistUiPreferences();render();});
+  shell.querySelectorAll('[data-header-toggle]').forEach(button=>button.onclick=(e)=>{e.stopPropagation();uiPreferences={...uiPreferences,workbenchHeaderCollapsed:!uiPreferences.workbenchHeaderCollapsed};persistUiPreferences();render();});
+  shell.querySelectorAll('[data-workbench-topbar].header-collapsed').forEach(topbar=>topbar.onclick=(e)=>{if(e.target.closest('button'))return;uiPreferences={...uiPreferences,workbenchHeaderCollapsed:false};persistUiPreferences();render();});
 }
 function render(){
   const app=ensureWorkbenchShell(),shell=app.querySelector('[data-workbench-shell]');
@@ -1589,6 +1591,16 @@ function render(){
       railBtn.textContent=uiPreferences.workbenchRailCollapsed?'▶':'◀';
       railBtn.title=uiPreferences.workbenchRailCollapsed?'展开全局导航侧栏':'收起全局导航侧栏 (释放战术视野)';
       railBtn.setAttribute('aria-label',railBtn.title);
+    }
+  }
+  const topbar=shell.querySelector('[data-workbench-topbar]');
+  if(topbar){
+    topbar.classList.toggle('header-collapsed',!!uiPreferences.workbenchHeaderCollapsed);
+    const headerBtn=topbar.querySelector('[data-header-toggle]');
+    if(headerBtn){
+      headerBtn.textContent=uiPreferences.workbenchHeaderCollapsed?'▼':'▲';
+      headerBtn.title=uiPreferences.workbenchHeaderCollapsed?'展开会话标题栏':'向上收起会话标题栏 (保留名称并释放战术视野)';
+      headerBtn.setAttribute('aria-label',headerBtn.title);
     }
   }
   renderedStatusProjection=projectWorkspaceStatus(state);

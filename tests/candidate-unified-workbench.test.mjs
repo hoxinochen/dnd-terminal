@@ -33,6 +33,7 @@ import {
   assert.equal(prefs.theme, 'dark');
   assert.equal(prefs.workbenchSubMode, 'full');
   assert.equal(prefs.workbenchRailCollapsed, false);
+  assert.equal(prefs.workbenchHeaderCollapsed, false);
   assert.equal(prefs.workbenchLeftCollapsed, false);
   assert.equal(prefs.workbenchRightCollapsed, false);
   assert.equal(prefs.workbenchDiceDockOpen, false);
@@ -42,6 +43,7 @@ import {
     theme: 'parchment',
     workbenchSubMode: 'combat',
     workbenchRailCollapsed: true,
+    workbenchHeaderCollapsed: true,
     workbenchLeftCollapsed: true,
     workbenchRightCollapsed: true,
     workbenchDiceDockOpen: true,
@@ -50,6 +52,7 @@ import {
   assert.equal(norm.theme, 'parchment');
   assert.equal(norm.workbenchSubMode, 'combat');
   assert.equal(norm.workbenchRailCollapsed, true);
+  assert.equal(norm.workbenchHeaderCollapsed, true);
   assert.equal(norm.workbenchLeftCollapsed, true);
   assert.equal(norm.workbenchRightCollapsed, true);
   assert.equal(norm.workbenchDiceDockOpen, true);
@@ -104,6 +107,10 @@ import {
   // Tactical distance badge contract
   // (2,3) to (5,7): dx=3, dy=4 -> 20 feet under default five-feet
   assert.match(markup, /战术距离: <b>20 尺<\/b>/);
+
+  // Left column de-duplication: no redundant situation card
+  assert.doesNotMatch(markup, /class="test-result"/, 'recentResultMarkup must not be rendered in the left column');
+  assert.match(markup, /class="wb-status-pill wb-status-actor"/, 'active actor displayed in prominent center pill');
 
   // Collapsible column dock strips
   assert.match(markup, /data-wb-collapse="left"/);
@@ -183,6 +190,18 @@ import {
 
   const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
   assert.match(app, /WORKSPACES\.filter\(w=>!w\.navHidden\)/, 'app.js must filter out navHidden workspaces from the navigation rail');
+}
+
+// 8. Collapsible session header contract (释放战术视野)
+{
+  const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+  assert.match(app, /data-header-toggle/, 'app.js must provide header toggle button');
+  assert.match(app, /header-collapsed/, 'app.js must toggle header-collapsed class');
+
+  const css = await readFile(new URL('../src/styles.css', import.meta.url), 'utf8');
+  assert.match(css, /\.workbench-topbar\.header-collapsed/, 'styles.css must style collapsed header');
+  assert.match(css, /\.workbench-topbar\.header-collapsed \.eyebrow\s*\{\s*display:\s*none/, 'collapsed header hides eyebrow');
+  assert.match(css, /\.workbench-topbar\.header-collapsed \.workbench-session\s*\{\s*display:\s*none/, 'collapsed header hides duplicate session phase');
 }
 
 console.log('candidate-unified-workbench.test.mjs: pass');
