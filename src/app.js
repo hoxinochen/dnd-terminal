@@ -1161,17 +1161,62 @@ function shortLabel(c){
   if(collisions.every(other=>other.name===c.name))return `${base} ${c.displayOrdinal||1}`;
   return `${base} ${Math.max(1,collisions.findIndex(other=>other.id===c.id)+1)}`;
 }
-function combatantRow(c){
-  const effects=effectsFor(c.id),isActive=active()?.id===c.id,isSelected=state.ui.selectedId===c.id,ended=combatEnded(),dead=isDead(c),transformed=isTransformed(c),away=c.presenceStatus==='temporarily-away',finished=c.participationStatus==='ended';
+function combatantAc(c){
+  if(c.armorClass!=null&&c.armorClass>0)return c.armorClass;
+  if(c.templateSnapshot?.armorClass!=null&&c.templateSnapshot.armorClass>0)return c.templateSnapshot.armorClass;
+  if(c.characterId){
+    const sheet=(typeof currentCharacterSheet==='function'?currentCharacterSheet(c.characterId):null)||(typeof characterSheetById==='function'?characterSheetById(c.characterId):null);
+    if(sheet?.armorClass!=null&&sheet.armorClass>0)return sheet.armorClass;
+  }
+  return null;
+}
+function combatantClassLabel(c){
+  if(c.characterId){
+    const sheet=(typeof currentCharacterSheet==='function'?currentCharacterSheet(c.characterId):null)||(typeof characterSheetById==='function'?characterSheetById(c.characterId):null);
+    const cls=sheet?.classes?.map(item=>`${item.name}${item.level?` ${item.level}`:''}`).join(' / ');
+    if(cls)return cls;
+    return '玩家角色';
+  }
+  if(c.templateSnapshot?.sourceType==='reference'&&c.templateSnapshot?.name){
+    return c.templateSnapshot.kind==='npc'?'NPC':(c.templateSnapshot.size?`${c.templateSnapshot.size}怪物`:'怪物');
+  }
+  if(c.kind==='npc')return 'NPC';
+  if(c.kind==='monster')return '怪物';
+  return c.relation==='enemy'?'敌对':'友方';
+}
+function combatantHpMeta(c){
+  const max=Math.max(1,c.maxHp||1),hp=Math.max(0,c.hp||0);
+  const pct=Math.min(100,Math.max(0,Math.round((hp/max)*100)));
+  const dead=isDead(c)||hp<=0;
+  let colorClass='hp-healthy';
+  if(dead)colorClass='hp-dead';
+  else if(pct<=20)colorClass='hp-critical';
+  else if(pct<=50)colorClass='hp-bloodied';
+  const tempPct=c.tempHp>0?Math.min(100,Math.round((c.tempHp/max)*100)):0;
+  return {hp,max,pct,colorClass,dead,tempHp:c.tempHp||0,tempPct};
+}
+function activeExpandedCombatantId(){
+  const selectedId=state.ui?.selectedId;
+  if(selectedId&&state.combatants?.some(x=>x.id===selectedId&&!x.cleanupRemoved))return selectedId;
+  return active()?.id||state.combatants?.find(x=>!x.cleanupRemoved)?.id||null;
+}
+function combatantRow(c, expandedId=activeExpandedCombatantId()){
+  const effects=effectsFor(c.id),isActive=active()?.id===c.id,isSelected=state.ui.selectedId===c.id,isExpanded=c.id===expandedId;
+  const ended=combatEnded(),dead=isDead(c),transformed=isTransformed(c),away=c.presenceStatus==='temporarily-away',finished=c.participationStatus==='ended';
   const locked=ended||away||finished||dead||transformed?'disabled':'';
   const saves=c.deathSaves||{successes:0,failures:0};
-  const status=transformed?`已转化为 ${esc(getCombatant(c.deathRecord?.transformedIntoId)?.name||'其他单位')}`:isPc(c)?`${lifeStatusLabel(c)}${pcLifePhase(c)==='dying'?` · 成功 ${saves.successes}/3 · 失败 ${saves.failures}/3`:''}${(c.conditions||[]).length?` · ${esc((c.conditions||[]).map(conditionLabel).join('、'))}`:''}`:dead?'死亡（DM 判定）':finished?'本场已结束参战':away?'临时离场':'在场参战';
-  const lifecycle=!ended&&!finished&&!dead&&!transformed&&(!isPc(c)||ordinaryActionsAllowed(c))?(away&&c.hp>0?`<button data-lifecycle-reenter="${c.id}">再入场</button>`:away?'':`<button data-lifecycle-leave="${c.id}">暂时离场</button><button class="danger" data-lifecycle-end="${c.id}">结束参战</button>`):ended&&state.ui.postCombatCleanup&&!c.cleanupRemoved?`<button data-cleanup-token="${c.id}">撤下棋子</button>`:'';
-  const critical=isPc(c)&&c.hp===0?`<label><input type="checkbox" data-hp-critical="${c.id}"/> 本次为重击（仅用于 0 HP 受伤失败数）</label>`:'';
-  const hpControls=away||finished||dead||transformed?'':`<label class="compact-input">伤害/治疗<input type="number" min="1" step="1" value="5" data-hp-input="${c.id}" inputmode="numeric" ${locked}/></label>${critical}<button data-hp-damage="${c.id}" ${locked}>伤害</button><button data-hp-heal="${c.id}" ${locked}>治疗</button><label class="compact-input">临时 HP<input type="number" min="0" step="1" value="${c.tempHp}" data-temp-hp-input="${c.id}" inputmode="numeric" ${locked}/></label><button data-temp-hp="${c.id}" ${locked}>设定</button>`;
-  const effectNames=effects.length?`${effects.length} 项效果：${esc(effects.map(effect=>effect.name).join('、'))}`:'无效果';
-  const effectCount=effects.length?`${effects.length} 项效果`:'无效果';
-  return `<article class="combatant ${c.relation} ${isActive?'active':''} ${isSelected?'selected':''} ${away?'away':''} ${finished?'finished':''} ${dead?'dead':''} ${transformed?'transformed':''}" data-select-card="${c.id}" tabindex="0" aria-label="选择 ${esc(displayName(c))}"><div class="combatant-summary"><span class="name">${esc(displayName(c))}</span><span class="pill">${c.relation}</span><span class="pill ${dead?'death-pill':''}">${status}</span>${projectionStatusMarkup(currentStatusProjection().byId[c.id])}<span>HP ${c.hp}/${c.maxHp}${c.tempHp?` +${c.tempHp}临时`:''}</span><span>先攻 ${c.initiative??'—'}</span><span>移动 ${c.movementRemaining}/${c.speed}</span><span class="effect-compact density-standard-only">${effectNames}</span><span class="effect-compact density-compact-only">${effectCount}</span></div><div class="combatant-actions">${hpControls}${lifecycle}</div></article>`;
+  const status=transformed?`已转化为 ${esc(getCombatant(c.deathRecord?.transformedIntoId)?.name||'其他单位')}`:isPc(c)?`${lifeStatusLabel(c)}${pcLifePhase(c)==='dying'?` · 成功 ${saves.successes}/3 · 失败 ${saves.failures}/3`:''}${(c.conditions||[]).length?` · ${esc((c.conditions||[]).map(conditionLabel).join('、'))}`:''}`:dead?'死亡':finished?'结束参战':away?'临时离场':'在场';
+  const ac=combatantAc(c),classLabel=combatantClassLabel(c),hpMeta=combatantHpMeta(c);
+  const initVal=c.initiative!=null&&c.initiative!==''?String(c.initiative).padStart(2,'0'):'—';
+  let actionPanel='';
+  if(isExpanded){
+    const lifecycle=!ended&&!finished&&!dead&&!transformed&&(!isPc(c)||ordinaryActionsAllowed(c))?(away&&c.hp>0?`<button data-lifecycle-reenter="${c.id}">再入场</button>`:away?'':`<button data-lifecycle-leave="${c.id}">暂时离场</button><button class="danger" data-lifecycle-end="${c.id}">结束参战</button>`):ended&&state.ui.postCombatCleanup&&!c.cleanupRemoved?`<button data-cleanup-token="${c.id}">撤下棋子</button>`:'';
+    const critical=isPc(c)&&c.hp===0?`<label class="roster-critical-check"><input type="checkbox" data-hp-critical="${c.id}"/> 本次为重击（仅用于 0 HP 受伤失败数）</label>`:'';
+    const hpControls=away||finished||dead||transformed?'':`<div class="roster-ctrl-row"><label class="compact-input">伤害/治疗<input type="number" min="1" step="1" value="5" data-hp-input="${c.id}" inputmode="numeric" ${locked}/></label>${critical}<button class="btn-damage" data-hp-damage="${c.id}" ${locked}>伤害</button><button class="btn-heal" data-hp-heal="${c.id}" ${locked}>治疗</button></div><div class="roster-ctrl-row"><label class="compact-input">临时 HP<input type="number" min="0" step="1" value="${c.tempHp||0}" data-temp-hp-input="${c.id}" inputmode="numeric" ${locked}/></label><button data-temp-hp="${c.id}" ${locked}>设定</button></div>`;
+    actionPanel=`<div class="combatant-actions roster-expanded-panel">${hpControls}${lifecycle?`<div class="roster-ctrl-row roster-lifecycle-row">${lifecycle}</div>`:''}</div>`;
+  }
+  const effectText=effects.length?`${effects.length}效果`:'';
+  return `<article class="combatant ${c.relation} ${isActive?'active':''} ${isSelected?'selected':''} ${isExpanded?'is-expanded':''} ${away?'away':''} ${finished?'finished':''} ${dead?'dead':''} ${transformed?'transformed':''}" data-select-card="${c.id}" tabindex="0" aria-label="选择 ${esc(displayName(c))}"><div class="combatant-summary roster-row-summary"><span class="roster-col-init ${c.relation}" title="先攻值">${initVal}</span><div class="roster-col-identity"><div class="roster-name-row"><span class="name">${esc(displayName(c))}</span>${isActive?'<span class="roster-badge-active">行动</span>':''}</div><div class="roster-meta-row"><span class="roster-class-tag">${esc(classLabel)}</span><span class="pill ${dead?'death-pill':''}">${esc(status)}</span>${effectText?`<span class="roster-effect-pill">${esc(effectText)}</span>`:''}</div></div><div class="roster-col-ac" title="护甲等级 (AC)"><small class="roster-ac-label">AC</small><b class="roster-ac-val">${ac!=null?ac:'—'}</b></div><div class="roster-col-hp" title="当前 HP / 最大 HP"><div class="roster-hp-text"><b class="roster-hp-val">${c.hp}/${c.maxHp}</b>${c.tempHp?`<span class="roster-temp-val">+${c.tempHp}</span>`:''}</div><div class="roster-hp-track"><div class="roster-hp-fill ${hpMeta.colorClass}" style="width:${hpMeta.pct}%;"></div>${hpMeta.tempPct>0?`<div class="roster-temp-fill" style="width:${hpMeta.tempPct}%;"></div>`:''}</div></div><button type="button" class="roster-chevron-btn" data-roster-toggle="${c.id}" title="${isExpanded?'收起互动面板':'展开互动面板'}" aria-label="${isExpanded?'收起':'展开'}">${isExpanded?'▲':'▼'}</button></div>${actionPanel}</article>`;
 }
 function effectCards(id){const effects=effectsFor(id),combatant=getCombatant(id),legacy=(combatant?.conditions||[]).filter(condition=>!(isPc(combatant)&&['unconscious','prone'].includes(condition)));return effects.map(effect=>`<div class="effect-card"><b>${esc(effect.name)}</b><small>${esc(effectSource(effect))} · ${esc(effectEnds(effect))}${effect.concentration?' · 专注':''}</small></div>`).join('')+(legacy.length?`<div class="effect-card legacy"><b>${esc(legacy.join('、'))}</b><small>旧版未跟踪状态：无来源与轮次</small></div>`:'')||'<span class="muted">无状态或 Buff</span>';}
 function referenceActionsFor(c){const normalize=action=>typeof action==='string'?{name:action,category:'action'}:action,entryId=c?.templateSnapshot?.sourceEntryId,admitted=referenceTemplateSeeds.find(template=>template.sourceEntryId===entryId),approved=(admitted?.referenceActions||[]).map(normalize),snapshot=(c?.templateSnapshot?.referenceActions||[]).map(normalize);if(snapshot.length)return snapshot.map(action=>{const evidence=approved.find(item=>item.name===action.name);return {...evidence,...action,detail:action.detail||evidence?.detail};});return approved;}
@@ -1464,7 +1509,9 @@ function unifiedWorkbenchView(){
     </div>
   ` : '';
   const turnMarkup=`${overlays}${prepMarkup}<div class="card" data-panel-id="turn"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="row">${combatControls}</div></div>`;
-  const rosterMarkup=`<div class="card" data-panel-id="roster"><h3>单位态势</h3><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(combatantRow).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div>`;
+  const expandedId=activeExpandedCombatantId();
+  const onFieldCount=state.combatants.filter(c=>!c.cleanupRemoved).length;
+  const rosterMarkup=`<div class="card roster-card" data-panel-id="roster"><div class="roster-title-bar"><h3>单位态势</h3><small class="roster-unit-count">${onFieldCount} 单位在场</small></div><div class="roster-header-row" aria-hidden="true"><span class="col-head-init">先攻</span><span class="col-head-name">单位 / 状态</span><span class="col-head-ac">AC</span><span class="col-head-hp">生命值 (HP)</span><span class="col-head-toggle"></span></div><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(c=>combatantRow(c,expandedId)).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div>`;
   const recentResultMarkup=`<div class="situation-grid" data-panel-id="recent-result">${battleSituationMarkup(currentStatusProjection())}</div>`;
   const r=state.ui.range,cells=r&&r.phase==='preview'?coveredCells(r):[],w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit',s2Draft=s2PlacementDraft;
   const pendingTransformSources=new Set(entryPlacementItems().filter(item=>item.kind==='transformation').map(item=>item.sourceCombatantId));
@@ -1739,8 +1786,8 @@ function bind(){
   document.querySelector('[data-s2-placement-cancel]')?.addEventListener('click',cancelS2Placement);
   document.querySelectorAll('[data-cleanup-token]').forEach(button=>button.onclick=()=>cleanupToken(button.dataset.cleanupToken));
   document.querySelectorAll('[data-create]').forEach(b=>b.onclick=()=>addCombatant(templates.find(t=>t.id===b.dataset.create),{x:Math.min(2,state.combatants.length),y:Math.min(2,state.combatants.length)}));
-  document.querySelectorAll('[data-select]').forEach(b=>b.onclick=()=>{state.ui.selectedId=b.dataset.select;persist();render();});
   document.querySelectorAll('[data-select-card]').forEach(card=>{const select=()=>{state.ui.selectedId=card.dataset.selectCard;persist();render();};card.onclick=event=>{if(event.target.closest('button,input,label'))return;select();};card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}};});
+  document.querySelectorAll('[data-roster-toggle]').forEach(btn=>btn.onclick=event=>{event.stopPropagation();const id=btn.dataset.rosterToggle,curr=activeExpandedCombatantId();state.ui.selectedId=(curr===id)?(active()?.id&&active().id!==id?active().id:null):id;persist();render();});
   document.querySelectorAll('[data-facing]').forEach(b=>b.onclick=()=>setFacingDraft(b.dataset.facing,b.dataset.facingValue));
   document.querySelectorAll('[data-facing-port]').forEach(b=>b.onclick=()=>setFacingPortDraft(b.dataset.facingPort,Number(b.dataset.portX),Number(b.dataset.portY)));
   document.querySelectorAll('[data-facing-correct]').forEach(b=>b.onclick=()=>correctFacing(b.dataset.facingCorrect,b.dataset.facingValue));

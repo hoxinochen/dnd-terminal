@@ -204,4 +204,25 @@ import {
   assert.match(css, /\.workbench-topbar\.header-collapsed \.workbench-session\s*\{\s*display:\s*none/, 'collapsed header hides duplicate session phase');
 }
 
+// 9. High-density combatant roster & HP visualization (Concept Ref: media_1788835527392.png)
+{
+  const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+  assert.match(app, /roster-header-row/, 'app.js must render roster table header row');
+  assert.match(app, /col-head-init/, 'app.js header row must contain INIT column');
+  assert.match(app, /col-head-ac/, 'app.js header row must contain AC column');
+  assert.match(app, /col-head-hp/, 'app.js header row must contain HP column');
+  assert.match(app, /roster-hp-track/, 'app.js must render visual HP track');
+  assert.match(app, /roster-hp-fill/, 'app.js must render visual HP fill bar');
+  assert.match(app, /activeExpandedCombatantId/, 'app.js must calculate activeExpandedCombatantId');
+  assert.match(app, /data-roster-toggle/, 'app.js must provide roster expansion toggle');
+
+  const css = await readFile(new URL('../src/battle-workbench.css', import.meta.url), 'utf8');
+  assert.match(css, /\.roster-header-row/, 'battle-workbench.css styles header row');
+  assert.match(css, /\.roster-hp-fill\.hp-healthy/, 'battle-workbench.css styles healthy green HP bar');
+  assert.match(css, /\.roster-hp-fill\.hp-bloodied/, 'battle-workbench.css styles bloodied amber HP bar');
+  assert.match(css, /\.roster-hp-fill\.hp-critical/, 'battle-workbench.css styles critical red HP bar');
+  assert.match(css, /\.combatants \.combatant\.is-expanded/, 'battle-workbench.css styles single expanded combatant');
+  assert.match(css, /\.roster-expanded-panel/, 'battle-workbench.css styles expanded action panel');
+}
+
 console.log('candidate-unified-workbench.test.mjs: pass');

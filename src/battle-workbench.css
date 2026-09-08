@@ -1378,3 +1378,508 @@ html[data-theme="parchment"] .workbench-topbar {
     display: none !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+   11. High-Density Tactical Combatant Roster & HP Visualization
+   -------------------------------------------------------------------------- */
+.roster-card {
+  padding: 10px 12px !important;
+}
+
+.roster-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.roster-title-bar h3 {
+  margin: 0 !important;
+  font-size: 0.96rem !important;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.roster-unit-count {
+  font-size: 0.72rem;
+  color: var(--wb-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table Header Row (INIT | NAME & CLASS | AC | HP STATUS) */
+.roster-header-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 34px 76px 18px;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--wb-text-muted);
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--wb-border-subtle);
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.col-head-init {
+  text-align: center;
+}
+
+.col-head-name {
+  text-align: left;
+}
+
+.col-head-ac {
+  text-align: center;
+}
+
+.col-head-hp {
+  text-align: right;
+  padding-right: 4px;
+}
+
+.col-head-toggle {
+  width: 18px;
+}
+
+/* High-Density Combatant Article */
+.combatants .combatant {
+  display: flex;
+  flex-direction: column;
+  background: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  margin-bottom: 5px;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.combatants .combatant:hover {
+  border-color: var(--wb-border-prominent);
+  background: var(--wb-bg-elevated);
+}
+
+.combatants .combatant:focus-visible {
+  border-color: var(--wb-accent-gold);
+  box-shadow: 0 0 0 2px rgba(230, 180, 80, 0.25);
+}
+
+/* Faction indicator left border */
+.combatants .combatant.ally {
+  border-left: 3px solid #10b981 !important;
+}
+
+.combatants .combatant.enemy {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.combatants .combatant.neutral {
+  border-left: 3px solid #f59e0b !important;
+}
+
+/* Active turn indicator */
+.combatants .combatant.active {
+  box-shadow: 0 0 0 1px var(--wb-accent-gold), 0 0 10px rgba(230, 180, 80, 0.22);
+}
+
+.combatants .combatant.active.is-expanded {
+  box-shadow: 0 0 0 1.5px var(--wb-accent-gold), 0 0 14px rgba(230, 180, 80, 0.25);
+}
+
+.combatants .combatant.is-expanded {
+  border-color: var(--wb-accent-gold);
+  background: var(--wb-bg-surface);
+}
+
+/* Summary Row (~38px height) */
+.roster-row-summary {
+  display: grid;
+  grid-template-columns: 28px 1fr 34px 76px 18px;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  min-height: 38px;
+}
+
+/* Col 1: Initiative */
+.roster-col-init {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.roster-col-init.ally {
+  color: #34d399;
+}
+
+.roster-col-init.enemy {
+  color: #f87171;
+}
+
+.roster-col-init.neutral {
+  color: #fbbf24;
+}
+
+/* Col 2: Name & Meta */
+.roster-col-identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.roster-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.roster-name-row .name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--wb-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.roster-badge-active {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(230, 180, 80, 0.2);
+  color: var(--wb-accent-gold);
+  border: 1px solid rgba(230, 180, 80, 0.4);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.roster-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.roster-class-tag {
+  color: var(--wb-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
+
+.roster-meta-row .pill {
+  font-size: 0.62rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wb-text-secondary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.roster-meta-row .pill.death-pill {
+  background: #713945;
+  color: #fff0f0;
+}
+
+.roster-effect-pill {
+  font-size: 0.62rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(94, 234, 212, 0.12);
+  color: var(--wb-accent-cyan);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Col 3: AC */
+.roster-col-ac {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.roster-ac-label {
+  font-size: 0.58rem;
+  color: var(--wb-text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.roster-ac-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--wb-accent-cyan);
+}
+
+/* Col 4: HP & Visual Bar */
+.roster-col-hp {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 72px;
+}
+
+.roster-hp-text {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.roster-hp-val {
+  font-weight: 700;
+  color: var(--wb-text-primary);
+}
+
+.roster-temp-val {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.roster-hp-track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.roster-hp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.roster-hp-fill.hp-healthy {
+  background-color: #10b981;
+}
+
+.roster-hp-fill.hp-bloodied {
+  background-color: #f59e0b;
+}
+
+.roster-hp-fill.hp-critical {
+  background-color: #ef4444;
+}
+
+.roster-hp-fill.hp-dead {
+  background-color: #6b7280;
+}
+
+.roster-temp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background-color: #38bdf8;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+/* Col 5: Chevron toggle */
+.roster-chevron-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--wb-text-muted);
+  cursor: pointer;
+  padding: 2px 3px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+  line-height: 1;
+}
+
+.roster-chevron-btn:hover {
+  color: var(--wb-accent-gold);
+}
+
+/* Expanded Interactive Action Panel */
+.roster-expanded-panel {
+  padding: 8px 10px 10px !important;
+  background: rgba(0, 0, 0, 0.22);
+  border-top: 1px solid var(--wb-border-subtle) !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.roster-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.roster-ctrl-row .compact-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  color: var(--wb-text-secondary);
+}
+
+.roster-ctrl-row .compact-input input {
+  width: 50px !important;
+  padding: 3px 6px !important;
+  font-size: 0.82rem !important;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 4px;
+  border: 1px solid var(--wb-border-prominent);
+  background-color: var(--wb-bg-surface);
+  color: var(--wb-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.roster-ctrl-row .btn-damage {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid #ef4444 !important;
+  color: #f87171 !important;
+  font-weight: 600 !important;
+  padding: 3px 10px !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  min-width: 0 !important;
+}
+
+.roster-ctrl-row .btn-damage:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.roster-ctrl-row .btn-heal {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid #10b981 !important;
+  color: #34d399 !important;
+  font-weight: 600 !important;
+  padding: 3px 10px !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  min-width: 0 !important;
+}
+
+.roster-ctrl-row .btn-heal:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.roster-ctrl-row button[data-temp-hp] {
+  padding: 3px 8px !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  min-width: 0 !important;
+}
+
+.roster-critical-check {
+  font-size: 0.72rem;
+  color: var(--wb-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin: 2px 0;
+}
+
+.roster-lifecycle-row {
+  padding-top: 4px;
+  border-top: 1px dashed var(--wb-border-subtle);
+  margin-top: 2px;
+}
+
+.roster-lifecycle-row button {
+  font-size: 0.74rem !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  min-width: 0 !important;
+}
+
+/* Theme Adjustments: Light Theme */
+html[data-theme="light"] .roster-expanded-panel {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="light"] .roster-col-init.ally {
+  color: #059669;
+}
+
+html[data-theme="light"] .roster-col-init.enemy {
+  color: #dc2626;
+}
+
+html[data-theme="light"] .roster-col-init.neutral {
+  color: #d97706;
+}
+
+html[data-theme="light"] .roster-col-ac .roster-ac-val {
+  color: #0284c7;
+}
+
+html[data-theme="light"] .roster-hp-track {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme="light"] .roster-meta-row .pill {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Theme Adjustments: Parchment Theme */
+html[data-theme="parchment"] .roster-expanded-panel {
+  background: rgba(60, 40, 20, 0.06);
+}
+
+html[data-theme="parchment"] .roster-col-init.ally {
+  color: #047857;
+}
+
+html[data-theme="parchment"] .roster-col-init.enemy {
+  color: #b91c1c;
+}
+
+html[data-theme="parchment"] .roster-col-init.neutral {
+  color: #b45309;
+}
+
+html[data-theme="parchment"] .roster-col-ac .roster-ac-val {
+  color: #0369a1;
+}
+
+html[data-theme="parchment"] .roster-hp-track {
+  background: rgba(60, 40, 20, 0.15);
+}
+
+html[data-theme="parchment"] .roster-meta-row .pill {
+  background: rgba(60, 40, 20, 0.08);
+}
