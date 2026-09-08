@@ -49,6 +49,7 @@ export function defaultUiPreferences() {
     layoutEditing: false,
     theme: 'dark',
     workbenchSubMode: 'full',
+    workbenchRailCollapsed: false,
     workbenchLeftCollapsed: false,
     workbenchRightCollapsed: false,
     workbenchDiceDockOpen: false,
@@ -71,6 +72,7 @@ export function normalizeUiPreferences(value) {
   next.layoutEditing = next.layoutEditing === true;
   next.theme = validThemes.has(value?.theme) ? value.theme : 'dark';
   next.workbenchSubMode = validSubModes.has(value?.workbenchSubMode) ? value.workbenchSubMode : 'full';
+  next.workbenchRailCollapsed = value?.workbenchRailCollapsed === true;
   next.workbenchLeftCollapsed = value?.workbenchLeftCollapsed === true;
   next.workbenchRightCollapsed = value?.workbenchRightCollapsed === true;
   next.workbenchDiceDockOpen = value?.workbenchDiceDockOpen === true;

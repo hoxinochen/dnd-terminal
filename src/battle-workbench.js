@@ -107,6 +107,7 @@ export function battleWorkbenchMarkup(data = {}) {
     turnMarkup = '',
     actionMarkup = '',
     inspectorMarkup = '',
+    rangeMarkup = '',
     mapGridMarkup = '',
     recentResultMarkup = '',
   } = data;
@@ -235,8 +236,8 @@ export function battleWorkbenchMarkup(data = {}) {
           </div>
           <div class="wb-column-content">
             ${turnMarkup}
-            ${rosterMarkup}
             ${recentResultMarkup}
+            ${rosterMarkup}
           </div>
         </aside>
 
@@ -293,8 +294,9 @@ export function battleWorkbenchMarkup(data = {}) {
           </div>
           <div class="wb-column-content">
             ${diceMarkup}
-            ${actionMarkup}
             ${inspectorMarkup}
+            ${actionMarkup}
+            ${rangeMarkup ? `<div class="wb-range-wrap">${rangeMarkup}</div>` : ''}
           </div>
         </aside>
       </div>

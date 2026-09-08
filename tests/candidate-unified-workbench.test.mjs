@@ -32,6 +32,7 @@ import {
   const prefs = defaultUiPreferences();
   assert.equal(prefs.theme, 'dark');
   assert.equal(prefs.workbenchSubMode, 'full');
+  assert.equal(prefs.workbenchRailCollapsed, false);
   assert.equal(prefs.workbenchLeftCollapsed, false);
   assert.equal(prefs.workbenchRightCollapsed, false);
   assert.equal(prefs.workbenchDiceDockOpen, false);
@@ -40,6 +41,7 @@ import {
   const norm = normalizeUiPreferences({
     theme: 'parchment',
     workbenchSubMode: 'combat',
+    workbenchRailCollapsed: true,
     workbenchLeftCollapsed: true,
     workbenchRightCollapsed: true,
     workbenchDiceDockOpen: true,
@@ -47,6 +49,7 @@ import {
   });
   assert.equal(norm.theme, 'parchment');
   assert.equal(norm.workbenchSubMode, 'combat');
+  assert.equal(norm.workbenchRailCollapsed, true);
   assert.equal(norm.workbenchLeftCollapsed, true);
   assert.equal(norm.workbenchRightCollapsed, true);
   assert.equal(norm.workbenchDiceDockOpen, true);
