@@ -1096,11 +1096,23 @@ function workspaceNavButton(workspace){
   return `<button class="${currentWorkspaceId()===workspace.id?'active':''}" data-workspace="${workspace.id}" aria-current="${currentWorkspaceId()===workspace.id?'page':'false'}" title="${esc(workspace.label)} · ${esc(workspace.description||'')}"><span class="nav-glyph" aria-hidden="true">${glyph}</span><span class="nav-text">${workspace.label}</span></button>`;
 }
 function selectWorkspaceForDomain(domainTab,{updateHash=true}={}){
+  if(domainTab==='地图'){
+    activeWorkspaceId='battle';
+    uiPreferences={...uiPreferences,lastWorkspace:'battle',workbenchSubMode:'map'};
+    persistUiPreferences();
+    if(updateHash&&globalThis.location?.hash!=='#battle')globalThis.location.hash='battle';
+    return;
+  }
   const workspaceId=workspaceForDomainTab(domainTab);activeWorkspaceId=workspaceId;
   uiPreferences={...uiPreferences,lastWorkspace:workspaceId};persistUiPreferences();
   if(updateHash&&globalThis.location?.hash!==`#${workspaceId}`)globalThis.location.hash=workspaceId;
 }
 function setWorkspace(workspaceId,{updateHash=true}={}){
+  if(workspaceId==='map'){
+    selectWorkspaceForDomain('地图',{updateHash});
+    render();
+    return;
+  }
   const next=WORKSPACES.find(workspace=>workspace.id===workspaceId);if(!next)return;
   selectWorkspaceForDomain(next.domainTab,{updateHash});
   render();
@@ -1584,7 +1596,7 @@ function render(){
   shell.querySelector('[data-workbench-session]').textContent=state.name;
   shell.querySelector('[data-workbench-phase]').textContent=`v${DELIVERY_VERSION} · ${phaseLabel(state.encounter?.phase)} · 第 ${state.turn?.round||0} 轮`;
   shell.querySelector('[data-workbench-summary]').textContent=`${state.events.length} events · ${state.encounter?.phase||'未知阶段'}`;
-  shell.querySelectorAll('[data-workbench-nav]').forEach(nav=>nav.innerHTML=WORKSPACES.map(workspaceNavButton).join(''));
+  shell.querySelectorAll('[data-workbench-nav]').forEach(nav=>nav.innerHTML=WORKSPACES.filter(w=>!w.navHidden).map(workspaceNavButton).join(''));
   shell.querySelector('[data-workbench-notice]').innerHTML=state.ui.message?`<p class="notice ${state.ui.messageKind||''}">${esc(state.ui.message)}</p>`:'';
   const viewRoot=shell.querySelector('[data-workbench-view]');viewRoot.innerHTML=view();
   bindWorkbenchShell(shell);upgradeLinkedEditors();bind();applyPanelPreferences(shell.querySelector('.workspace'));

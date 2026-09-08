@@ -174,4 +174,15 @@ import {
   assert.match(app, /workbench-v070\.js\?v=20260907-exp-ux-gemini-001-1/, 'modified workbench module must use the candidate cache key');
 }
 
+// 7. Unified Navigation Rail: Removal of independent 'map' entry
+{
+  const { WORKSPACES } = await import('../src/workbench-v070.js');
+  const visibleWorkspaces = WORKSPACES.filter(w => !w.navHidden);
+  assert.deepEqual(visibleWorkspaces.map(w => w.id), ['battle', 'characters', 'library', 'log', 'dice', 'settings'], 'map must not be an independent navigation entry');
+  assert.equal(WORKSPACES.find(w => w.id === 'map')?.navHidden, true, 'map workspace is marked navHidden');
+
+  const app = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+  assert.match(app, /WORKSPACES\.filter\(w=>!w\.navHidden\)/, 'app.js must filter out navHidden workspaces from the navigation rail');
+}
+
 console.log('candidate-unified-workbench.test.mjs: pass');

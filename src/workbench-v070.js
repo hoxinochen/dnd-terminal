@@ -3,7 +3,7 @@ export const UI_PREFERENCES_VERSION = 1;
 
 export const WORKSPACES = Object.freeze([
   { id: 'battle', label: '工作台', domainTab: '战斗', configurable: true, description: '统一工作台 · 行动轮、地图沙盘与战术检视' },
-  { id: 'map', label: '地图', domainTab: '地图', configurable: true, description: '位置、范围、朝向与投入确认' },
+  { id: 'map', label: '地图', domainTab: '地图', configurable: true, description: '位置、范围、朝向与投入确认', navHidden: true },
   { id: 'characters', label: '角色', domainTab: '角色', configurable: true, description: '长期角色、修订、投影与战后回写' },
   { id: 'library', label: '单位库', domainTab: '单位库', configurable: false, description: '模板来源、归档、编辑与投入' },
   { id: 'log', label: '日志', domainTab: '日志', configurable: false, description: '顺序事件、补偿与 DM 修正' },
