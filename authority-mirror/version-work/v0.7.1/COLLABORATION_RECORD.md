@@ -7,7 +7,7 @@
 - 候选分支：`gemini/v0.7.0-unified-battle-map-ux-candidate`
 - 候选冻结 commit：`58ebd929255d157973ec7587d73d6b0fecf05f93`
 - 记录日期：2026-09-10
-- 当前状态：已获 User 批准 merge；尚未执行主线 merge、push、Release 或 Archive
+- 当前状态：已获 User 批准并完成主线 merge；主线回归通过，尚未 push、Release 或 Archive
 
 本记录依据当前对话中的 User 授权与验收、候选分支提交历史、AG 生成的执行/验证文件和最终源码。Git 行级差异无法证明每一行由哪个模型输入，因此以下按协作职责和阶段记录，不作逐行作者声明。
 
@@ -29,7 +29,7 @@
 5. User 确认此前四个 bug 已完成人工验收后，任务转为工作台视觉和响应式 UX：左侧固定 20%、地图/右侧非对称比例、三主题状态可读性、骰子栏 containment、地图本身平移和空白视图切换。
 6. Codex 发现部分中间实现偏离“美术设计优化”目标，接手进行独立审查：新增 `src/workbench-foundation.css`；补齐 `src/map-controller.js` 的鼠标/触控/键盘平移及空白导航边界；调整 `src/app.js`、`src/styles.css`、`src/battle-workbench.css`、`src/battle-workbench.js` 和契约测试。
 7. Codex 使用 `scratch/verify-ux-recovery.mjs` 在独立 Chrome 中完成六档视口 × 三主题、布局比例、收起轨道、地图交互、折叠状态、存储不变和控制台检查；User 随后完成 Safari 人工验收。
-8. Codex 在候选分支创建冻结 commit `58ebd92`；User 于 2026-09-10 明确批准将本次交付命名为 v0.7.1、生成正式项目文档并 merge。
+8. Codex 在候选分支创建冻结 commit `58ebd92`；User 于 2026-09-10 明确批准将本次交付命名为 v0.7.1、生成正式项目文档并 merge。候选随后以 `6ae7636` fast-forward 集成到 main。
 
 ## 证据与停止点
 
@@ -37,4 +37,4 @@
 - Chrome 隔离验证覆盖 320、390、768、1024、1280、1440 六档和 dark/light/parchment 三主题。
 - Safari 人工验收通过；Firefox/Edge 实机和性能/长时会话未执行。
 - v0.7.0 冻结 Release/Archive 材料没有被修改。
-- 当前下一步是主线 merge 后的回归和集成状态记录；Push、Local Private Release、Archive、部署和公开发布仍未执行。
+- 主线回归已执行：26/26 测试文件通过；下一门禁转为 Push、Local Private Release 或 Archive 的独立决定。

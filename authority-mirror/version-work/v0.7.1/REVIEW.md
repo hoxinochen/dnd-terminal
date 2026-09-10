@@ -1,10 +1,11 @@
 # Independent Review：DND Terminal v0.7.1
 
-- **状态：** `Review Complete — Approved for Main Integration`
+- **状态：** `Review Complete — Main Integration Passed`
 - **评审日期：** `2026-09-10`
 - **评审者：** Codex（本任务内独立于 Gemini/AG 的复核路径）
 - **评审范围：** v0.7.1 ABC、候选实现、自动测试、隔离 Chrome 证据、User Safari 人工验收及协作记录
 - **候选 commit：** `58ebd929255d157973ec7587d73d6b0fecf05f93`
+- **main 集成 commit：** `6ae7636`
 
 ## 1. 证据分级
 
@@ -32,4 +33,4 @@
 
 ## 4. 结论与后续门禁
 
-Review 结论为 `Review Complete — Approved for Main Integration`。User 已授权 merge；主线合并后需补跑主线回归并更新集成状态。Local Private Release、Archive、Push、部署和公开发布仍未授权。
+Review 结论为 `Review Complete — Main Integration Passed`。User 已授权 merge；已以 `6ae7636` fast-forward 集成并通过主线回归。Local Private Release、Archive、Push、部署和公开发布仍未授权。

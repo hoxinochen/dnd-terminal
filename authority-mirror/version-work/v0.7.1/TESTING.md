@@ -1,7 +1,7 @@
 # Testing：v0.7.1 统一战斗工作台 UX 适配
 
 - **交付 ID：** `v0.7.1`
-- **状态：** `Automated and Browser Verification Passed — Human Accepted — Ready for Main Integration`
+- **状态：** `Automated and Browser Verification Passed — Human Accepted — Main Integration Passed`
 - **执行日期：** `2026-09-10`
 - **测试候选 commit：** `58ebd929255d157973ec7587d73d6b0fecf05f93`
 
@@ -41,7 +41,7 @@ User 已在 Safari 中完成当前候选版本验收并确认用户体验良好�
 - Firefox/Edge 实机验收未执行；
 - 性能、长时会话、真实用户数据迁移和公开环境验收未执行；
 - 本文件不把人工验收或自动测试表述为 Release、Archive、部署或公开发布证明；
-- 主线合并后的回归仍需在 merge 后执行并补充结果。
+- 主线集成 commit `6ae7636` 上已复跑相同 Node 语法、26 个测试文件和 `git diff --check`，结果通过。
 
 ## 5. 复现入口
 

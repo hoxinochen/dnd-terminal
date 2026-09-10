@@ -3,11 +3,11 @@
 - **项目名称（Project Name）：** DND Terminal
 - **项目 ID：** `dnd-terminal`
 - **当前产品版本：** `v0.7.1` 统一战斗工作台 UX 适配
-- **当前状态：** v0.7.0 Archived — Local Private；v0.7.1 Approved / Frozen for Integration
+- **当前状态：** v0.7.0 Archived — Local Private；v0.7.1 Implemented — Main Integrated
 - **当前交付：** `v0.7.1 — 统一战斗工作台 UX 适配`
-- **当前门禁：** v0.7.1 候选已冻结，main integration 已获授权；Push、Release、Archive、部署与公开发布未授权
+- **当前门禁：** v0.7.1 已集成 main，主线回归通过；Push、Release、Archive、部署与公开发布未授权
 - **活文档核对基线：** 已核对至 v0.7.1 Integration / 2026-09-10
-- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`；main integration 已获 User 授权，主线合并后的回归待执行，Push、Release、Archive、部署与公开发布仍未授权
+- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`；主线回归已通过，尚未 push、Release、Archive、部署或公开发布
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
@@ -32,9 +32,9 @@ User 于 `2026-09-01` 正式授权生成、批准并冻结 v0.7.0 ABC，随后�
 
 User 于 `2026-09-02` 先授权更新 Backlog 并生成 v0.7.0 Amendment 01，随后明确批准冻结并授权 Implementation；本次施工已完成，自动测试与浏览器复验事实见对应 Implementation / Testing。该 Amendment 收口地图视口、骰点历史/复合骰式、角色创建流程和设置开发验证工具；地图导入及有符号四向热扩展继续属于强化后的 BL-007，不进入本次施工。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成，Commit、Push、部署与公开发布仍未授权。
 
-User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生成 ESG 交付文档和 merge。v0.7.1 聚焦统一战斗工作台的响应式布局、三主题状态可读性、地图视口平移/空白导航、骰子栏 containment 和既有死亡/投入流程的 UX 适配；候选 commit 为 `58ebd92`。User Safari 人工验收通过；主线合并后的回归仍待执行。
+User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生成 ESG 交付文档和 merge。v0.7.1 聚焦统一战斗工作台的响应式布局、三主题状态可读性、地图视口平移/空白导航、骰子栏 containment 和既有死亡/投入流程的 UX 适配；候选 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`。User Safari 人工验收通过；主线回归 26/26 通过。
 
-当前没有已批准的下一版本；v0.7.1 是当前进行中的 Main Integration 交付。Backlog、优先级和 AI 推荐不自动扩张本交付范围。
+当前没有已批准的下一版本；v0.7.1 是当前已集成 main 的交付。Backlog、优先级和 AI 推荐不自动扩张本交付范围。
 
 - [项目 Authority](docs/extensions/project-authority.md)
 - [产品需求基线](docs/extensions/product-requirements.md)

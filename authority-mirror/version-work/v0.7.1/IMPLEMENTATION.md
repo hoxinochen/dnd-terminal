@@ -1,8 +1,9 @@
 # Implementation：v0.7.1 统一战斗工作台 UX 适配
 
 - **交付 ID：** `v0.7.1`
-- **状态：** `Implemented — Candidate Frozen; Integration Authorized`
+- **状态：** `Implemented — Main Integrated; Regression Passed`
 - **候选 commit：** `58ebd929255d157973ec7587d73d6b0fecf05f93`
+- **main 集成 commit：** `6ae7636`
 - **实现分支：** `gemini/v0.7.0-unified-battle-map-ux-candidate`
 - **技术基线：** `main@a07332f`；v0.7.0 已 Archived — Local Private
 
@@ -34,4 +35,4 @@
 
 ## 5. 集成停止点
 
-候选实现已冻结并获 User 授权 merge。合并后只需执行主线回归和更新集成状态；没有自动授权 Release、Archive、Push 或公开发布。
+候选实现已冻结并获 User 授权 merge；已以 `6ae7636` fast-forward 集成到 `main`，主线回归 26/26 通过。没有自动授权 Release、Archive、Push 或公开发布。
