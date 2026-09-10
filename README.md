@@ -7,7 +7,7 @@
 - **当前交付：** `v0.7.1 — 统一战斗工作台 UX 适配`
 - **当前门禁：** v0.7.1 Local Private Release 已完成；Archive、Push、部署与公开发布未授权
 - **活文档核对基线：** 已核对至 v0.7.1 Integration / 2026-09-10
-- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`，Release 文档同步提交为 `3946fb1`；v0.7.1 Local Private Release 已完成，尚未 Archive、Push、部署或公开发布
+- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`，Release 文档同步提交为 `158d24d`；v0.7.1 Local Private Release 已完成，尚未 Archive、Push、部署或公开发布
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
@@ -99,7 +99,7 @@ User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生�
 - [v0.7.1 Collaboration Record](authority-mirror/version-work/v0.7.1/COLLABORATION_RECORD.md)
 - [v0.7.1 Release Notes](authority-mirror/version-work/v0.7.1/RELEASE_NOTES.md)
 
-全部项目文档的 canonical Authority 只在 Obsidian；Workspace 的 `authority-mirror/` 与根 README 是单向技术投影。v0.5.0 产品实现为 `370b92a`，Authority 镜像为 `2f897a6`，活文档治理同步为 `ab82faf`；v0.6.0 归档基线为 `3464d17`，v0.7.1 已由候选 `58ebd92` 集成到 `main`，当前本地发布文档同步提交为 `3946fb1`。v0.7.1 Local Private Release 已完成；Archive、Push、部署与公开发布仍未授权。
+全部项目文档的 canonical Authority 只在 Obsidian；Workspace 的 `authority-mirror/` 与根 README 是单向技术投影。v0.5.0 产品实现为 `370b92a`，Authority 镜像为 `2f897a6`，活文档治理同步为 `ab82faf`；v0.6.0 归档基线为 `3464d17`，v0.7.1 已由候选 `58ebd92` 集成到 `main`，当前本地发布文档同步提交为 `158d24d`。v0.7.1 Local Private Release 已完成；Archive、Push、部署与公开发布仍未授权。
 
 ## ESG 活采纳矩阵
 
