@@ -1,12 +1,12 @@
 # Architecture
 
-- **Status：** Archived through v0.7.0 — Local Private
-- **Applies To：** 当前 Workspace 的已实施事实；v0.7.0 已完成 Implementation、自动测试、浏览器验证、User Human Acceptance、Review、Local Private Release 和 Lightweight Archive
+- **Status：** v0.7.0 Archived — Local Private；v0.7.1 Released — Local Private
+- **Applies To：** 当前 Workspace 的已实施事实；v0.7.0 已完成完整归档门禁，v0.7.1 已完成 Implementation、自动测试、浏览器验证、User Human Acceptance、Review、Main Integration 与 Local Private Release
 - **Authority：** Approved ABC after user approval; implementation facts after Implementation and Review
 - **Documentation Root：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **Implementation Root：** `/Users/chenzehao/Projects/DND Terminal`
 
-当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态、v0.5.0 的死亡后结果、v0.6.0 的三结果卡与八法术非阻塞提示，以及 v0.7.0 的七工作区、只读状态投影、Panel Registry、独立 UI 偏好和 copy-on-write 会话迁移。v0.1.0 至 v0.7.0 的对应 Review/Release/Archive 事实由各版本冻结记录承担。
+当前已在 Workspace 实现零依赖浏览器单页：单一内存 `CombatSession`、`localStorage` Envelope、顺序事件、紧凑恢复检查点、固定验证库、行动轮、二维方格、范围预览、DM 目标覆写、JSON 导入导出，以及长期角色卡、修订、受控 Excel `CharacterDraft`、多施法来源、资源池、战斗投影、关联单位独立棋子、DM 确认的 Vex 候选/效果和战后逐项审核回写。后续已加入角色归档生命周期、PC `0 HP`/死亡豁免/稳定/死亡状态、v0.5.0 的死亡后结果、v0.6.0 的三结果卡与八法术非阻塞提示，以及 v0.7.0 的七工作区、只读状态投影、Panel Registry、独立 UI 偏好和 copy-on-write 会话迁移。v0.7.1 又在不改变 Domain/Event/Session 边界的前提下完成统一战斗工作台响应式布局、主题状态可读性、地图视口交互和顶部控件 containment。各交付的 Review/Release/Archive 事实由对应版本冻结记录承担。
 
 文档与实现使用双根目录：治理与交付文档只在 Documentation Root；源码、测试源码、依赖与构建配置只在 Implementation Root。两者通过版本身份、Workspace 相对路径和哈希建立证据引用，不复制内容。
 

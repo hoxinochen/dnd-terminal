@@ -2,8 +2,8 @@
 
 - **记录日期：** 2026-09-03
 - **面向对象：** 正在逐步学习工程管理、需要重新获得项目控制感的项目负责人
-- **当前产品事实：** `v0.7.0` 已 `Archived — Local Private`；下一交付尚未授权
-- **当前规划事实：** `docs/BACKLOG.md` 正在试行 Backlog v2；User 已确认首次整体优先级，但尚未选择下一版本
+- **当前产品事实：** `v0.7.0` 已 `Archived — Local Private`；`v0.7.1` 已 `Released — Local Private`
+- **当前规划事实：** `docs/BACKLOG.md` 正在试行 Backlog v2；User 已确认首次整体优先级，尚未选择下一版本；v0.7.1 Archive、Push 与下一版本仍未授权
 - **本文件用途：** 用功能、数据流和职责理解项目；不替代 `ARCHITECTURE.md`、Backlog、规则基线或任一版本 ABC
 
 ## 先读这一页：你不需要逐行读代码

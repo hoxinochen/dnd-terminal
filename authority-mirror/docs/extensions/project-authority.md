@@ -1,7 +1,7 @@
 # 项目 Authority（Project Authority）
 
 - **Extension ID：** `local.project-authority`
-- **Status：** Stable Local Extension；v0.6.0 与 v0.7.0 Archived — Local Private；v0.7.1 Implemented — Main Integrated
+- **Status：** Stable Local Extension；v0.6.0、v0.7.0 与 v0.7.1 Released — Local Private
 - **Owner / Selecting Authority：** User
 - **Created In Delivery：** `v0.1.0`
 - **Core Relationship：** Stable Local Extension under adopted Downstream Documentation Schema Core `schema-v0.3.0`
@@ -23,9 +23,9 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - `v0.4.0`、`v0.5.0` 与 `v0.6.0` 均只有一个主 Slice，无跨 Slice 汇总或双轴 Milestone 退出门禁，因此适用性均为 `Core Only / Milestone Profile Not Applicable`；v0.6.0 已完成 User 授权的 Local Private Release 与 Lightweight Archive。
 - `v0.7.0` 冻结 ABC 使用一个主 Slice 和五个内部 Implementation Phase，适用性为 `Core Only / Milestone Profile Not Applicable`。
 - `v0.7.0 Amendment 01` 于 `2026-09-02` 获 User 批准/冻结及 Implementation 授权，现已完成实施；User 已确认人工审核通过并授权 Review，Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成。它不改写原 ABC、Profile 适用性或已实施事实，也不自动授权 Commit、Push、部署或公开发布。
-- `v0.7.1` 于 `2026-09-10` 获 User 批准版本身份、范围文档和主线 merge。它是 v0.7.0 归档后的独立 UX 适配交付，候选 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`；ABC、Implementation、Testing、Review 与 Gemini/AG/Codex 协作记录已建立，主线回归 26/26 通过。它不改写 v0.7.0 冻结材料；Release、Archive、Push、部署和公开发布仍未授权。
+- `v0.7.1` 于 `2026-09-10` 获 User 批准版本身份、范围文档和主线 merge。它是 v0.7.0 归档后的独立 UX 适配交付，候选 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`；ABC、Implementation、Testing、Review 与 Gemini/AG/Codex 协作记录已建立，主线回归 26/26 通过。User 随后授权 Local Private Release，发布包、内容清单、解压复验和包内 26/26 回归已完成，Release Notes 已建立。它不改写 v0.7.0 冻结材料；Archive、Push、部署和公开发布仍未授权。
 - Archive Contract/Profile 只能在具体交付获得 Archive 方向授权并完成适用性选择后采用；历史版本的选择不得自动继承。
-- 当前进行中的交付为 `v0.7.1 — 统一战斗工作台 UX 适配`；`v0.7.0` 仍是最近归档事实和技术基线。
+- 当前交付为已发布的 `v0.7.1 — 统一战斗工作台 UX 适配`；`v0.7.0` 仍是最近归档事实和技术基线，v0.7.1 的 Archive 尚未授权。
 - Backlog v2、归档后活文档收口门禁与新交付立项前方向审查均为 DND Terminal 本地试行实践，尚不是 ESG Released Profile，也未改变当前 ESG 采纳矩阵。
 
 ## 项目边界
@@ -125,9 +125,9 @@ README 不能承担该职责，因为 README 是简明入口且会持续更新�
 - User 于 `2026-09-10` 批准 `v0.7.1` 作为 v0.7.0 归档后的独立 UX 适配交付，并授权生成对应 ESG 文档与 merge。
 - `version-work/v0.7.1/ABC.md`、`IMPLEMENTATION.md`、`TESTING.md`、`REVIEW.md` 与 `COLLABORATION_RECORD.md` 已建立；候选冻结 commit 为 `58ebd92`。
 - 当前范围只包含统一工作台布局、三主题可读性、骰子栏 containment、地图平移/空白导航及既有死亡/投入流程的表现层适配；不改变 Domain、Event Log、Session Schema 或 v0.7.0 冻结材料。
-- 当前门禁为 v0.7.1 Main Integration 已完成、主线回归已通过。Push、Local Private Release、Archive、部署和公开发布仍未授权。
+- 当前门禁为 v0.7.1 Main Integration、主线回归和 Local Private Release 已完成。Archive、Push、部署和公开发布仍未授权。
 
-当前下一门禁是 v0.7.1 的 Local Private Release / Archive 方向决定；这些门禁尚未授权。Backlog 的 P1、AI 推进建议和 Roadmap 方向不得扩张当前 v0.7.1 范围。
+当前下一门禁是 v0.7.1 的 Archive 方向决定；该门禁尚未授权。Backlog 的 P1、AI 推进建议和 Roadmap 方向不得扩张当前 v0.7.1 范围。
 
 ## 决策与变更
 

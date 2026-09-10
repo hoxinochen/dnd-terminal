@@ -3,11 +3,11 @@
 - **项目名称（Project Name）：** DND Terminal
 - **项目 ID：** `dnd-terminal`
 - **当前产品版本：** `v0.7.1` 统一战斗工作台 UX 适配
-- **当前状态：** v0.7.0 Archived — Local Private；v0.7.1 Implemented — Main Integrated
+- **当前状态：** v0.7.0 Archived — Local Private；v0.7.1 Released — Local Private
 - **当前交付：** `v0.7.1 — 统一战斗工作台 UX 适配`
-- **当前门禁：** v0.7.1 已集成 main，主线回归通过；Push、Release、Archive、部署与公开发布未授权
+- **当前门禁：** v0.7.1 Local Private Release 已完成；Archive、Push、部署与公开发布未授权
 - **活文档核对基线：** 已核对至 v0.7.1 Integration / 2026-09-10
-- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`；主线回归已通过，尚未 push、Release、Archive、部署或公开发布
+- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`，Release 文档同步提交为 `3946fb1`；v0.7.1 Local Private Release 已完成，尚未 Archive、Push、部署或公开发布
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
@@ -32,7 +32,7 @@ User 于 `2026-09-01` 正式授权生成、批准并冻结 v0.7.0 ABC，随后�
 
 User 于 `2026-09-02` 先授权更新 Backlog 并生成 v0.7.0 Amendment 01，随后明确批准冻结并授权 Implementation；本次施工已完成，自动测试与浏览器复验事实见对应 Implementation / Testing。该 Amendment 收口地图视口、骰点历史/复合骰式、角色创建流程和设置开发验证工具；地图导入及有符号四向热扩展继续属于强化后的 BL-007，不进入本次施工。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成，Commit、Push、部署与公开发布仍未授权。
 
-User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生成 ESG 交付文档和 merge。v0.7.1 聚焦统一战斗工作台的响应式布局、三主题状态可读性、地图视口平移/空白导航、骰子栏 containment 和既有死亡/投入流程的 UX 适配；候选 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`。User Safari 人工验收通过；主线回归 26/26 通过。
+User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生成 ESG 交付文档和 merge。v0.7.1 聚焦统一战斗工作台的响应式布局、三主题状态可读性、地图视口平移/空白导航、骰子栏 containment 和既有死亡/投入流程的 UX 适配；候选 commit 为 `58ebd92`，main 集成 commit 为 `6ae7636`。User Safari 人工验收通过；主线与解压发布包回归均为 26/26 通过。User 随后授权 Local Private Release，发布包和内容清单见 `version-work/v0.7.1/RELEASE_NOTES.md`。
 
 当前没有已批准的下一版本；v0.7.1 是当前已集成 main 的交付。Backlog、优先级和 AI 推荐不自动扩张本交付范围。
 
@@ -97,8 +97,9 @@ User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生�
 - [v0.7.1 Testing](version-work/v0.7.1/TESTING.md)
 - [v0.7.1 Independent Review](version-work/v0.7.1/REVIEW.md)
 - [v0.7.1 Collaboration Record](version-work/v0.7.1/COLLABORATION_RECORD.md)
+- [v0.7.1 Release Notes](version-work/v0.7.1/RELEASE_NOTES.md)
 
-全部项目文档的 canonical Authority 只在 Obsidian；Workspace 的 `authority-mirror/` 与根 README 是单向技术投影。v0.5.0 产品实现为 `370b92a`，Authority 镜像为 `2f897a6`，活文档治理同步为 `ab82faf`；v0.6.0 归档基线为 `3464d17`，v0.7.0 产品与文档的既有技术同步已进入 `main`/`origin/main`，当前提交为 `bc31f20`。本次 2026-09-04 活文档收口将在工作树形成新的未提交投影；部署与公开发布仍未授权。
+全部项目文档的 canonical Authority 只在 Obsidian；Workspace 的 `authority-mirror/` 与根 README 是单向技术投影。v0.5.0 产品实现为 `370b92a`，Authority 镜像为 `2f897a6`，活文档治理同步为 `ab82faf`；v0.6.0 归档基线为 `3464d17`，v0.7.1 已由候选 `58ebd92` 集成到 `main`，当前本地发布文档同步提交为 `3946fb1`。v0.7.1 Local Private Release 已完成；Archive、Push、部署与公开发布仍未授权。
 
 ## ESG 活采纳矩阵
 
@@ -126,4 +127,6 @@ M1 Profile 选择日期为 `2026-08-14`；Selecting Authority 为 User。其历�
 
 User 于 `2026-08-24` 将维护交付命名为 `v0.3.1`，明确批准冻结其 ABC、Implementation，并确认人工验收通过；随后明确授权完成 Review、Release 与 Archive。v0.3.1 的 25 文件快照、发布包、全部哈希、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.3.1/archive/ARCHIVE_SUMMARY.md`。
 
-v0.4.0、v0.5.0、v0.6.0 与 v0.7.0 均已完成其获授权的 Review、Local Private Release 和 Lightweight Archive。v0.6.0 的 37 文件快照、校验清单、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`；v0.7.0 的 42 文件快照、校验清单、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.7.0/archive/ARCHIVE_SUMMARY.md`。本次活文档收口的 Commit/Push 以及部署、公开发布或再分发仍未获授权。
+v0.4.0、v0.5.0、v0.6.0 与 v0.7.0 均已完成其获授权的 Review、Local Private Release 和 Lightweight Archive。v0.6.0 的 37 文件快照、校验清单、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.6.0/archive/ARCHIVE_SUMMARY.md`；v0.7.0 的 42 文件快照、校验清单、Archive Readiness Review 和八项 Gate 结论见 `version-work/v0.7.0/archive/ARCHIVE_SUMMARY.md`。
+
+v0.7.1 已完成 User 授权的 Local Private Release；51 个产品源码/测试文件、ZIP 与内容清单见 `version-work/v0.7.1/RELEASE_NOTES.md`。当前下一门禁为 Archive；Push、部署、公开发布和再分发仍未获授权。
