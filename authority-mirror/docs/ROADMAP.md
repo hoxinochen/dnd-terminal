@@ -1,8 +1,8 @@
 # Roadmap
 
-- **状态（Status）：** Recent Delivery / v0.7.1 Released — Local Private
-- **最近归档版本：** v0.7.0 Archived — Local Private
-- **当前门禁：** v0.7.1 Local Private Release 已完成；Archive、Push、部署与公开发布未授权
+- **状态（Status）：** Recent Archive / v0.7.1 Archived — Local Private
+- **最近归档版本：** v0.7.1 Archived — Local Private
+- **当前门禁：** v0.7.1 Archive 已完成；Push、部署与公开发布未授权
 - **Naming Rule：** 产品交付使用 SemVer；Milestone/Slice 只在已采纳 ESG Profile 的适用条件成立时使用，不自动继承历史选择。
 
 ## 当前项目位置
@@ -11,7 +11,7 @@ v0.1.0 至 v0.7.0 已完成七个大版本的本地产品演进。v0.7.0 的 Imp
 
 项目已经具备本地单 DM 战斗闭环、二维方格与范围候选、顺序事件、自动保存与导入导出、长期角色修订与受控 Excel 导入、战斗投影、战后审核回写、PC 生命阶段和死亡后窄结果，以及七工作区、只读状态投影和受控布局。
 
-当前交付为 `v0.7.1 — 统一战斗工作台 UX 适配`。它已在候选分支完成并通过自动、隔离 Chrome 与 User Safari 验收，随后以 `6ae7636` 集成到 main，主线与解压发布包回归均为 26/26 通过；Local Private Release 已完成，Archive 尚未授权。
+当前交付为 `v0.7.1 — 统一战斗工作台 UX 适配`。它已在候选分支完成并通过自动、隔离 Chrome 与 User Safari 验收，随后以 `6ae7636` 集成到 main；Local Private Release、51 文件快照和八项 Archive Gate 已完成，证据见 `version-work/v0.7.1/archive/ARCHIVE_SUMMARY.md`。
 
 v0.7.1 只收敛真实验收发现的响应式布局、三主题状态可读性、骰子栏 containment、地图视口平移/空白导航和既有死亡/投入流程 UX，不扩张为地图资源、规则引擎或多人能力。
 
@@ -92,8 +92,8 @@ Backlog 保存完整条目、优先级、来源和依赖；Roadmap 只保存跨�
 
 ## 下一门禁
 
-下一步是决定 v0.7.1 的 Archive，而不是启动另一项产品方向：
+下一步是决定 v0.7.1 的 Push，而不是启动另一项产品方向：
 
-1. 如需 Archive，另行请求并执行对应门禁；
+1. 如需 Push，User 另行授权后再执行；
 2. 如需推送远端，User 另行授权 Push；
 3. 任何下一版本仍须重新执行方向审查和 ABC 门禁。

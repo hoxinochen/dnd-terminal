@@ -1,7 +1,7 @@
 # Architecture
 
-- **Status：** v0.7.0 Archived — Local Private；v0.7.1 Released — Local Private
-- **Applies To：** 当前 Workspace 的已实施事实；v0.7.0 已完成完整归档门禁，v0.7.1 已完成 Implementation、自动测试、浏览器验证、User Human Acceptance、Review、Main Integration 与 Local Private Release
+- **Status：** v0.7.0 与 v0.7.1 Archived — Local Private
+- **Applies To：** 当前 Workspace 的已实施事实；v0.7.0 与 v0.7.1 均已完成 Implementation、自动测试、浏览器验证、User Human Acceptance、Review、Main Integration、Local Private Release 与 Archive
 - **Authority：** Approved ABC after user approval; implementation facts after Implementation and Review
 - **Documentation Root：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **Implementation Root：** `/Users/chenzehao/Projects/DND Terminal`
@@ -62,7 +62,7 @@ Amendment 01 将法术目录扩展为 `SpellRulingProfile`：Profile 定义简�
 
 Amendment 01 在既有边界内收口地图视口、100 条骰史、复合骰式与快捷输入、单一角色创建任务流和设置中的开发验证工具。地图图片、动态边界、负坐标、单位库搜索和自由比例布局均未成为 v0.7.0 已实施架构。
 
-### v0.7.1 已实施架构（Main Integration）
+### v0.7.1 已实施架构（Archived — Local Private）
 
 v0.7.1 在不新建 Domain 或 Session Schema 的前提下，为统一战斗工作台增加独立的表现层基础样式 `src/workbench-foundation.css`。桌面布局固定左侧 20%，按全量/战斗/死亡处理状态分配地图和 Inspector；收起侧栏只保留 44px 轨道，窄屏退化为纵向任务流。
 

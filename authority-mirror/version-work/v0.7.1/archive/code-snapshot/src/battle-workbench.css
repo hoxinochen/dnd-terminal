@@ -1,0 +1,3115 @@
+/* ==========================================================================
+   Unified Battle Map Workbench (EXP-UX-GEMINI-001)
+   Complete Visual & Interaction Overhaul
+   Strictly Zero Emojis
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Theme Variables Layer
+   -------------------------------------------------------------------------- */
+
+/* 1.1 Dark Theme: Obsidian Tactical Console (Clean Matte Charcoal, No 2010 Blue) */
+:root,
+.battle-workbench-root.theme-dark {
+  --wb-bg-canvas: #090a0d;
+  --wb-bg-surface: #121318;
+  --wb-bg-elevated: #1a1b22;
+  --surface-panel: #14161d;
+  --surface-card: #1c1e28;
+  --wb-bg-glass: rgba(18, 19, 24, 0.88);
+  --wb-border-subtle: #272730;
+  --wb-border-prominent: #383845;
+  --wb-text-primary: #f4f4f7;
+  --wb-text-secondary: #9ea0ad;
+  --wb-text-muted: #656673;
+  --wb-accent-gold: #f59e0b;
+  --wb-accent-gold-glow: rgba(245, 158, 11, 0.22);
+  --wb-accent-crimson: #ef4444;
+  --wb-accent-emerald: #10b981;
+  --wb-accent-cyan: #06b6d4;
+  --wb-accent-violet: #a855f7;
+  --status-success: #10b981;
+  --status-danger: #ef4444;
+  --status-warning: #f59e0b;
+  --wb-shadow-card: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --wb-shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.65);
+  --wb-dock-bg: #101115;
+}
+
+/* 1.2 Light Theme: Daylight Studio (High Contrast, Daylight Clean) */
+html[data-theme="light"] {
+  --wb-bg-canvas: #e8ecef;
+  --wb-bg-surface: #f2f4f5;
+  --wb-bg-elevated: #dde3e7;
+  --surface-panel: #e5e9ec;
+  --surface-card: #f3f1eb;
+  --wb-bg-glass: rgba(242, 244, 245, 0.94);
+  --wb-border-subtle: #c8d0d6;
+  --wb-border-prominent: #aeb9c2;
+  --wb-text-primary: #1d2933;
+  --wb-text-secondary: #53626d;
+  --wb-text-muted: #6b7983;
+  --wb-accent-gold: #a85f16;
+  --wb-accent-gold-glow: rgba(168, 95, 22, 0.18);
+  --wb-accent-crimson: #b93b3b;
+  --wb-accent-emerald: #237a61;
+  --wb-accent-cyan: #167991;
+  --wb-accent-violet: #7447a8;
+  --status-success: #15803d;
+  --status-danger: #b91c1c;
+  --status-warning: #b45309;
+  --wb-shadow-card: 0 2px 8px rgba(38, 51, 61, 0.08);
+  --wb-shadow-floating: 0 6px 20px rgba(38, 51, 61, 0.14);
+  --wb-dock-bg: #d6dde1;
+}
+
+.battle-workbench-root.theme-light {
+  --surface-panel: #e5e9ec;
+  --surface-card: #f3f1eb;
+  --status-success: #15803d;
+  --status-danger: #b91c1c;
+  --status-warning: #b45309;
+}
+
+/* 1.3 Parchment Theme: Medieval Fantasy Scroll (Warm Aged Vellum & Dark Ink) */
+html[data-theme="parchment"] {
+  --wb-bg-canvas: #c9ae82;
+  --wb-bg-surface: #e5d1ab;
+  --wb-bg-elevated: #d7bd90;
+  --surface-panel: #d5c39e;
+  --surface-card: #ebdcc3;
+  --wb-bg-glass: rgba(229, 209, 171, 0.94);
+  --wb-border-subtle: #a9895c;
+  --wb-border-prominent: #876a43;
+  --wb-text-primary: #35200f;
+  --wb-text-secondary: #624225;
+  --wb-text-muted: #805c3b;
+  --wb-accent-gold: #92501c;
+  --wb-accent-gold-glow: rgba(146, 80, 28, 0.22);
+  --wb-accent-crimson: #842d27;
+  --wb-accent-emerald: #3f6546;
+  --wb-accent-cyan: #1c6573;
+  --wb-accent-violet: #65407b;
+  --status-success: #2d6a34;
+  --status-danger: #8c2d25;
+  --status-warning: #9a561c;
+  --wb-shadow-card: 0 3px 12px rgba(53, 32, 15, 0.16);
+  --wb-shadow-floating: 0 8px 24px rgba(53, 32, 15, 0.24);
+  --wb-dock-bg: #bb996c;
+}
+
+.battle-workbench-root.theme-parchment {
+  --surface-panel: #d5c39e;
+  --surface-card: #ebdcc3;
+  --status-success: #2d6a34;
+  --status-danger: #8c2d25;
+  --status-warning: #9a561c;
+}
+
+/* Shell & Body Theme Integration */
+html[data-theme="dark"] body,
+html[data-theme="dark"] .shell,
+html[data-theme="dark"] .workbench-main,
+html[data-theme="dark"] .workbench-rail,
+html[data-theme="dark"] .workbench-topbar {
+  background-color: #090a0d !important;
+  color: #f4f4f7 !important;
+  border-color: #272730 !important;
+}
+
+html[data-theme="light"] body,
+html[data-theme="light"] .shell,
+html[data-theme="light"] .workbench-main,
+html[data-theme="light"] .workbench-rail,
+html[data-theme="light"] .workbench-topbar {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+html[data-theme="parchment"] body,
+html[data-theme="parchment"] .shell,
+html[data-theme="parchment"] .workbench-main,
+html[data-theme="parchment"] .workbench-rail,
+html[data-theme="parchment"] .workbench-topbar {
+  background-color: #ebe0c5 !important;
+  color: #291509 !important;
+  border-color: #d5c39f !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Root Layout & Topbar (Clean Segmented Controls, Zero Brackets)
+   -------------------------------------------------------------------------- */
+.battle-workbench-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 520px;
+  background-color: var(--wb-bg-canvas);
+  color: var(--wb-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.wb-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  background-color: var(--wb-bg-surface);
+  border-bottom: 1px solid var(--wb-border-subtle);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+/* Segmented Control Component (No ugly brackets!) */
+.wb-segmented-group {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.wb-mode-btn,
+.wb-theme-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  line-height: 1.2;
+}
+
+.wb-mode-btn:hover,
+.wb-theme-btn:hover {
+  color: var(--wb-text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.wb-mode-btn.active,
+.wb-theme-btn.active {
+  background-color: var(--wb-bg-surface);
+  color: var(--wb-accent-gold);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+/* Status Pills in Topbar (Enlarged & Prominent Center Data Display) */
+.wb-topbar-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.wb-status-pill {
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 4px 13px;
+  border-radius: 6px;
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  color: var(--wb-text-secondary);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.wb-status-round {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--wb-accent-gold);
+  border-color: var(--wb-accent-gold);
+  background-color: rgba(230, 180, 80, 0.12);
+}
+
+.wb-status-actor {
+  font-size: 1.02rem;
+  font-weight: 700;
+  background-color: rgba(230, 180, 80, 0.2);
+  border-color: var(--wb-accent-gold);
+  color: #ffffff;
+}
+
+.theme-light .wb-status-actor {
+  color: #1a2233;
+}
+
+.theme-parchment .wb-status-actor {
+  color: #3b2814;
+}
+
+.wb-status-distance {
+  font-size: 0.92rem;
+  border-color: var(--wb-accent-cyan);
+  color: var(--wb-accent-cyan);
+  background-color: rgba(94, 234, 212, 0.1);
+  font-weight: 600;
+}
+
+.wb-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-journal-btn {
+  appearance: none;
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-journal-btn:hover {
+  border-color: var(--wb-accent-gold);
+  color: var(--wb-accent-gold);
+}
+
+/* --------------------------------------------------------------------------
+   2.1 Initiative Ribbon (Horizontal Combat Flow Bar)
+   -------------------------------------------------------------------------- */
+.wb-initiative-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background-color: var(--wb-bg-elevated);
+  border-bottom: 1px solid var(--wb-border-subtle);
+  flex-shrink: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+
+.wb-ribbon-round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 2px 10px;
+  flex-shrink: 0;
+  line-height: 1.1;
+}
+
+.wb-ribbon-round-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--wb-text-muted);
+}
+
+.wb-ribbon-round-val {
+  font-size: 1.05rem;
+  font-family: monospace;
+  font-weight: 800;
+  color: var(--wb-accent-gold);
+}
+
+.wb-ribbon-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: thin;
+}
+
+.wb-ribbon-track::-webkit-scrollbar {
+  height: 4px;
+}
+.wb-ribbon-track::-webkit-scrollbar-thumb {
+  background: var(--wb-border-subtle);
+  border-radius: 2px;
+}
+
+.wb-ribbon-empty-text {
+  font-size: 0.8rem;
+  color: var(--wb-text-muted);
+  font-style: italic;
+}
+
+.wb-ribbon-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 20px;
+  padding: 3px 10px 3px 4px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.wb-ribbon-item:hover {
+  border-color: var(--wb-border-prominent);
+  background-color: var(--wb-bg-elevated);
+}
+
+.wb-ribbon-item.active {
+  border-color: var(--wb-accent-gold);
+  background-color: var(--wb-accent-gold-glow);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.28);
+}
+
+.wb-ribbon-token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.wb-ribbon-token.kind-pc {
+  background-color: #1a160d;
+  color: #fef08a;
+  border: 1.5px solid var(--wb-accent-gold);
+}
+
+.wb-ribbon-token.kind-npc {
+  background-color: #0b1922;
+  color: #a5f3fc;
+  border: 1.5px solid var(--wb-accent-cyan);
+}
+
+.wb-ribbon-token.kind-monster {
+  background-color: #210c0e;
+  color: #fecaca;
+  border: 1.5px solid var(--wb-accent-crimson);
+}
+
+.wb-ribbon-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.wb-ribbon-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--wb-text-primary);
+  white-space: nowrap;
+}
+
+.wb-ribbon-sub {
+  font-size: 0.65rem;
+  color: var(--wb-text-secondary);
+  white-space: nowrap;
+}
+
+.wb-ribbon-action {
+  flex-shrink: 0;
+}
+
+.wb-ribbon-next-btn,
+.wb-ribbon-start-btn {
+  appearance: none;
+  background-color: var(--wb-accent-emerald);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.wb-ribbon-next-btn:hover,
+.wb-ribbon-start-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   3. Three-Column Grid Engine & Transitions
+   -------------------------------------------------------------------------- */
+.wb-layout-container {
+  display: grid;
+  grid-template-columns: minmax(220px, 21%) minmax(0, 1fr) minmax(260px, 25%);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  transition: grid-template-columns 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Track sizing, modes and collapsed states are owned by workbench-foundation.css. */
+
+/* Columns Base Styling */
+.wb-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--wb-bg-surface);
+  border-right: 1px solid var(--wb-border-subtle);
+}
+
+.wb-col-right {
+  border-right: none;
+  border-left: 1px solid var(--wb-border-subtle);
+}
+
+.wb-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--wb-bg-elevated);
+  border-bottom: 1px solid var(--wb-border-subtle);
+  flex-shrink: 0;
+}
+
+.wb-col-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--wb-text-primary);
+}
+
+.wb-collapse-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 0.72rem;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wb-collapse-btn:hover {
+  background-color: var(--wb-bg-surface);
+  color: var(--wb-accent-gold);
+  border-color: var(--wb-accent-gold);
+}
+
+.wb-column-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wb-column-content > * {
+  order: initial !important;
+}
+
+.wb-column-content .card {
+  overflow: visible !important;
+  flex-shrink: 0;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: var(--wb-radius-sm);
+  padding: 12px;
+}
+
+/* Battle Situation Grid (2-column comfortable layout in workbench left column) */
+.wb-col-left .situation-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  background: var(--wb-bg-elevated) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: var(--wb-radius-sm) !important;
+  overflow: visible !important;
+}
+
+.wb-col-left .situation-grid article {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 8px 10px !important;
+  background: var(--wb-bg-surface) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: 6px !important;
+  min-width: 0 !important;
+}
+
+.wb-col-left .situation-grid article:nth-child(5) {
+  grid-column: 1 / -1 !important; /* 最近结果 occupies full row */
+}
+
+.wb-col-left .situation-grid article span {
+  font-size: 0.72rem !important;
+  color: var(--wb-text-secondary) !important;
+  letter-spacing: 0.02em !important;
+}
+
+.wb-col-left .situation-grid article b {
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  color: var(--wb-text-primary) !important;
+  white-space: normal !important;
+  line-height: 1.25 !important;
+}
+
+.wb-col-left .situation-grid article small {
+  font-size: 0.72rem !important;
+  color: var(--wb-text-muted) !important;
+  line-height: 1.3 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+.wb-col-left .situation-grid article.attention {
+  border-color: var(--wb-accent-gold) !important;
+  background: rgba(229, 184, 99, 0.08) !important;
+}
+
+/* Battle Control Command Box */
+.wb-col-left [data-panel-id="turn"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-col-left [data-panel-id="turn"] .notice {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.wb-col-left [data-panel-id="turn"] .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Combatant Roster in Left Column */
+.wb-col-left [data-panel-id="roster"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-col-left [data-panel-id="roster"] .combatants {
+  display: grid;
+  gap: 8px;
+}
+
+/* Map Inspector in Right Column (Completely Unclipped) */
+.map-inspector-panel {
+  overflow: visible !important;
+}
+
+.map-inspector {
+  margin-top: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  overflow: visible !important;
+}
+
+.map-inspector .facing-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--wb-border-subtle);
+}
+
+.map-inspector .facing-controls h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--wb-text-primary);
+  font-weight: 600;
+}
+
+.map-inspector .facing-controls .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.map-inspector .facing-controls button {
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+}
+
+.map-inspector .facing-controls button.active {
+  background-color: var(--wb-accent-gold);
+  color: #0d1420;
+  border-color: var(--wb-accent-gold);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   4. Glanceable Mini-Docks (Chinese Upright Typography, Strictly No rotate-180)
+   -------------------------------------------------------------------------- */
+.wb-dock-strip {
+  display: none;
+  background-color: var(--wb-dock-bg);
+  border-right: 1px solid var(--wb-border-subtle);
+  border-left: 1px solid var(--wb-border-subtle);
+  cursor: pointer;
+  user-select: none;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 4px;
+  width: 44px;
+  transition: background-color 0.15s ease;
+  z-index: 5;
+}
+
+.wb-dock-strip:hover {
+  background-color: var(--wb-bg-elevated);
+}
+
+.wb-mini-dock-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.wb-mini-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 4px;
+  text-align: center;
+  width: 32px;
+  box-sizing: border-box;
+}
+
+.wb-mini-round {
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  color: var(--wb-text-primary);
+}
+
+.wb-mini-target {
+  background-color: var(--wb-accent-crimson);
+  color: #ffffff;
+}
+
+.wb-mini-tag {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--wb-text-secondary);
+  text-align: center;
+  word-break: break-all;
+}
+
+.wb-mini-sub {
+  font-size: 0.68rem;
+  color: var(--wb-text-muted);
+}
+
+.wb-mini-divider {
+  width: 20px;
+  height: 1px;
+  background-color: var(--wb-border-prominent);
+  margin: 4px 0;
+}
+
+/* Upright Chinese Typography: Characters remain perfectly upright, top-to-bottom */
+.wb-dock-label {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.25em;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--wb-text-muted);
+  transition: color 0.15s ease;
+}
+
+.wb-dock-strip:hover .wb-dock-label {
+  color: var(--wb-accent-gold);
+}
+
+/* --------------------------------------------------------------------------
+   5. Tactical Map Viewport & Smooth Canvas Zoom Engine (Fix Bug 1)
+   -------------------------------------------------------------------------- */
+.wb-map-floating-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background-color: var(--wb-bg-glass);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 20px;
+  box-shadow: var(--wb-shadow-floating);
+  z-index: 20;
+}
+
+.wb-map-spec {
+  font-size: 0.74rem;
+  color: var(--wb-text-muted);
+  white-space: nowrap;
+}
+
+.wb-map-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wb-map-btn {
+  appearance: none;
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.74rem;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.wb-map-btn:hover {
+  background-color: var(--wb-bg-surface);
+  color: var(--wb-accent-gold);
+  border-color: var(--wb-accent-gold);
+}
+
+.wb-zoom-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--wb-text-primary);
+  min-width: 40px;
+  text-align: center;
+}
+
+.wb-map-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+  display: flex;
+  background-color: var(--wb-bg-canvas);
+  cursor: grab;
+}
+
+.wb-map-viewport:active {
+  cursor: grabbing;
+}
+
+/* CRITICAL FIX: The scale transform was missing in the canvas! */
+.wb-map-canvas {
+  margin: auto;
+  padding: 40px;
+  transform: scale(var(--map-scale, 1));
+  transform-origin: center center;
+  transition: transform 0.08s cubic-bezier(0.2, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* --------------------------------------------------------------------------
+   6. Semantic Tokens (PC Gold Ring, NPC Cyan, Monster Crimson, Strict Zero Emojis)
+   -------------------------------------------------------------------------- */
+.wb-token {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8rem;
+  user-select: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+/* 6.1 PC: Noble Double Gold Ring */
+.token.kind-character,
+.wb-token.token-pc {
+  background-color: #1a160d;
+  color: #fef08a;
+  border: 2px solid var(--wb-accent-gold);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.35), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* 6.2 NPC: Cyan Boundary with subtle geometric indicator */
+.token.kind-npc::after,
+.wb-token.token-npc::after {
+  content: '◆';
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 7px;
+  color: var(--wb-accent-cyan);
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.token.kind-npc,
+.wb-token.token-npc {
+  background-color: #0b1922;
+  color: #a5f3fc;
+  border: 2px solid var(--wb-accent-cyan);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* 6.3 Monster / Enemy: Crimson with Geometric Diamond Badge */
+.wb-token.token-enemy,
+.wb-token.token-monster {
+  background-color: #210c0e;
+  color: #fecaca;
+  border: 2px solid var(--wb-accent-crimson);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* 6.4 Controlled Entities / Undead / Familiars: Violet Dashed Ring */
+.token.controlled-associated,
+.wb-token.token-controlled {
+  border: 2px dashed var(--wb-accent-violet) !important;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25) !important;
+}
+
+/* 6.5 Token States */
+.wb-token.token-active {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.wb-token.token-selected {
+  outline: 2px solid var(--wb-accent-cyan);
+  outline-offset: 2px;
+}
+
+.wb-token.token-dead {
+  opacity: 0.45;
+  filter: grayscale(80%);
+  border-style: dotted;
+}
+
+.token-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 0.62rem;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-prominent);
+  border-radius: 4px;
+  padding: 0 3px;
+  line-height: 1.2;
+}
+
+/* --------------------------------------------------------------------------
+   7. Scheme A Embedded Dice Dock
+   -------------------------------------------------------------------------- */
+.wb-dice-dock {
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-dice-dock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wb-dice-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-dice-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--wb-text-primary);
+}
+
+.wb-dice-result-badge {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background-color: var(--wb-accent-gold-glow);
+  color: var(--wb-accent-gold);
+  border: 1px solid var(--wb-accent-gold);
+}
+
+.wb-dice-idle-badge {
+  font-size: 0.72rem;
+  color: var(--wb-text-muted);
+}
+
+.wb-dice-toggle-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  font-size: 0.72rem;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+}
+
+.wb-dice-toggle-btn:hover {
+  color: var(--wb-text-primary);
+}
+
+.wb-dice-preset-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.wb-dice-preset-chip {
+  appearance: none;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.wb-dice-preset-chip:hover {
+  border-color: var(--wb-accent-gold);
+  color: var(--wb-accent-gold);
+}
+
+.wb-dice-input-row {
+  display: flex;
+  gap: 4px;
+}
+
+.wb-dice-formula-input {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-prominent);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  color: var(--wb-text-primary);
+}
+
+.wb-dice-mode-select {
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-prominent);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.74rem;
+  color: var(--wb-text-secondary);
+}
+
+.wb-dice-roll-btn {
+  appearance: none;
+  background-color: var(--wb-accent-gold);
+  border: 1px solid var(--wb-accent-gold);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1a160d;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+.wb-dice-roll-btn:hover {
+  opacity: 0.9;
+}
+
+.wb-dice-dark-label {
+  font-size: 0.7rem;
+  color: var(--wb-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* 7.1 Dice Showcase (Big tactile result display inspired by DM tactical console) */
+.wb-dice-showcase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 4px;
+}
+
+.wb-dice-showcase-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-dice-showcase-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--wb-text-primary);
+}
+
+.wb-dice-showcase-detail {
+  font-size: 0.68rem;
+  color: var(--wb-text-muted);
+}
+
+.wb-dice-showcase-total {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--wb-accent-gold);
+  text-shadow: 0 0 10px var(--wb-accent-gold-glow);
+  user-select: none;
+}
+
+.theme-light .wb-dice-showcase-total {
+  color: #1e3a8a;
+  text-shadow: none;
+}
+
+.theme-parchment .wb-dice-showcase-total {
+  color: #78350f;
+  text-shadow: none;
+}
+
+.wb-dice-history-drawer {
+  margin-top: 6px;
+  border-top: 1px solid var(--wb-border-subtle);
+  padding-top: 6px;
+}
+
+.wb-history-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--wb-text-muted);
+  margin-bottom: 4px;
+}
+
+.wb-history-scroll-list {
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wb-dice-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background-color: var(--wb-bg-surface);
+}
+
+.wb-history-formula { color: var(--wb-text-secondary); }
+.wb-history-total { color: var(--wb-accent-gold); font-weight: 700; }
+
+/* --------------------------------------------------------------------------
+   8. BL-030 Quick Journal (团务速记) Drawer
+   -------------------------------------------------------------------------- */
+.wb-journal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wb-journal-drawer {
+  width: 380px;
+  max-width: 90vw;
+  height: 100%;
+  background-color: var(--wb-bg-surface);
+  border-left: 1px solid var(--wb-border-subtle);
+  box-shadow: var(--wb-shadow-floating);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.wb-journal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--wb-border-subtle);
+  padding-bottom: 10px;
+}
+
+.wb-journal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-journal-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.wb-journal-badge {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: var(--wb-accent-gold-glow);
+  color: var(--wb-accent-gold);
+}
+
+.wb-journal-close-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+}
+
+.wb-journal-textarea {
+  width: 100%;
+  height: 90px;
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-prominent);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.84rem;
+  color: var(--wb-text-primary);
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.wb-journal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.wb-journal-feed {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-journal-feed-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wb-journal-card {
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+/* --------------------------------------------------------------------------
+   9. Clean Content Cards & Forms Inside Workbench (No legacy bulky blue styling)
+   -------------------------------------------------------------------------- */
+.battle-workbench-root .card,
+.battle-workbench-root .card .card,
+.battle-workbench-root .character-fact-card,
+.battle-workbench-root .action-detail,
+.battle-workbench-root .info-item,
+.battle-workbench-root .effect-card {
+  background: var(--wb-bg-surface) !important;
+  color: var(--wb-text-primary) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: 8px !important;
+  padding: 12px;
+  box-shadow: var(--wb-shadow-card) !important;
+}
+
+.battle-workbench-root .card h2,
+.battle-workbench-root .card h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--wb-text-primary) !important;
+}
+
+.battle-workbench-root .combatant {
+  background: var(--wb-bg-elevated) !important;
+  color: var(--wb-text-primary) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: 6px !important;
+  padding: 8px 10px;
+  transition: all 0.12s ease;
+}
+
+.battle-workbench-root .combatant:hover {
+  border-color: var(--wb-border-prominent) !important;
+}
+
+.battle-workbench-root .combatant.active {
+  border-color: var(--wb-accent-gold) !important;
+  box-shadow: inset 3px 0 0 var(--wb-accent-gold), 0 0 0 1px var(--wb-accent-gold-glow) !important;
+}
+
+.battle-workbench-root .notice {
+  background: var(--wb-bg-elevated) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: 6px !important;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  color: var(--wb-text-secondary) !important;
+}
+
+.battle-workbench-root .notice.warn {
+  background: var(--wb-accent-gold-glow) !important;
+  border-color: var(--wb-accent-gold) !important;
+  color: var(--wb-accent-gold) !important;
+}
+
+.battle-workbench-root .combatant button,
+.battle-workbench-root .card button:not(.primary):not(.danger):not(.wb-mode-btn):not(.wb-theme-btn):not(.wb-ribbon-next-btn):not(.wb-dice-preset-chip) {
+  background-color: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-prominent);
+  color: var(--wb-text-primary);
+  border-radius: 4px;
+}
+
+.battle-workbench-root select,
+.battle-workbench-root input[type="text"],
+.battle-workbench-root input[type="number"],
+.battle-workbench-root textarea {
+  background-color: var(--wb-bg-elevated);
+  color: var(--wb-text-primary);
+  border: 1px solid var(--wb-border-prominent);
+  border-radius: 4px;
+}
+
+.battle-workbench-root button.primary {
+  background-color: var(--wb-accent-gold);
+  color: #1a160d;
+  font-weight: 600;
+  border-color: var(--wb-accent-gold);
+}
+
+/* Responsive layout is owned by workbench-foundation.css. */
+
+/* --------------------------------------------------------------------------
+   11. High-Density Tactical Combatant Roster & HP Visualization
+   -------------------------------------------------------------------------- */
+.roster-card {
+  padding: 10px 12px !important;
+}
+
+.roster-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.roster-title-bar h3 {
+  margin: 0 !important;
+  font-size: 0.96rem !important;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.roster-unit-count {
+  font-size: 0.72rem;
+  color: var(--wb-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table Header Row (INIT | NAME & CLASS | AC | HP STATUS) */
+.roster-header-row {
+  display: grid !important;
+  grid-template-columns: 28px 1fr 34px 84px !important;
+  gap: 6px !important;
+  align-items: center !important;
+  padding: 4px 8px !important;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--wb-text-muted);
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--wb-border-subtle);
+  margin-bottom: 6px;
+  user-select: none;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
+.col-head-init {
+  text-align: center;
+}
+
+.col-head-name {
+  text-align: left;
+}
+
+.col-head-ac {
+  text-align: center;
+}
+
+.col-head-hp {
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* High-Density Combatant Article */
+.combatants .combatant {
+  display: flex;
+  flex-direction: column;
+  background: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  margin-bottom: 5px;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.combatants .combatant:hover {
+  border-color: var(--wb-border-prominent);
+  background: var(--wb-bg-elevated);
+}
+
+.combatants .combatant:focus-visible {
+  border-color: var(--wb-accent-gold);
+  box-shadow: 0 0 0 2px rgba(230, 180, 80, 0.25);
+}
+
+/* Faction indicator left border */
+.combatants .combatant.ally {
+  border-left: 3px solid #10b981 !important;
+}
+
+.combatants .combatant.enemy {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.combatants .combatant.neutral {
+  border-left: 3px solid #f59e0b !important;
+}
+
+/* Active turn indicator */
+.combatants .combatant.active {
+  box-shadow: 0 0 0 1px var(--wb-accent-gold), 0 0 10px rgba(230, 180, 80, 0.22);
+}
+
+.combatants .combatant.active.is-expanded {
+  box-shadow: 0 0 0 1.5px var(--wb-accent-gold), 0 0 14px rgba(230, 180, 80, 0.25);
+}
+
+.combatants .combatant.is-expanded {
+  border-color: var(--wb-accent-gold);
+  background: var(--wb-bg-surface);
+}
+
+/* Summary Row (~38px height) */
+.roster-row-summary {
+  display: grid !important;
+  grid-template-columns: 28px 1fr 34px 84px !important;
+  gap: 6px !important;
+  align-items: center !important;
+  padding: 6px 8px !important;
+  min-height: 38px !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Col 1: Initiative */
+.roster-col-init {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.roster-col-init.ally {
+  color: #34d399;
+}
+
+.roster-col-init.enemy {
+  color: #f87171;
+}
+
+.roster-col-init.neutral {
+  color: #fbbf24;
+}
+
+/* Col 2: Name & Meta */
+.roster-col-identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.roster-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.roster-name-row .name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--wb-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.roster-badge-active {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(230, 180, 80, 0.2);
+  color: var(--wb-accent-gold);
+  border: 1px solid rgba(230, 180, 80, 0.4);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.roster-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.roster-class-tag {
+  color: var(--wb-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+}
+
+.roster-meta-row .pill {
+  font-size: 0.62rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--wb-text-secondary);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.roster-meta-row .pill.death-pill {
+  background: var(--label-paper, #eee9df);
+  color: var(--label-danger, #862f35);
+}
+
+.roster-effect-pill {
+  font-size: 0.62rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(94, 234, 212, 0.12);
+  color: var(--wb-accent-cyan);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Col 3: AC */
+.roster-col-ac {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.roster-ac-label {
+  font-size: 0.58rem;
+  color: var(--wb-text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.roster-ac-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--wb-accent-cyan);
+}
+
+/* Col 4: HP & Visual Bar */
+.roster-col-hp {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+  justify-content: center;
+  min-width: 72px;
+}
+
+.roster-hp-text {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.roster-hp-val {
+  font-weight: 700;
+  color: var(--wb-text-primary);
+}
+
+.roster-temp-val {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.roster-hp-track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.roster-hp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.roster-hp-fill.hp-healthy {
+  background-color: #10b981;
+}
+
+.roster-hp-fill.hp-bloodied {
+  background-color: #f59e0b;
+}
+
+.roster-hp-fill.hp-critical {
+  background-color: #ef4444;
+}
+
+.roster-hp-fill.hp-dead {
+  background-color: #6b7280;
+}
+
+.roster-temp-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background-color: #38bdf8;
+  border-radius: 2px;
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   Section 12: Unified Right-Column Unit Action Center
+   Consolidated from former row drawers into a stationary, spacious control hub
+   ========================================================================== */
+
+.map-inspector.unit-action-center {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  background: var(--wb-bg-surface) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: var(--wb-radius-sm) !important;
+  padding: 12px !important;
+  margin-top: 0 !important;
+}
+
+.unit-action-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unit-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.unit-title-group .unit-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.unit-title-group .pill-relation {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.unit-title-group .pill-relation.ally {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.unit-title-group .pill-relation.enemy {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.unit-title-group .pill-relation.neutral {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.unit-title-group .pill-ac {
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit-meta-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+}
+
+.unit-class-tag {
+  color: var(--wb-text-muted);
+}
+
+/* Big HP Display Block */
+.unit-hp-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+}
+
+.unit-hp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.unit-hp-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--wb-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.unit-hp-val-group {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit-hp-cur {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.unit-hp-cur.hp-healthy { color: #34d399; }
+.unit-hp-cur.hp-bloodied { color: #fbbf24; }
+.unit-hp-cur.hp-critical { color: #f87171; }
+.unit-hp-cur.hp-dead { color: var(--wb-muted); }
+
+.unit-hp-slash, .unit-hp-max {
+  font-size: 0.95rem;
+  color: var(--wb-text-muted);
+  font-weight: 600;
+}
+
+.unit-temp-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+.big-track {
+  height: 8px !important;
+  border-radius: 4px !important;
+}
+
+/* Operation Controls in Right Column */
+.unit-action-ops {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unit-ctrl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.unit-ctrl-grid .ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.unit-ctrl-grid .compact-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  color: var(--wb-text-secondary);
+}
+
+.unit-ctrl-grid .compact-input input {
+  width: 52px !important;
+  padding: 3px 6px !important;
+  font-size: 0.85rem !important;
+  font-weight: 700;
+  text-align: center;
+  border-radius: 4px;
+  border: 1px solid var(--wb-border-prominent);
+  background-color: var(--wb-bg-elevated);
+  color: var(--wb-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit-ctrl-grid .btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-damage {
+  flex: 1;
+  background: rgba(244, 63, 94, 0.12) !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+  color: #fb7185 !important;
+  font-weight: 600 !important;
+  padding: 5px 8px !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-damage:hover {
+  background: rgba(244, 63, 94, 0.22) !important;
+  border-color: rgba(244, 63, 94, 0.55) !important;
+  color: #ffffff !important;
+}
+
+.btn-heal {
+  flex: 1;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  color: #34d399 !important;
+  font-weight: 600 !important;
+  padding: 5px 8px !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-heal:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: rgba(16, 185, 129, 0.55) !important;
+  color: #ffffff !important;
+}
+
+.btn-group + button, .ctrl-temp-mod button, button[data-temp-hp] {
+  width: 100%;
+  background: rgba(56, 189, 248, 0.1) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  color: #38bdf8 !important;
+  font-weight: 600 !important;
+  padding: 5px 8px !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-group + button:hover, .ctrl-temp-mod button:hover, button[data-temp-hp]:hover {
+  background: rgba(56, 189, 248, 0.22) !important;
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  color: #ffffff !important;
+}
+
+.unit-lifecycle-row {
+  display: flex;
+  gap: 6px;
+}
+
+.unit-lifecycle-row button {
+  flex: 1;
+  padding: 4px 8px !important;
+  font-size: 0.76rem !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  background: var(--wb-bg-elevated) !important;
+  color: var(--wb-text-secondary) !important;
+  cursor: pointer;
+}
+
+.unit-lifecycle-row button:hover {
+  border-color: var(--wb-border-prominent) !important;
+  color: var(--wb-text-primary) !important;
+}
+
+.unit-lifecycle-row button.danger {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #f87171 !important;
+}
+
+.unit-lifecycle-row button.danger:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.roster-critical-check {
+  font-size: 0.72rem;
+  color: var(--wb-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin: 2px 0;
+}
+
+/* Collapsible Tactical Details */
+.unit-action-drawers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--wb-border-subtle);
+  padding-top: 6px;
+}
+
+.wb-details-fold {
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.wb-details-fold summary {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.wb-details-fold summary:hover {
+  color: var(--wb-accent-gold);
+}
+
+.wb-details-fold .details-content {
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   Section 13: Right-Column Tabs & Token Interaction (棋子互动)
+   Segmented inspector controls: Combat Actions vs Token Interaction
+   ========================================================================== */
+
+.inspector-tabs {
+  display: flex !important;
+  gap: 3px !important;
+  background: rgba(0, 0, 0, 0.32) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: 6px !important;
+  padding: 3px !important;
+  margin-bottom: 2px !important;
+}
+
+.inspector-tab-btn {
+  flex: 1 !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  color: var(--wb-text-secondary) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+}
+
+.inspector-tab-btn:hover {
+  color: var(--wb-text-primary) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.inspector-tab-btn.active {
+  background: var(--wb-bg-elevated) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: var(--wb-accent-gold, #fbbf24) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Token Interaction Layout (mode-token) */
+.unit-action-center.mode-token {
+  gap: 10px !important;
+}
+
+.token-interact-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--wb-border-subtle);
+}
+
+.token-short-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--wb-border-subtle);
+  color: var(--wb-text-primary);
+}
+
+.token-pos-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 5px;
+  padding: 6px 10px;
+}
+
+.token-meta-item {
+  font-size: 0.74rem;
+  color: var(--wb-text-secondary);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.token-meta-item b {
+  color: var(--wb-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.token-facing-section,
+.token-port-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.token-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.token-section-header h4 {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+}
+
+.token-active-hint {
+  font-size: 0.72rem;
+  color: var(--wb-text-secondary);
+}
+
+.token-active-hint b {
+  color: var(--wb-accent-gold, #fbbf24);
+}
+
+.facing-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.facing-btn {
+  height: 30px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--wb-border-subtle);
+  background: var(--wb-bg-surface);
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.facing-btn:hover:not(:disabled) {
+  border-color: var(--wb-accent-gold);
+  color: var(--wb-text-primary);
+}
+
+.facing-btn.active {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: var(--wb-accent-gold, #f59e0b) !important;
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.2);
+}
+
+.facing-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.port-btn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 6px;
+}
+
+.port-btn {
+  padding: 5px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid var(--wb-border-subtle);
+  background: var(--wb-bg-surface);
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.port-btn:hover:not(:disabled) {
+  border-color: var(--wb-accent-gold);
+  color: var(--wb-text-primary);
+}
+
+.port-btn.active {
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: var(--wb-accent-gold, #f59e0b) !important;
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.2);
+}
+
+.port-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.token-rule-hints {
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--wb-text-muted);
+}
+
+.token-dm-correction {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dm-correct-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.dm-correct-btn-grid button {
+  padding: 4px 6px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  border: 1px solid var(--wb-border-subtle);
+  background: var(--wb-bg-elevated);
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.dm-correct-btn-grid button:hover {
+  border-color: var(--wb-border-prominent);
+  color: var(--wb-text-primary);
+}
+
+.token-action-footer {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.token-action-footer button {
+  flex: 1;
+  height: 28px;
+  font-size: 0.74rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-deselect {
+  border: 1px solid var(--wb-border-subtle) !important;
+  background: var(--wb-bg-elevated) !important;
+  color: var(--wb-text-muted) !important;
+}
+
+.btn-deselect:hover {
+  color: var(--wb-text-primary) !important;
+  border-color: var(--wb-border-prominent) !important;
+}
+
+/* Integrated Range & Map Section inside Token Tab */
+.token-range-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 4px;
+}
+
+.token-range-section aside.card,
+.token-range-section .card {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.token-range-section h2 {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 4px 0 !important;
+  color: var(--wb-text-primary) !important;
+}
+
+.token-range-section p.muted {
+  font-size: 0.72rem !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.35 !important;
+}
+
+.token-range-section .row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  margin-bottom: 6px !important;
+}
+
+.token-range-section button[data-range],
+.token-range-section button[data-action="undo"] {
+  padding: 4px 8px !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  background: var(--wb-bg-surface) !important;
+  color: var(--wb-text-secondary) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.token-range-section button[data-range]:hover,
+.token-range-section button[data-action="undo"]:hover {
+  border-color: var(--wb-accent-gold) !important;
+  color: var(--wb-text-primary) !important;
+}
+
+.token-range-section .notice {
+  font-size: 0.7rem !important;
+  padding: 6px 8px !important;
+  border-radius: 4px !important;
+  margin-top: 2px !important;
+}
+
+/* Theme Adjustments: Light Theme */
+html[data-theme="light"] .inspector-tabs {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] .inspector-tab-btn.active {
+  background: #ffffff !important;
+  color: #b45309 !important;
+  border-color: rgba(180, 83, 9, 0.3) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] .facing-btn.active,
+html[data-theme="light"] .port-btn.active {
+  background: rgba(180, 83, 9, 0.12) !important;
+  border-color: #b45309 !important;
+  color: #b45309 !important;
+}
+
+html[data-theme="light"] .roster-col-init.ally {
+  color: #059669;
+}
+
+html[data-theme="light"] .roster-col-init.enemy {
+  color: #dc2626;
+}
+
+html[data-theme="light"] .roster-col-init.neutral {
+  color: #d97706;
+}
+
+html[data-theme="light"] .roster-col-ac .roster-ac-val {
+  color: #0284c7;
+}
+
+html[data-theme="light"] .roster-hp-track {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme="light"] .roster-meta-row .pill {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Theme Adjustments: Parchment Theme */
+html[data-theme="parchment"] .inspector-tabs {
+  background: rgba(60, 40, 20, 0.08) !important;
+}
+
+html[data-theme="parchment"] .inspector-tab-btn.active {
+  background: #f7f3ea !important;
+  color: #92400e !important;
+  border-color: rgba(146, 64, 14, 0.3) !important;
+  box-shadow: 0 1px 3px rgba(60, 40, 20, 0.12) !important;
+}
+
+html[data-theme="parchment"] .facing-btn.active,
+html[data-theme="parchment"] .port-btn.active {
+  background: rgba(146, 64, 14, 0.12) !important;
+  border-color: #92400e !important;
+  color: #92400e !important;
+}
+
+html[data-theme="parchment"] .roster-expanded-panel {
+  background: rgba(60, 40, 20, 0.06);
+}
+
+html[data-theme="parchment"] .roster-col-init.ally {
+  color: #047857;
+}
+
+html[data-theme="parchment"] .roster-col-init.enemy {
+  color: #b91c1c;
+}
+
+html[data-theme="parchment"] .roster-col-init.neutral {
+  color: #b45309;
+}
+
+html[data-theme="parchment"] .roster-col-ac .roster-ac-val {
+  color: #0369a1;
+}
+
+html[data-theme="parchment"] .roster-hp-track {
+  background: rgba(60, 40, 20, 0.15);
+}
+
+html[data-theme="parchment"] .roster-meta-row .pill {
+  background: rgba(60, 40, 20, 0.08);
+}
+
+/* Round 0 Encounter Preparation Left Column Styles */
+.wb-col-left [data-panel-id="prep-controls"] .combatant {
+  padding: 8px 10px !important;
+  gap: 8px !important;
+}
+
+.wb-col-left [data-panel-id="prep-controls"] .combatant-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.wb-col-left [data-panel-id="prep-controls"] .combatant .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.wb-col-left [data-panel-id="prep-controls"] .combatant label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: var(--wb-text-secondary);
+}
+
+.wb-col-left [data-panel-id="prep-controls"] .combatant input,
+.wb-col-left [data-panel-id="prep-controls"] .combatant select {
+  font-size: 0.78rem;
+  padding: 3px 6px;
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 4px;
+  color: var(--wb-text-primary);
+}
+
+/* ==========================================================================
+   Combat Control Buttons Bar (Clear Hierarchy & Accidental Click Prevention)
+   ========================================================================== */
+.combat-controls-host {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.combat-ctrl-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.combat-progression-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.combat-danger-group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.combat-cleanup-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.combat-progression-group button,
+.combat-danger-group button,
+.combat-cleanup-group button {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  min-height: 36px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-initiative {
+  background-color: var(--wb-accent-gold) !important;
+  color: #000000 !important;
+  border: 1px solid var(--wb-accent-gold) !important;
+  font-weight: 700 !important;
+}
+.btn-initiative:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 2px 8px var(--wb-accent-gold-glow);
+}
+
+.btn-next-turn {
+  background-color: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-prominent);
+  color: var(--wb-text-primary);
+  font-weight: 600;
+}
+.btn-next-turn:hover {
+  border-color: var(--wb-accent-gold);
+  color: var(--wb-accent-gold);
+}
+
+.btn-undo {
+  background-color: transparent;
+  border: 1px solid var(--wb-border-subtle);
+  color: var(--wb-text-secondary);
+}
+.btn-undo:hover {
+  color: var(--wb-text-primary);
+  border-color: var(--wb-border-prominent);
+}
+
+.btn-end-combat {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  color: var(--wb-accent-crimson) !important;
+}
+.btn-end-combat:hover {
+  background-color: var(--wb-accent-crimson) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* ==========================================================================
+   PC Life Panel (4-Layer Modern Visual Structure)
+   ========================================================================== */
+.unit-pc-life-host {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.unit-pc-life-host .pc-life-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--wb-shadow-card);
+}
+
+.unit-pc-life-host .pc-life-panel h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--wb-border-subtle);
+}
+
+/* Layer 1: Compact Status Strip */
+.pc-life-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 8px;
+  background: var(--surface-card, var(--wb-bg-elevated));
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+}
+
+.pc-life-panel .pc-life-metric.stat,
+.pc-life-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  min-width: 0 !important;
+  padding: 6px 4px !important;
+  background: var(--surface-card, var(--wb-bg-elevated)) !important;
+  border: 1px solid var(--wb-border-subtle) !important;
+  border-radius: 6px !important;
+  color: var(--wb-text-primary) !important;
+}
+
+.pc-metric-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--wb-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pc-metric-val {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pc-metric-val.phase-active {
+  color: var(--status-success, var(--wb-accent-emerald));
+}
+
+.pc-metric-val.phase-dying {
+  color: var(--status-danger, var(--wb-accent-crimson));
+}
+
+.pc-metric-val.phase-stable {
+  color: var(--status-success, var(--wb-accent-emerald));
+}
+
+.pc-metric-val.phase-dead {
+  color: var(--status-danger, #ef4444);
+}
+
+.pc-metric-val.phase-needs-review {
+  color: var(--status-warning, var(--wb-accent-gold));
+}
+
+.saves-succ-val {
+  color: var(--status-success, var(--wb-accent-emerald));
+}
+
+.saves-fail-val {
+  color: var(--status-danger, var(--wb-accent-crimson));
+}
+
+/* Layer 2: Operations & Details */
+.pc-death-save-op,
+.pc-stand-op,
+.pc-stabilize-op {
+  padding: 8px 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.death-save-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pc-life-details-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.life-correction-form .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.death-saves-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 0.76rem;
+  padding: 4px 0;
+}
+
+.save-history-item {
+  margin: 0;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--wb-bg-elevated);
+  color: var(--wb-text-secondary);
+}
+
+/* Layer 3: Segmented Death Outcome Switcher */
+.death-outcome-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--wb-bg-elevated);
+  border: 1px solid var(--wb-border-prominent);
+  border-radius: 8px;
+}
+
+.death-outcome-choice h4,
+.shape-picker-section h4 {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+}
+
+.death-outcome-segmented,
+.shape-segmented-group {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  background: var(--wb-bg-canvas);
+  padding: 3px;
+  border-radius: 6px;
+  border: 1px solid var(--wb-border-subtle);
+  overflow-x: auto;
+}
+
+.death-outcome-btn,
+.shape-btn {
+  flex: 1;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--wb-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.death-outcome-btn:hover,
+.shape-btn:hover {
+  color: var(--wb-text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.death-outcome-btn.active,
+.shape-btn.active {
+  background: var(--wb-bg-surface);
+  border-color: var(--wb-accent-gold);
+  color: var(--wb-accent-gold);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.death-choice-notice {
+  margin: 0 !important;
+  font-size: 0.78rem !important;
+  padding: 6px 8px !important;
+}
+
+/* Layer 4: Multi-Stage Structured Forms */
+.post-death-stage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.form-stage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  background: var(--wb-bg-elevated);
+  margin: 0;
+}
+
+.stage-legend {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--wb-accent-gold);
+  padding: 0 6px;
+}
+
+/* Inheritance Card Grid */
+.inheritance-fieldset {
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  padding: 8px;
+  margin: 0;
+}
+
+.inheritance-fieldset legend {
+  font-size: 0.74rem;
+  color: var(--wb-text-secondary);
+  padding: 0 4px;
+}
+
+.inheritance-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.inheritance-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--wb-bg-surface);
+  border: 1px solid var(--wb-border-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.76rem;
+  color: var(--wb-text-secondary);
+}
+
+.inheritance-card:hover {
+  border-color: var(--wb-border-prominent);
+  color: var(--wb-text-primary);
+}
+
+.inheritance-card.selected {
+  border-color: var(--wb-accent-gold);
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--wb-text-primary);
+  font-weight: 600;
+}
+
+.inheritance-card input[type="checkbox"] {
+  margin: 0;
+  accent-color: var(--wb-accent-gold);
+}
+
+.submit-stage-btn {
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Details Fold Styling (Resources, Spell Slots, Actions & Mastery)
+   ========================================================================== */
+.wb-details-fold {
+  border: 1px solid var(--wb-border-subtle);
+  border-radius: 6px;
+  background: var(--wb-bg-surface);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.wb-details-fold[open] {
+  border-color: var(--wb-border-prominent);
+}
+
+.wb-details-fold > summary {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--wb-text-primary);
+  cursor: pointer;
+  background: var(--wb-bg-elevated);
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.wb-details-fold > summary:hover {
+  background: var(--wb-border-subtle);
+}
+
+.wb-details-fold .details-content {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   Theme Adaptations: Light & Parchment Themes
+   ========================================================================== */
+
+/* Light Theme Enhancements (Zero #ffffff cards, Grey-white Surface) */
+html[data-theme="light"] .unit-pc-life-host .pc-life-panel,
+html[data-theme="light"] .wb-details-fold {
+  background: #f3f1eb;
+  border-color: #c8d0d6;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="light"] .pc-life-summary-strip,
+html[data-theme="light"] .form-stage-section,
+html[data-theme="light"] .death-outcome-choice,
+html[data-theme="light"] .wb-details-fold > summary {
+  background: #e5e9ec;
+  border-color: #c8d0d6;
+}
+
+html[data-theme="light"] .death-outcome-segmented,
+html[data-theme="light"] .shape-segmented-group {
+  background: #dde3e7;
+  border-color: #c8d0d6;
+}
+
+html[data-theme="light"] .death-outcome-btn.active,
+html[data-theme="light"] .shape-btn.active {
+  background: #e5e9ec;
+  color: #a85f16;
+  border-color: rgba(168, 95, 22, 0.4);
+}
+
+html[data-theme="light"] .inheritance-card {
+  background: #f3f1eb;
+  border-color: #c8d0d6;
+  color: #1d2933;
+}
+
+html[data-theme="light"] .inheritance-card.selected {
+  background: rgba(168, 95, 22, 0.1);
+  border-color: #a85f16;
+  color: #1d2933;
+}
+
+html[data-theme="light"] .spell-ruling-workspace {
+  background: #f3f1eb !important;
+  border-color: #c8d0d6 !important;
+  color: #1d2933 !important;
+}
+
+html[data-theme="light"] .spell-brief {
+  background: #e5e9ec !important;
+  border-left-color: #a85f16 !important;
+}
+
+html[data-theme="light"] .spell-ruling-card {
+  background: #f3f1eb !important;
+  border-color: #c8d0d6 !important;
+}
+
+html[data-theme="light"] .ruling-mode-group button {
+  background: #dde3e7 !important;
+  color: #1d2933 !important;
+}
+
+html[data-theme="light"] .ruling-mode-group button.active {
+  background: #a85f16 !important;
+  color: #ffffff !important;
+}
+
+html[data-theme="light"] .spell-ruling-preview {
+  background: #e5e9ec !important;
+  border-color: #aeb9c2 !important;
+}
+
+html[data-theme="light"] .notice {
+  background: #e5e9ec !important;
+  color: #1d2933 !important;
+  border-left-color: #2563eb !important;
+}
+html[data-theme="light"] .notice.warn {
+  border-left-color: #b45309 !important;
+  background: #fefce8 !important;
+}
+html[data-theme="light"] .notice.error {
+  border-left-color: #b91c1c !important;
+  background: #fef2f2 !important;
+}
+
+/* Parchment Theme Enhancements (Warm Aged Vellum & Brownish Surface, Zero Dark Blocks) */
+html[data-theme="parchment"] .unit-pc-life-host .pc-life-panel,
+html[data-theme="parchment"] .wb-details-fold {
+  background: #ebdcc3;
+  border-color: #a9895c;
+  box-shadow: 0 2px 6px rgba(53, 32, 15, 0.08);
+}
+
+html[data-theme="parchment"] .pc-life-summary-strip,
+html[data-theme="parchment"] .form-stage-section,
+html[data-theme="parchment"] .death-outcome-choice,
+html[data-theme="parchment"] .wb-details-fold > summary {
+  background: #dfcfb3;
+  border-color: #a9895c;
+}
+
+html[data-theme="parchment"] .death-outcome-segmented,
+html[data-theme="parchment"] .shape-segmented-group {
+  background: #d5c39e;
+  border-color: #a9895c;
+}
+
+html[data-theme="parchment"] .death-outcome-btn.active,
+html[data-theme="parchment"] .shape-btn.active {
+  background: #ebdcc3;
+  color: #92501c;
+  border-color: rgba(146, 80, 28, 0.5);
+}
+
+html[data-theme="parchment"] .inheritance-card {
+  background: #ebdcc3;
+  border-color: #a9895c;
+  color: #35200f;
+}
+
+html[data-theme="parchment"] .inheritance-card.selected {
+  background: rgba(146, 80, 28, 0.16);
+  border-color: #92501c;
+  color: #35200f;
+}
+
+html[data-theme="parchment"] .spell-ruling-workspace {
+  background: #ebdcc3 !important;
+  border-color: #a9895c !important;
+  color: #35200f !important;
+}
+
+html[data-theme="parchment"] .spell-brief {
+  background: #dfcfb3 !important;
+  border-left-color: #92501c !important;
+}
+
+html[data-theme="parchment"] .spell-ruling-card {
+  background: #ebdcc3 !important;
+  border-color: #a9895c !important;
+}
+
+html[data-theme="parchment"] .ruling-mode-group button {
+  background: #d5c39e !important;
+  color: #35200f !important;
+}
+
+html[data-theme="parchment"] .ruling-mode-group button.active {
+  background: #92501c !important;
+  color: #f9f5ea !important;
+}
+
+html[data-theme="parchment"] .spell-ruling-preview {
+  background: #dfcfb3 !important;
+  border-color: #a9895c !important;
+  color: #35200f !important;
+}
+
+html[data-theme="parchment"] .notice {
+  background: #ebdcc3 !important;
+  color: #35200f !important;
+  border-left-color: #92501c !important;
+}
+html[data-theme="parchment"] .notice.warn {
+  border-left-color: #b45309 !important;
+  background: #fdf6e6 !important;
+}
+html[data-theme="parchment"] .notice.error {
+  border-left-color: #991b1b !important;
+  background: #fcedeb !important;
+}
+
+/* ==========================================================================
+   Responsive Adaptations (1440, 1280, 1050, 900, 480, 390, 320px)
+   ========================================================================== */
+@media (max-width: 900px) {
+  .combat-ctrl-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .combat-progression-group {
+    justify-content: flex-start;
+  }
+  .combat-danger-group {
+    margin-top: 4px;
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .combat-progression-group button,
+  .combat-danger-group button {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  .death-outcome-segmented,
+  .shape-segmented-group {
+    flex-direction: column;
+  }
+  .inheritance-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
