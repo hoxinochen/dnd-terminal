@@ -18,7 +18,7 @@ assert.match(app,/host\.querySelectorAll\('\[data-death-resolve\]'\)/,'PC UI rem
 assert.match(app,/const SESSION_ENVELOPE_SCHEMA_VERSION = V070_SESSION_SCHEMA_VERSION;/);
 assert.match(app,/const STORAGE_KEY = V070_STORAGE_KEY;/);
 assert.match(index,/DND Terminal v0\.7\.0 — DM Workbench/);
-assert.match(index,/src\/app\.js\?v=20260907-exp-ux-gemini-001-1/,'Chrome must load the cache-invalidated v0.7 UX candidate bundle');
+assert.match(index,/src\/app\.js\?v=20260908-ux-recovery-2/,'Chrome must load the cache-invalidated v0.7 UX candidate bundle');
 assert.match(domain,/V050_SESSION_SCHEMA_VERSION = '0\.4\.1'/,'Amendment 03 promotes the Session Schema while preserving delivery/schema distinction');
 assert.match(v060Domain,/V060_SESSION_SCHEMA_VERSION = '0\.5\.0'/,'v0.6.0 promotes the current Session Schema');
 

@@ -42,11 +42,12 @@ function renderWorkbenchTopbar(options = {}) {
     selectedName = '',
     tacticalDistanceFeet = null,
     turnStarted = false,
+    diceMarkup = '',
   } = options;
 
-  const roundBadge = turnStarted
-    ? `<span class="wb-status-pill wb-status-round">第 ${round} 轮</span>`
-    : '<span class="wb-status-pill wb-status-idle">未开始先攻</span>';
+  const roundBadge = `
+    <span class="wb-status-pill wb-status-round">第 <b>${round}</b> 轮</span>
+  `;
 
   const actorBadge = activeName
     ? `<span class="wb-status-pill wb-status-actor">当前行动：${activeName}</span>`
@@ -61,7 +62,7 @@ function renderWorkbenchTopbar(options = {}) {
       <!-- 模式切换：现代分段器设计，绝无生硬方括号 -->
       <div class="wb-segmented-group" role="group" aria-label="工作台显示模式">
         <button type="button" class="wb-mode-btn ${subMode === 'full' ? 'active' : ''}" data-wb-mode="full" title="全量三栏布局">全量</button>
-        <button type="button" class="wb-mode-btn ${subMode === 'combat' ? 'active' : ''}" data-wb-mode="combat" title="战斗聚焦（收起地图，两栏对开）">战斗</button>
+        <button type="button" class="wb-mode-btn ${subMode === 'combat' ? 'active' : ''}" data-wb-mode="combat" title="战斗聚焦（保留地图，加宽操作区）">战斗</button>
         <button type="button" class="wb-mode-btn ${subMode === 'map' ? 'active' : ''}" data-wb-mode="map" title="纯净地图（收起双侧，全屏沙盘）">地图</button>
       </div>
 
@@ -95,7 +96,9 @@ export function battleWorkbenchMarkup(data = {}) {
     activeCombatant,
     selectedCombatant,
     subMode = 'full',
+    layoutState = null,
     theme = 'dark',
+    inspectorTab = 'combat',
     leftCollapsed = false,
     rightCollapsed = false,
     diceDockOpen = false,
@@ -109,8 +112,11 @@ export function battleWorkbenchMarkup(data = {}) {
     inspectorMarkup = '',
     rangeMarkup = '',
     mapGridMarkup = '',
+    movementMarkup = '',
     recentResultMarkup = '',
   } = data;
+
+  const resolvedLayoutState = layoutState || (subMode === 'combat' ? 'combat' : subMode === 'map' ? 'map' : 'full');
 
   const w = state?.settings?.width || 24;
   const h = state?.settings?.height || 18;
@@ -154,6 +160,7 @@ export function battleWorkbenchMarkup(data = {}) {
     selectedName,
     tacticalDistanceFeet: tacticalDist,
     turnStarted,
+    diceMarkup,
   });
 
   // Initiative Ribbon (inspired by modern Baldur's Gate / Foundry DM consoles)
@@ -219,10 +226,11 @@ export function battleWorkbenchMarkup(data = {}) {
   const selectedHp = selectedCombatant ? `${selectedCombatant.hp} HP` : '—';
 
   return `
-    <div class="battle-workbench-root theme-${theme} mode-${subMode} ${leftCollapsed ? 'left-collapsed' : ''} ${rightCollapsed ? 'right-collapsed' : ''}"
+    <div class="battle-workbench-root theme-${theme} mode-${subMode} layout-${resolvedLayoutState} ${leftCollapsed ? 'left-collapsed' : ''} ${rightCollapsed ? 'right-collapsed' : ''}"
          data-battle-workbench
          data-theme="${theme}"
-         data-submode="${subMode}">
+         data-submode="${subMode}"
+         data-layout-state="${resolvedLayoutState}">
 
       ${topbar}
       ${initiativeRibbon}
@@ -268,6 +276,10 @@ export function battleWorkbenchMarkup(data = {}) {
             </div>
           </div>
 
+          <div class="wb-map-pan-handle" data-map-pan-handle tabindex="0" role="group" aria-label="地图平移把手，按住拖动或使用方向键">
+            <span class="map-pan-help">按住此条拖动地图 · 点击地图空白处${subMode === 'map' ? '返回上一视图' : '放大为地图视图'}</span>
+            ${movementMarkup}
+          </div>
           <div class="wb-map-viewport" data-map-viewport style="--map-scale: ${zoomLevel};">
             <div class="wb-map-canvas" data-map-canvas>
               ${mapGridMarkup}
@@ -285,17 +297,16 @@ export function battleWorkbenchMarkup(data = {}) {
           </div>
         </div>
 
-        <!-- 右栏：战时掷骰坞 + 当前选中者检视 -->
-        <aside class="wb-column wb-col-right" aria-label="操作检视与掷骰">
+        <!-- 右栏：操作与检视（双Tab：战斗操作 vs 棋子互动） -->
+        <aside class="wb-column wb-col-right" aria-label="操作检视与棋子互动">
           <div class="wb-column-header">
             <button type="button" class="wb-collapse-btn" data-wb-collapse="right" title="收起检视面板" aria-label="收起右侧面板">▶</button>
             <span class="wb-col-title">操作与检视</span>
           </div>
           <div class="wb-column-content">
-            ${diceMarkup}
             ${inspectorMarkup}
             ${actionMarkup}
-            ${rangeMarkup ? `<div class="wb-range-wrap">${rangeMarkup}</div>` : ''}
+            ${(inspectorTab === 'token' && rangeMarkup && !inspectorMarkup.includes('data-panel-id="range"')) ? `<div class="wb-range-wrap">${rangeMarkup}</div>` : ''}
           </div>
         </aside>
       </div>
@@ -320,6 +331,7 @@ export function bindBattleWorkbenchInteractions(shell, callbacks = {}) {
     onJournalToggle = null,
     onJournalAddNote = null,
     onZoomChange = null,
+    onMapBackgroundClick = null,
   } = callbacks;
 
   // 1. SubMode Switcher (Clean segmented controls)
@@ -350,6 +362,8 @@ export function bindBattleWorkbenchInteractions(shell, callbacks = {}) {
     bindMapController(viewport, canvas, {
       initialZoom: parseFloat(viewport.style.getPropertyValue('--map-scale')) || 1.0,
       labelElement: label,
+      panHandle: shell.querySelector('[data-map-pan-handle]'),
+      onBackgroundClick: onMapBackgroundClick,
       onZoomChange: (newZoom) => onZoomChange?.('direct', newZoom),
     });
 

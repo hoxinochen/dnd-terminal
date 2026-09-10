@@ -10,6 +10,7 @@ import { V070_DELIVERY_VERSION, V070_SESSION_SCHEMA_VERSION, V070_STORAGE_KEY, c
 import { PANEL_REGISTRY, WORKSPACES, domainTabForWorkspace, loadUiPreferences, movePanelPreference, panelsForWorkspace, projectWorkspaceStatus, resetAllUiPreferences, resetWorkspacePreferences, saveUiPreferences, updatePanelPreference, workspaceForDomainTab, workspaceFromHash } from './workbench-v070.js?v=20260907-exp-ux-gemini-001-1';
 import { parseDiceFormula, parseDiceShortcut, rollDiceFormula } from './dice.js?v=20260902-1';
 import { battleWorkbenchMarkup, bindBattleWorkbenchInteractions } from './battle-workbench.js';
+import { diceDockMarkup, bindDiceDock } from './dice-dock.js';
 
 const SESSION_ENVELOPE_SCHEMA_VERSION = V070_SESSION_SCHEMA_VERSION;
 const DELIVERY_VERSION = V070_DELIVERY_VERSION;
@@ -35,6 +36,31 @@ const uid = () => {
 };
 const clone = value => globalThis.structuredClone ? globalThis.structuredClone(value) : JSON.parse(JSON.stringify(value));
 const now = () => new Date().toISOString();
+
+// In-memory UI transient states (Strictly NOT written to domain session/events/JSON)
+const inspectorDisclosureState = new Map();
+export function getInspectorDisclosureState(combatantId, foldKey) {
+  return inspectorDisclosureState.get(`${combatantId}:${foldKey}`);
+}
+export function setInspectorDisclosureState(combatantId, foldKey, isOpen) {
+  inspectorDisclosureState.set(`${combatantId}:${foldKey}`, Boolean(isOpen));
+}
+
+const deathSuccessorDraft = new Map();
+export function getDeathSuccessorDraft(combatantId) {
+  return deathSuccessorDraft.get(combatantId) || null;
+}
+export function clearDeathSuccessorDraft(combatantId) {
+  deathSuccessorDraft.delete(combatantId);
+}
+
+const deathControlledDraft = new Map();
+export function getDeathControlledDraft(combatantId) {
+  return deathControlledDraft.get(combatantId) || null;
+}
+export function clearDeathControlledDraft(combatantId) {
+  deathControlledDraft.delete(combatantId);
+}
 
 const templates = [
   { id:'goblin-warrior', name:'地精武者', kind:'monster', relation:'enemy', maxHp:14, speed:30, footprint:[1,1], initiative:2, resources:{'附赠动作':1}, sourceEntryId:'urn:uuid:59e8ff3d-cddd-5452-ae67-1181b18beed8', note:'MM 2025 验证模板；可创建多个独立实例。' },
@@ -98,6 +124,9 @@ let showArchivedCharacters = uiPreferences.showArchivedCharacters;
 let templateEditorId = null;
 let templateEditorNew = false;
 let mapGesture = null;
+let mapReturnMode = null;
+let resolutionView = { key: null, rightCollapsed: false };
+const mapViewPositions = new Map();
 let deathOutcomeChoice = null;
 let s2PlacementDraft = null;
 let renderedStatusProjection = null;
@@ -276,7 +305,13 @@ function linkedEntitiesFromForm(form){
 function upgradeLinkedEditors(){
   document.querySelectorAll('textarea[name="linkedEntities"]').forEach(textarea=>{
     if(textarea.closest('[data-linked-editor]'))return;
-    const entities=linkedFromText(textarea.value);
+    let entities=[];
+    if(textarea.dataset.linkedJson){
+      try{entities=JSON.parse(textarea.dataset.linkedJson);}catch(_){}
+    }
+    if(!entities.length){
+      entities=linkedFromText(textarea.value);
+    }
     const host=document.createElement('div');
     host.className='linked-editor'; host.dataset.linkedEditor='';
     host.innerHTML=`<p class="muted">关联单位使用图形化设置。模板可以绑定到长期卡，也可以仅在本场加入遭遇时选择。</p>${entities.map((entity,index)=>linkedEntityRowMarkup(entity,index)).join('')}<button type="button" data-linked-add>新增关联单位</button>`;
@@ -431,7 +466,8 @@ function applyLinkedEntityTemplateHint(){
   const field=document.querySelector('textarea[name="linkedEntities"]');
   if(field&&!field.value)field.placeholder='示例盟友|ally|ally|第0回合生成棋子|preset-scout；实际 ID 请从单位库复制';
   const selected=characterRecords.find(record=>record.characterId===selectedCharacterId),region=document.querySelector('[data-character-region="linked"]');
-  if(selected&&region&&!region.querySelector('.linked-encounter-actions'))region.insertAdjacentHTML('beforeend',linkedMaterializationPanel(selected,state.encounter?.phase==='preparation'));
+  const preparing=state.encounter?.phase==='preparation',joining=state.turn.started&&!combatEnded();
+  if(selected&&region&&!region.querySelector('.linked-encounter-actions'))region.insertAdjacentHTML('beforeend',linkedMaterializationPanel(selected,preparing,joining));
 }
 function characterArchiveBlockers(characterId){
   const battleOpen=state.encounter?.phase!=='ended';
@@ -541,28 +577,225 @@ function addCharacterProjection(characterId){
     const combatant=materializeCombatant(member,uid());ensureFacing(combatant);const item={kind:'join',combatant,reserveMemberId:null,tiePlacement:'after',initiativeMode:'roll',initiativeModifier:combatant.initiativeModifier,initiativeRoll:null,initiativeConfigured:false};stageEntryItem(item,{destination:'keep',notice:`已从 ${projection.name} 修订 ${projection.characterRevision} 生成隔离投影，并加入待入场批次。`});
   }catch(error){message(`投影未创建：${error.message}`,'error');}
 }
+function resolveCombatProjectionForEntity({ characterId, entityId = null, entityKind = 'linked' } = {}) {
+  const preparing = state.encounter?.phase === 'preparation';
+  const joining = state.turn.started && !combatEnded();
+  const listKey = entityKind === 'controlled' ? 'controlledEntities' : 'linkedEntities';
+
+  if (!characterId) {
+    return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'missing-character-id', reasonText: '未指定角色 ID。' };
+  }
+
+  if (preparing) {
+    const member = (state.encounter?.members || []).find(m =>
+      m.combatProjectionId && (
+        m.characterSheetRef?.characterId === characterId ||
+        m.characterId === characterId ||
+        (state.combatProjections || []).some(p => p.projectionId === m.combatProjectionId && p.characterId === characterId)
+      )
+    );
+    if (!member) {
+      return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'no-projection', reasonText: '先在第 0 回合加入控制者当前角色投影。' };
+    }
+    const projection = (state.combatProjections || []).find(p => p.projectionId === member.combatProjectionId);
+    if (!projection) {
+      return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'no-projection', reasonText: '找不到该角色在当前遭遇准备中的战斗投影。' };
+    }
+    if (entityId) {
+      const entityInProj = (projection[listKey] || []).find(e => e.id === entityId);
+      if (!entityInProj) {
+        return { ok: false, projection, entitySnapshot: null, controllerCombatant: null, reason: 'entity-not-in-projection', reasonText: '该实体只存在于更新后的角色卡修订中，不属于当前遭遇。' };
+      }
+      return { ok: true, projection, entitySnapshot: entityInProj, controllerCombatant: null, reason: null, reasonText: null };
+    }
+    return { ok: true, projection, entitySnapshot: null, controllerCombatant: null, reason: null, reasonText: null };
+  }
+
+  if (joining) {
+    const candidates = (state.combatants || []).filter(c =>
+      c.kind === 'character' &&
+      !c.cleanupRemoved &&
+      (
+        c.characterSheetRef?.characterId === characterId ||
+        c.characterId === characterId ||
+        (c.combatProjectionId && (state.combatProjections || []).some(p => p.projectionId === c.combatProjectionId && p.characterId === characterId))
+      )
+    );
+
+    if (!candidates.length) {
+      return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'no-combatant', reasonText: '控制者不在当前战斗或未在场。' };
+    }
+
+    const candidatesWithProj = candidates.map(c => ({
+      combatant: c,
+      projection: (state.combatProjections || []).find(p => p.projectionId === c.combatProjectionId)
+    })).filter(item => item.projection != null);
+
+    if (!candidatesWithProj.length) {
+      return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'no-projection', reasonText: '找不到该角色在当前战斗中的冻结投影。' };
+    }
+
+    if (entityId) {
+      const matching = candidatesWithProj.filter(item =>
+        (item.projection[listKey] || []).some(e => e.id === entityId)
+      );
+
+      if (!matching.length) {
+        return { ok: false, projection: candidatesWithProj[0].projection, entitySnapshot: null, controllerCombatant: candidatesWithProj[0].combatant, reason: 'entity-not-in-projection', reasonText: '该实体只存在于更新后的角色卡修订中，不属于当前战斗。角色卡的新修订不会自动修改进行中的战斗。' };
+      }
+
+      const distinctProjectionIds = new Set(matching.map(m => m.projection.projectionId));
+      if (distinctProjectionIds.size > 1) {
+        return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'multiple-ambiguous-projections', reasonText: '检测到同一角色存在多个不同的战斗投影，无法安全确定来源。' };
+      }
+
+      const selected = matching[0];
+      const entityInProj = (selected.projection[listKey] || []).find(e => e.id === entityId);
+      return {
+        ok: true,
+        projection: selected.projection,
+        entitySnapshot: entityInProj,
+        controllerCombatant: selected.combatant,
+        reason: null,
+        reasonText: null
+      };
+    }
+
+    const distinctProjectionIds = new Set(candidatesWithProj.map(item => item.projection.projectionId));
+    if (distinctProjectionIds.size > 1) {
+      return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'multiple-ambiguous-projections', reasonText: '同一角色存在多个不同的战斗投影，无法安全确定来源。' };
+    }
+
+    return {
+      ok: true,
+      projection: candidatesWithProj[0].projection,
+      entitySnapshot: null,
+      controllerCombatant: candidatesWithProj[0].combatant,
+      reason: null,
+      reasonText: null
+    };
+  }
+
+  return { ok: false, projection: null, entitySnapshot: null, controllerCombatant: null, reason: 'phase-not-allowed', reasonText: '战斗已结束或未在准备阶段；状态只读。' };
+}
+function isLinkedEntityDuplicate(projectionId, linkedEntityId){
+  if(!projectionId||!linkedEntityId)return false;
+  if((state.combatants||[]).some(c=>(c.sourceCombatProjectionId===projectionId&&(c.sourceLinkedEntityId===linkedEntityId||c.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId))||(c.linkedEntityProjection?.sourceCombatProjectionId===projectionId&&c.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId)))return true;
+  if(entryPlacementItems().some(item=>{const c=item.combatant;if(!c)return false;return (c.sourceCombatProjectionId===projectionId&&(c.sourceLinkedEntityId===linkedEntityId||c.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId))||(c.linkedEntityProjection?.sourceCombatProjectionId===projectionId&&c.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId);}))return true;
+  if((state.encounter?.members||[]).some(m=>(m.sourceCombatProjectionId===projectionId&&(m.sourceLinkedEntityId===linkedEntityId||m.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId))||(m.linkedEntityProjection?.sourceCombatProjectionId===projectionId&&m.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId)))return true;
+  if(state.ui.entryDraft){const c=state.ui.entryDraft.stagedItem?.combatant;if(c&&((c.sourceCombatProjectionId===projectionId&&(c.sourceLinkedEntityId===linkedEntityId||c.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId))||(c.linkedEntityProjection?.sourceCombatProjectionId===projectionId&&c.linkedEntityProjection?.linkedEntityRef?.id===linkedEntityId)))return true;}
+  return false;
+}
+function isControlledEntityDuplicate(projectionId, controlledEntityId){
+  if(!projectionId||!controlledEntityId)return false;
+  if((state.combatants||[]).some(c=>(c.controllerLink?.controlledEntityId===controlledEntityId||c.controlledEntityProjection?.controlledEntityId===controlledEntityId)&&(c.sourceCombatProjectionId===projectionId||c.controlledEntityProjection?.sourceCombatProjectionId===projectionId||!c.sourceCombatProjectionId)))return true;
+  if(entryPlacementItems().some(item=>{const c=item.combatant;if(!c)return false;const projId=item.controlledEntityProjection?.sourceCombatProjectionId||c.controlledEntityProjection?.sourceCombatProjectionId||c.sourceCombatProjectionId;return (c.controllerLink?.controlledEntityId===controlledEntityId||c.controlledEntityProjection?.controlledEntityId===controlledEntityId||item.controllerLink?.controlledEntityId===controlledEntityId||item.controlledEntityProjection?.controlledEntityId===controlledEntityId)&&(projId===projectionId||!projId);}))return true;
+  if((state.encounter?.members||[]).some(m=>m.controlledEntityProjection?.controlledEntityId===controlledEntityId&&(m.controlledEntityProjection?.sourceCombatProjectionId===projectionId||m.sourceCombatProjectionId===projectionId||!m.sourceCombatProjectionId)))return true;
+  if(state.ui.entryDraft){const c=state.ui.entryDraft.stagedItem?.combatant;if(c&&(c.controllerLink?.controlledEntityId===controlledEntityId||c.controlledEntityProjection?.controlledEntityId===controlledEntityId))return true;}
+  return false;
+}
 function materializeLinkedEntity(characterId,linkedEntityId,templateChoice=''){
-  if(state.encounter?.phase!=='preparation')return message('关联单位只能在第 0 回合生成棋子；战斗中加入需后续单独授权。','warn');
-  const record=characterRecords.find(candidate=>candidate.characterId===characterId),sheet=record&&currentCharacterSheet(record),entity=(sheet?.linkedEntities||[]).find(item=>item.id===linkedEntityId),projection=state.combatProjections.find(item=>item.characterId===characterId&&item.characterRevision===sheet?.revision);
-  if(!entity||!projection)return message('请先将该角色当前修订生成投影并加入遭遇。','warn');
+  const preparing=state.encounter?.phase==='preparation',joining=state.turn.started&&!combatEnded();
+  if(!preparing&&!joining)return message('当前只能在遭遇准备阶段，或已开始且未结束的战斗中加入关联生物。','warn');
+  const resolved=resolveCombatProjectionForEntity({characterId,entityId:linkedEntityId,entityKind:'linked'});
+  if(!resolved.ok)return message(resolved.reasonText||'找不到该角色在当前战斗中的有效冻结投影。','warn');
+  const projection=resolved.projection,entity=resolved.entitySnapshot;
   const requestedTemplateId=templateChoice||entity.templateRef?.templateId;
   if(!requestedTemplateId)return message(`${entity.name} 尚未选择 UnitTemplate；请在本卡片选择本场模板。`,'warn');
   const template=templateById(requestedTemplateId);if(!template||template.archived)return message(`关联单位绑定的模板“${requestedTemplateId}”不存在或已归档。请在本卡片选择未归档模板。`,'warn');
-  const duplicate=state.encounter.members.some(member=>member.linkedEntityProjection?.sourceCombatProjectionId===projection.projectionId&&member.linkedEntityProjection?.linkedEntityRef?.id===entity.id);if(duplicate)return message('该角色投影中的关联单位已经生成棋子，不能重复加入。','warn');
-  const position=firstFreeFootprintPosition({widthCells:template.footprint?.[0]||1,heightCells:template.footprint?.[1]||1},state.encounter.members.filter(member=>member.deployment!=='reserve'),state.settings);if(!position)return message('地图没有可容纳关联单位的空位。','warn');
-  try{const linkedProjection=createLinkedEntityProjection(projection,entity,template,{id:uid,timestamp:now}),member=createEncounterMember(template,uid(),position);member.name=entity.name;member.relation=entity.relation;member.displayOrdinal=nextDisplayOrdinal(member.name,state.encounter.members);member.linkedEntityProjection=linkedProjection;member.sourceCombatProjectionId=projection.projectionId;member.sourceLinkedEntityId=entity.id;ensureFacing(member);state.linkedEntityProjections.push(linkedProjection);state.encounter.members.push(member);message(`${entity.name} 已生成独立棋子并加入第 0 回合；其 HP、行动轮与原角色分离。`);}catch(error){message(`关联单位未加入遭遇：${error.message}`,'error');}
+  if(isLinkedEntityDuplicate(projection.projectionId,entity.id))return message(joining?'该角色投影中的关联单位已加入本次战斗，不能重复生成。':'该角色投影中的关联单位已经生成棋子，不能重复加入。','warn');
+  if(preparing){
+    const position=firstFreeFootprintPosition({widthCells:template.footprint?.[0]||1,heightCells:template.footprint?.[1]||1},state.encounter.members.filter(member=>member.deployment!=='reserve'),state.settings);if(!position)return message('地图没有可容纳关联单位的空位。','warn');
+    try{const linkedProjection=createLinkedEntityProjection(projection,entity,template,{id:uid,timestamp:now}),member=createEncounterMember(template,uid(),position);member.name=entity.name;member.relation=entity.relation;member.displayOrdinal=nextDisplayOrdinal(member.name,state.encounter.members);member.linkedEntityProjection=linkedProjection;member.sourceCombatProjectionId=projection.projectionId;member.sourceLinkedEntityId=entity.id;ensureFacing(member);state.linkedEntityProjections.push(linkedProjection);state.encounter.members.push(member);message(`${entity.name} 已生成独立棋子并加入第 0 回合；其 HP、行动轮与原角色分离。`);}catch(error){message(`关联单位未加入遭遇：${error.message}`,'error');}
+    return;
+  }
+  const occupied=[...onFieldCombatants(),...pendingPlacementCombatants()],footprint={widthCells:template.footprint?.[0]||1,heightCells:template.footprint?.[1]||1},position=firstFreeFootprintPosition(footprint,occupied,state.settings);
+  if(!position)return message('地图没有可容纳关联单位的空位。','warn');
+  try{
+    const linkedProjection=createLinkedEntityProjection(projection,entity,template,{id:uid,timestamp:now}),member=createEncounterMember(template,uid(),position);
+    member.name=entity.name;member.relation=entity.relation;member.displayOrdinal=nextDisplayOrdinal(member.name,[...state.combatants,...pendingPlacementCombatants()]);member.linkedEntityProjection=linkedProjection;member.sourceCombatProjectionId=projection.projectionId;member.sourceLinkedEntityId=entity.id;ensureFacing(member);
+    const combatant=materializeCombatant(member,uid());ensureFacing(combatant);
+    const item={kind:'join',combatant,reserveMemberId:null,tiePlacement:'after',initiativeMode:'roll',initiativeModifier:combatant.initiativeModifier,initiativeRoll:null,initiativeConfigured:false,linkedProjection,controlledEntityProjection:null,controllerLink:null};
+    stageEntryItem(item,{destination:'keep',notice:`${entity.name} 已生成本场独立快照，并加入待入场批次。`});
+  }catch(error){message(`关联单位未加入待入场批次：${error.message}`,'error');}
 }
 function materializeControlledEntity(characterId,controlledEntityId){
-  if(state.encounter?.phase!=='preparation')return message('受控生物只能在第 0 回合加入新遭遇；战斗中加入仍需使用既有临时投入流程。','warn');
-  const record=characterRecords.find(candidate=>candidate.characterId===characterId),sheet=record&&currentCharacterSheet(record),entity=(sheet?.controlledEntities||[]).find(item=>item.id===controlledEntityId),projection=state.combatProjections.find(item=>item.characterId===characterId&&item.characterRevision===sheet?.revision);
-  if(!entity||!projection)return message('请先将控制者当前修订生成投影并加入遭遇。','warn');
+  const preparing=state.encounter?.phase==='preparation',joining=state.turn.started&&!combatEnded();
+  if(!preparing&&!joining)return message('当前只能在遭遇准备阶段，或已开始且未结束的战斗中加入受控生物。','warn');
+  const resolved=resolveCombatProjectionForEntity({characterId,entityId:controlledEntityId,entityKind:'controlled'});
+  if(!resolved.ok)return message(resolved.reasonText||'找不到该角色在当前战斗中的有效冻结投影。','warn');
+  const projection=resolved.projection,entity=resolved.entitySnapshot;
   if(!['controlled','permanent-controlled'].includes(entity.status))return message('该受控关系已到期、解除或失控，不能从控制者卡再次投入；DM 可从单位库独立加入对应模板。','warn');
   const template=templateById(entity.templateRef?.templateId);if(!template||template.archived)return message('该受控生物绑定的 UnitTemplate 不存在或已归档。','warn');
-  const duplicate=state.encounter.members.some(member=>member.controlledEntityProjection?.sourceCombatProjectionId===projection.projectionId&&member.controlledEntityProjection?.controlledEntityId===entity.id);if(duplicate)return message('该受控生物已加入本次遭遇，不能重复生成。','warn');
-  const position=firstFreeFootprintPosition({widthCells:template.footprint?.[0]||1,heightCells:template.footprint?.[1]||1},state.encounter.members.filter(member=>member.deployment!=='reserve'),state.settings);if(!position)return message('地图没有可容纳该受控生物的空位。','warn');
-  try{const linkedProjection=createLinkedEntityProjection(projection,{id:entity.id,name:entity.name,relation:'ally'},template,{id:uid,timestamp:now}),member=createEncounterMember(template,uid(),position);linkedProjection.associationKind='controlled';linkedProjection.controlledEntityId=entity.id;member.name=entity.name;member.relation='ally';member.displayOrdinal=nextDisplayOrdinal(member.name,state.encounter.members);member.controlledEntityProjection={projectionId:linkedProjection.projectionId,sourceCombatProjectionId:projection.projectionId,controlledEntityId:entity.id,controllerCharacterRef:clone(projection.characterId?{characterId:projection.characterId,revision:projection.characterRevision}:null),status:entity.status,duration:clone(entity.duration),commandRangeFeet:entity.commandRangeFeet,effectLabel:entity.effectLabel};ensureFacing(member);state.linkedEntityProjections.push(linkedProjection);state.controlledEntityProjections.push(clone(member.controlledEntityProjection));state.encounter.members.push(member);message(`${entity.name} 已作为受控关联生物加入第 0 回合；本场会创建新的独立战斗实例。`);}catch(error){message(`受控生物未加入遭遇：${error.message}`,'error');}
+  if(isControlledEntityDuplicate(projection.projectionId,entity.id))return message(joining?'该受控生物已加入本次战斗，不能重复生成。':'该受控生物已加入本次遭遇，不能重复生成。','warn');
+  if(preparing){
+    const position=firstFreeFootprintPosition({widthCells:template.footprint?.[0]||1,heightCells:template.footprint?.[1]||1},state.encounter.members.filter(member=>member.deployment!=='reserve'),state.settings);if(!position)return message('地图没有可容纳该受控生物的空位。','warn');
+    try{const linkedProjection=createLinkedEntityProjection(projection,{id:entity.id,name:entity.name,relation:'ally'},template,{id:uid,timestamp:now}),member=createEncounterMember(template,uid(),position);linkedProjection.associationKind='controlled';linkedProjection.controlledEntityId=entity.id;member.name=entity.name;member.relation='ally';member.displayOrdinal=nextDisplayOrdinal(member.name,state.encounter.members);member.controlledEntityProjection={projectionId:linkedProjection.projectionId,sourceCombatProjectionId:projection.projectionId,controlledEntityId:entity.id,controllerCharacterRef:clone(projection.characterId?{characterId:projection.characterId,revision:projection.characterRevision}:null),status:entity.status,duration:clone(entity.duration),commandRangeFeet:entity.commandRangeFeet,effectLabel:entity.effectLabel};ensureFacing(member);state.linkedEntityProjections.push(linkedProjection);state.controlledEntityProjections.push(clone(member.controlledEntityProjection));state.encounter.members.push(member);message(`${entity.name} 已作为受控关联生物加入第 0 回合；本场会创建新的独立战斗实例。`);}catch(error){message(`受控生物未加入遭遇：${error.message}`,'error');}
+    return;
+  }
+  const controllerCombatant=resolved.controllerCombatant||state.combatants.find(c=>c.combatProjectionId===projection.projectionId||(c.characterSheetRef&&c.characterSheetRef.characterId===characterId)||c.characterId===characterId);
+  if(!controllerCombatant)return message('控制者尚未加入当前战斗或未在场；找不到控制者战斗实例，不能加入受控生物。','warn');
+  const occupied=[...onFieldCombatants(),...pendingPlacementCombatants()],footprint={widthCells:template.footprint?.[0]||1,heightCells:template.footprint?.[1]||1},position=firstFreeFootprintPosition(footprint,occupied,state.settings);
+  if(!position)return message('地图没有可容纳该受控生物的空位。','warn');
+  try{
+    const linkedProjection=createLinkedEntityProjection(projection,{id:entity.id,name:entity.name,relation:'ally'},template,{id:uid,timestamp:now});
+    linkedProjection.associationKind='controlled';linkedProjection.controlledEntityId=entity.id;
+    const member=createEncounterMember(template,uid(),position);
+    member.name=entity.name;member.relation='ally';member.displayOrdinal=nextDisplayOrdinal(member.name,[...state.combatants,...pendingPlacementCombatants()]);
+    member.controlledEntityProjection={projectionId:linkedProjection.projectionId,sourceCombatProjectionId:projection.projectionId,controlledEntityId:entity.id,controllerCharacterRef:clone(projection.characterId?{characterId:projection.characterId,revision:projection.characterRevision}:null),status:entity.status,duration:clone(entity.duration),commandRangeFeet:entity.commandRangeFeet,effectLabel:entity.effectLabel};
+    ensureFacing(member);
+    const combatant=materializeCombatant(member,uid());
+    combatant.controlledEntityProjection=clone(member.controlledEntityProjection);
+    combatant.controllerLink={controlledEntityId:entity.id,controllerCombatantId:controllerCombatant.id,controllerCharacterRef:clone(member.controlledEntityProjection.controllerCharacterRef),controllerName:controllerCombatant.name,effectLabel:entity.effectLabel,commandRangeFeet:entity.commandRangeFeet,duration:clone(entity.duration),status:entity.status,history:[...(entity.history||[]),{eventId:uid(),type:'re-materialized',at:now(),round:state.turn.round,status:entity.status,reason:'从控制者 CharacterSheet 的正式受控关系创建本场独立实例'}]};
+    ensureFacing(combatant);
+    const item={kind:'join',combatant,reserveMemberId:null,tiePlacement:'after',initiativeMode:'roll',initiativeModifier:combatant.initiativeModifier,initiativeRoll:null,initiativeConfigured:false,linkedProjection,controlledEntityProjection:clone(member.controlledEntityProjection),controllerLink:clone(combatant.controllerLink)};
+    stageEntryItem(item,{destination:'keep',notice:`${entity.name} 已生成本场受控独立快照，并加入待入场批次。`});
+  }catch(error){message(`受控生物未加入待入场批次：${error.message}`,'error');}
 }
-function linkedMaterializationPanel(record,preparing){const sheet=record&&currentCharacterSheet(record),entities=sheet?.linkedEntities||[];if(!record||!entities.length)return '';const projection=state.combatProjections.find(item=>item.characterId===sheet.characterId&&item.characterRevision===sheet.revision);return `<section class="linked-encounter-actions"><p class="muted">仅从显式 UnitTemplate 建立独立快照；本场选择模板不会回写长期角色卡。</p>${entities.map(entity=>{const duplicate=state.encounter.members.some(member=>member.linkedEntityProjection?.sourceCombatProjectionId===projection?.projectionId&&member.linkedEntityProjection?.linkedEntityRef?.id===entity.id);return `<article class="character-fact-card linked-card" data-linked-card><div class="card-heading"><b>${esc(entity.name)}</b><span class="pill">${esc(LINKED_KIND_LABELS[entity.kind]||entity.kind)} / ${esc(LINKED_RELATION_LABELS[entity.relation]||entity.relation)}</span></div><p>${esc(entity.note||'无备注')}</p><label>本场 UnitTemplate<select data-linked-template-choice ${duplicate||!preparing||!projection?'disabled':''}>${linkedTemplateOptions(entity.templateRef?.templateId||'')}</select></label><small>${entity.templateRef?.templateId?`长期绑定：${esc(entity.templateRef.templateId)}`:'未长期绑定；请选择本场模板'}</small><button class="primary" data-linked-materialize="${esc(entity.id)}" data-linked-character="${sheet.characterId}" ${duplicate||!preparing||!projection?'disabled':''}>${duplicate?'已加入本次遭遇':'生成棋子并加入遭遇'}</button></article>`;}).join('')}</section>`;}
+function linkedMaterializationPanel(record,preparing,joining=false){
+  const sheet=record&&currentCharacterSheet(record);
+  let entities=sheet?.linkedEntities||[];
+  if(!record||(!preparing&&!joining))return '';
+
+  if(joining){
+    const resolved=resolveCombatProjectionForEntity({characterId:sheet.characterId,entityKind:'linked'});
+    if(resolved.ok&&resolved.projection?.linkedEntities){
+      const sheetIds=new Set(entities.map(e=>e.id));
+      const extraFromProj=resolved.projection.linkedEntities.filter(e=>!sheetIds.has(e.id));
+      if(extraFromProj.length){entities=[...entities,...extraFromProj];}
+    }
+  }
+
+  if(!entities.length)return '';
+  return `<section class="linked-encounter-actions"><p class="muted">仅从显式 UnitTemplate 建立独立快照；本场选择模板不会回写长期角色卡。</p>${entities.map(entity=>{
+    const resolved=resolveCombatProjectionForEntity({characterId:sheet.characterId,entityId:entity.id,entityKind:'linked'});
+    const projection=resolved.projection;
+    const duplicate=isLinkedEntityDuplicate(projection?.projectionId,entity.id);
+    let disabled=false,buttonText='',helpText='';
+    if(duplicate){
+      disabled=true;
+      buttonText=joining?'已加入本次战斗':'已加入本次遭遇';
+      helpText=joining?'已在正式实例、reserve、草稿或待入场批次中。':'已在当前遭遇中。';
+    }else if(!resolved.ok){
+      disabled=true;
+      buttonText=joining?'加入待入场批次':'生成棋子并加入遭遇';
+      if(resolved.reason==='entity-not-in-projection'){
+        helpText='该实体只存在于更新后的角色卡修订中，不属于当前战斗。角色卡的新修订不会自动修改进行中的战斗。';
+      }else if(resolved.reason==='no-combatant'){
+        helpText='控制者不在当前战斗或未在场。';
+      }else if(resolved.reason==='multiple-ambiguous-projections'){
+        helpText='检测到同一角色存在多个不同的战斗投影，无法安全确定来源。';
+      }else{
+        helpText=joining?'找不到该角色在当前战斗中的冻结投影。':'请先在第 0 回合将该角色加入遭遇。';
+      }
+    }else{
+      disabled=false;
+      buttonText=joining?'加入待入场批次':'生成棋子并加入遭遇';
+      helpText=joining?'将使用当前战斗冻结投影建立独立快照。':'本场将创建新的独立实例。';
+    }
+    return `<article class="character-fact-card linked-card" data-linked-card><div class="card-heading"><b>${esc(entity.name)}</b><span class="pill">${esc(LINKED_KIND_LABELS[entity.kind]||entity.kind)} / ${esc(LINKED_RELATION_LABELS[entity.relation]||entity.relation)}</span></div><p>${esc(entity.note||'无备注')}</p><label>本场 UnitTemplate<select data-linked-template-choice ${disabled?'disabled':''}>${linkedTemplateOptions(entity.templateRef?.templateId||'')}</select></label><small>${entity.templateRef?.templateId?`长期绑定：${esc(entity.templateRef.templateId)}`:'未长期绑定；请选择本场模板'}</small><button class="primary" data-linked-materialize="${esc(entity.id)}" data-linked-character="${sheet.characterId}" ${disabled?'disabled':''}>${buttonText}</button><small class="action-help-text">${helpText}</small></article>`;
+  }).join('')}</section>`;
+}
 function generatePostCombatDiffs(){
   const existing=new Set((state.postCombatDiffs||[]).map(diff=>`${diff.combatProjectionId}:${diff.combatantId}`));let created=0;
   state.combatants.filter(combatant=>combatant.combatProjectionId&&!combatant.postCombatWritebackDisabled).forEach(combatant=>{
@@ -658,8 +891,19 @@ function initiativeOrderWith(candidate, tiePlacement='after',excludedIds=[]){con
 function entryItemFromDraft(draft, values=null){
   const read=name=>values?values.get(name):draft[name],position=values?{x:Math.max(0,Math.floor(Number(read('x'))||0)),y:Math.max(0,Math.floor(Number(read('y'))||0))}:clone(draft.position),template=clone(draft.templateSnapshot),member=createEncounterMember(template,uid(),position),pendingCombatants=entryPlacementItems().map(item=>item.combatant),numbered=[...state.combatants,...pendingCombatants];
   ensureDisplayOrdinals(numbered);member.name=String(read('name')||draft.name).trim()||draft.name;member.displayOrdinal=draft.displayOrdinal||nextDisplayOrdinal(member.name,numbered);member.relation=read('relation')||draft.relation;member.hp=Math.max(0,Math.min(member.maxHp,Math.floor(Number(read('hp'))||draft.hp)));member.resources=values?parseResources(read('resources')):clone(draft.resources);member.resourceMax=clone(member.resources);member.slots=clone(draft.slots||{});member.slotsMax=clone(draft.slots||{});member.conditions=values?String(read('conditions')||'').split(/[，,;；]/).map(text=>text.trim()).filter(Boolean):[...(draft.conditions||[])];
-  const combatant=materializeCombatant(member,uid());ensureFacing(combatant);const initiativeMode=read('initiativeMode')||'roll',pending=!values&&initiativeMode==='roll',resolved=pending?{configured:false,mode:'roll',roll:null,modifier:normalizeInitiativeModifier(read('initiativeModifier')),total:null}:resolveInitiative({mode:initiativeMode,modifier:read('initiativeModifier'),roll:initiativeMode==='roll'?Math.floor(Math.random()*20)+1:null,manualTotal:read('initiative')});combatant.initiativeModifier=resolved.modifier;combatant.initiativeRoll=resolved.roll;combatant.initiativeMode=resolved.mode;combatant.initiative=resolved.total;
-  return {kind:'join',combatant,reserveMemberId:draft.reserveMemberId||null,tiePlacement:read('tiePlacement')==='before'?'before':'after',initiativeMode:resolved.mode,initiativeModifier:resolved.modifier,initiativeRoll:resolved.roll,initiativeConfigured:resolved.configured};
+  const origin=draft.stagedItem?.combatant||(draft.reserveMemberId?state.encounter.members.find(m=>m.id===draft.reserveMemberId):null);
+  if(origin?.sourceCombatProjectionId){member.sourceCombatProjectionId=origin.sourceCombatProjectionId;}
+  if(origin?.sourceLinkedEntityId){member.sourceLinkedEntityId=origin.sourceLinkedEntityId;}
+  if(origin?.linkedEntityProjection){member.linkedEntityProjection=clone(origin.linkedEntityProjection);}
+  if(origin?.controlledEntityProjection){member.controlledEntityProjection=clone(origin.controlledEntityProjection);}
+  const combatant=materializeCombatant(member,uid());ensureFacing(combatant);
+  if(origin?.sourceCombatProjectionId){combatant.sourceCombatProjectionId=origin.sourceCombatProjectionId;}
+  if(origin?.sourceLinkedEntityId){combatant.sourceLinkedEntityId=origin.sourceLinkedEntityId;}
+  if(origin?.linkedEntityProjection){combatant.linkedEntityProjection=clone(origin.linkedEntityProjection);}
+  if(origin?.controlledEntityProjection){combatant.controlledEntityProjection=clone(origin.controlledEntityProjection);}
+  if(origin?.controllerLink||draft.stagedItem?.controllerLink){combatant.controllerLink=clone(origin?.controllerLink||draft.stagedItem?.controllerLink);}
+  const initiativeMode=read('initiativeMode')||'roll',pending=!values&&initiativeMode==='roll',resolved=pending?{configured:false,mode:'roll',roll:null,modifier:normalizeInitiativeModifier(read('initiativeModifier')),total:null}:resolveInitiative({mode:initiativeMode,modifier:read('initiativeModifier'),roll:initiativeMode==='roll'?Math.floor(Math.random()*20)+1:null,manualTotal:read('initiative')});combatant.initiativeModifier=resolved.modifier;combatant.initiativeRoll=resolved.roll;combatant.initiativeMode=resolved.mode;combatant.initiative=resolved.total;
+  return {kind:'join',combatant,reserveMemberId:draft.reserveMemberId||null,tiePlacement:read('tiePlacement')==='before'?'before':'after',initiativeMode:resolved.mode,initiativeModifier:resolved.modifier,initiativeRoll:resolved.roll,initiativeConfigured:resolved.configured,linkedProjection:draft.stagedItem?.linkedProjection||origin?.linkedEntityProjection||null,controlledEntityProjection:clone(origin?.controlledEntityProjection||null),controllerLink:clone(combatant.controllerLink||null)};
 }
 function stageEntryItem(item,{destination='battle',notice}={}){const plan=placementPlan(item.combatant,item.combatant.position,[...onFieldCombatants(),...pendingPlacementCombatants()]);if(!plan.valid)return message(`不能准备投入：${plan.reasons.join('；')}。请修改坐标后再确认。`,'warn');state.ui.entryPlacement={items:[...entryPlacementItems(),item]};state.ui.entryDraft=null;state.ui.selectedId=null;if(destination==='map')selectWorkspaceForDomain('地图');else if(destination==='battle')selectWorkspaceForDomain('战斗');const resolvedNotice=typeof notice==='function'?notice():notice;message(resolvedNotice||`已暂存 ${displayName(item.combatant)}，当前待入场 ${entryPlacementItems().length} 个。`);}
 function stageTemplateEntry(template){if(!template||combatEnded()||!state.turn.started)return message('只有已开始且未结束的战斗可临时加入单位。','warn');if(state.ui.entryDraft)return message('请先确认或放弃当前正在编辑的加入草稿。','warn');const item=entryItemFromDraft(entryDraftFor(template));stageEntryItem(item,{destination:'keep',notice:()=>`已添加 ${displayName(item.combatant)}，当前待入场 ${entryPlacementItems().length} 个。`});}
@@ -704,7 +948,52 @@ function confirmEntryPlacement(){
   if(invalid)return message(`无法投入 ${displayName(invalid.item.combatant)}：${invalid.plan.reasons.join('；')}。`,'warn');
   const initiativePlan=initiativePlanForEntryBatch(items),names=items.map(item=>displayName(item.combatant)),joined=items.filter(item=>item.kind==='join'),reentered=items.filter(item=>item.kind==='reentry'),transformed=items.filter(item=>item.kind==='transformation');
   command('combatant.batch-deployed',{batch:true,joined:joined.map(item=>({id:item.combatant.id,templateId:item.combatant.templateId,reserveMemberId:item.reserveMemberId,initiative:item.combatant.initiative,tiePlacement:item.tiePlacement,eligibleFromRound:item.eligibleFromRound,position:item.combatant.position})),reentered:reentered.map(item=>({id:item.combatant.id,initiative:item.initiative,initiativeMode:item.initiativeMode,tiePlacement:item.tiePlacement,eligibleFromRound:item.eligibleFromRound,position:item.position})),transformed:transformed.map(item=>({sourceCombatantId:item.sourceCombatantId,replacementId:item.combatant.id,templateId:item.combatant.templateId,initiative:item.combatant.initiative,tiePlacement:item.tiePlacement,eligibleFromRound:item.eligibleFromRound,position:item.combatant.position}))},()=>{
-    joined.forEach(item=>{const c=item.combatant;state.combatants.push(c);if(item.reserveMemberId){const reserve=state.encounter.members.find(member=>member.id===item.reserveMemberId);if(reserve){reserve.deployedCombatantId=c.id;reserve.deployment='deployed';}}if(c.kind==='character')state.characters.push({id:uid(),combatantId:c.id,name:c.name,baseline:{hp:c.hp,resources:clone(c.resources),slots:clone(c.slots)}});});
+    joined.forEach(item=>{
+      const c=item.combatant;
+      state.combatants.push(c);
+      if(item.linkedProjection){
+        if(!state.linkedEntityProjections.some(p=>p.projectionId===item.linkedProjection.projectionId)){
+          state.linkedEntityProjections.push(item.linkedProjection);
+        }
+      }
+      if(item.controlledEntityProjection){
+        if(!state.controlledEntityProjections.some(p=>p.projectionId===item.controlledEntityProjection.projectionId)){
+          state.controlledEntityProjections.push(clone(item.controlledEntityProjection));
+        }
+      }
+      if(item.controllerLink&&!c.controllerLink){
+        c.controllerLink=clone(item.controllerLink);
+      }
+      if(item.reserveMemberId){
+        const reserve=state.encounter.members.find(member=>member.id===item.reserveMemberId);
+        if(reserve){
+          reserve.deployedCombatantId=c.id;
+          reserve.deployment='deployed';
+          if(reserve.linkedEntityProjection&&!c.linkedEntityProjection){
+            c.linkedEntityProjection=clone(reserve.linkedEntityProjection);
+            c.sourceCombatProjectionId=reserve.sourceCombatProjectionId;
+            c.sourceLinkedEntityId=reserve.sourceLinkedEntityId;
+          }
+          if(reserve.controlledEntityProjection&&!c.controllerLink){
+            const controller=state.combatants.find(candidate=>candidate.combatProjectionId===reserve.controlledEntityProjection.sourceCombatProjectionId);
+            if(controller){
+              c.controllerLink={
+                controlledEntityId:reserve.controlledEntityProjection.controlledEntityId,
+                controllerCombatantId:controller.id,
+                controllerCharacterRef:clone(reserve.controlledEntityProjection.controllerCharacterRef),
+                controllerName:controller.name,
+                effectLabel:reserve.controlledEntityProjection.effectLabel,
+                commandRangeFeet:reserve.controlledEntityProjection.commandRangeFeet,
+                duration:clone(reserve.controlledEntityProjection.duration),
+                status:reserve.controlledEntityProjection.status,
+                history:[{eventId:reserve.controlledEntityProjection.projectionId,type:'re-materialized',at:now(),round:state.turn.round,status:reserve.controlledEntityProjection.status,reason:'从控制者 CharacterSheet 的正式受控关系创建本场独立实例'}]
+              };
+            }
+          }
+        }
+      }
+      if(c.kind==='character')state.characters.push({id:uid(),combatantId:c.id,name:c.name,baseline:{hp:c.hp,resources:clone(c.resources),slots:clone(c.slots)}});
+    });
     reentered.forEach(item=>{const c=item.combatant;c.position=clone(item.position);c.initiative=item.initiative;c.initiativeModifier=item.initiativeModifier;c.initiativeRoll=item.initiativeRoll;c.initiativeMode=item.initiativeMode;c.eligibleFromRound=item.eligibleFromRound;c.presenceStatus='on-field';});
     transformed.forEach(item=>{const source=getCombatant(item.sourceCombatantId),c=item.combatant;if(source){source.lifeStatus='transformed';source.participationStatus='ended';source.presenceStatus='temporarily-away';source.deathRecord={...(source.deathRecord||{}),transformedIntoId:c.id};}c.transformationOrigin={combatantId:item.sourceCombatantId,name:source?.name||'未知遗骸'};state.combatants.push(c);});
     state.turn.order=initiativePlan.order;state.turn.index=initiativePlan.currentId?initiativePlan.order.indexOf(initiativePlan.currentId):initiativePlan.order.findIndex(id=>isTurnEligible(state.combatants.find(c=>c.id===id)));state.ui.entryPlacement=null;state.ui.selectedId=items[0].combatant.id;
@@ -884,7 +1173,7 @@ function createS2ControlledUndeadCandidate(source,values){
   return {source,template,controller,controllerRecord,controlledEntity,combatant,eventId,mapOutcome,initiative,reason,v060};
 }
 function queueControlledEntityCandidate(item){
-  const projection=item.controllerRecord&&state.combatProjections.find(candidate=>candidate.characterId===item.controllerRecord.characterId&&candidate.characterRevision===item.controllerRecord.currentRevision);
+  const projection=(item.controller?.combatProjectionId&&state.combatProjections.find(p=>p.projectionId===item.controller.combatProjectionId))||(item.controllerRecord&&state.combatProjections.find(candidate=>candidate.characterId===item.controllerRecord.characterId&&candidate.characterRevision===item.controllerRecord.currentRevision));
   if(!projection)return false;
   const entity=clone(item.controlledEntity),existing=(state.postCombatDiffs||[]).some(diff=>diff.combatantId===item.combatant.id&&diff.characterId===projection.characterId&&diff.status==='pending');
   if(existing)return true;
@@ -943,7 +1232,7 @@ function confirmS2PlacementAt(position){
   if(!plan.valid)return message(`此处不可摆放：${plan.reasons.join('；')}。已有棋子、尸体棋子或越界都会阻止生成。`,'warn');
   s2PlacementDraft=null;
   try{
-    if(draft.kind==='successor')commitS2Successor(item);else commitS2ControlledUndead(item);
+    if(draft.kind==='successor'){commitS2Successor(item);clearDeathSuccessorDraft(item.source?.id);}else{commitS2ControlledUndead(item);clearDeathControlledDraft(item.source?.id);}
   }catch(error){s2PlacementDraft=draft;message(`新躯体未创建：${error.message}`,'error');}
 }
 function cancelS2Placement(){
@@ -990,7 +1279,56 @@ function issueControlledCommand(id,form){
     message(`已记录 ${status.controller.name} 对 ${combatant.name} 的命令；具体动作结算仍由 DM 处理。`);
   }catch(error){message(error.message,'error');}
 }
-function s2InheritanceControls(){return `<fieldset><legend>创建时复制字段（未勾选的组以空/默认值建立，之后两卡完全独立）</legend><div class="form-grid">${S2_SUCCESSOR_INHERITANCE_GROUPS.map(group=>`<label><input type="checkbox" name="inheritGroups" value="${group}" checked/> ${esc(S2_INHERITANCE_LABELS[group])}</label>`).join('')}</div></fieldset>`;}
+function saveSuccessorDraftFromForm(form){
+  const sourceId=form.dataset.s2SuccessorForm;if(!sourceId)return;
+  const formData=new FormData(form),inheritGroups=formData.getAll('inheritGroups'),existing=deathSuccessorDraft.get(sourceId)||{};
+  deathSuccessorDraft.set(sourceId,{
+    ...existing,
+    name:formData.get('name')??existing.name,
+    hp:formData.get('hp')!==null?Number(formData.get('hp')):existing.hp,
+    maxHp:formData.get('maxHp')!==null?Number(formData.get('maxHp')):existing.maxHp,
+    relation:formData.get('relation')??existing.relation,
+    bodyDescription:formData.get('bodyDescription')??existing.bodyDescription,
+    originalDisposition:formData.get('originalDisposition')??existing.originalDisposition,
+    mapOutcome:formData.get('mapOutcome')??existing.mapOutcome,
+    initiativeMode:formData.get('initiativeMode')??existing.initiativeMode,
+    initiativeModifier:formData.get('initiativeModifier')!==null?Number(formData.get('initiativeModifier')):existing.initiativeModifier,
+    initiative:formData.get('initiative')!==null?Number(formData.get('initiative')):existing.initiative,
+    tiePlacement:formData.get('tiePlacement')??existing.tiePlacement,
+    reason:formData.get('reason')??existing.reason,
+    inheritGroups,
+  });
+}
+function saveControlledDraftFromForm(form){
+  const sourceId=form.dataset.s2UndeadForm;if(!sourceId)return;
+  const formData=new FormData(form),existing=deathControlledDraft.get(sourceId)||{};
+  deathControlledDraft.set(sourceId,{
+    ...existing,
+    templateId:formData.get('templateId')??existing.templateId,
+    name:formData.get('name')??existing.name,
+    relation:formData.get('relation')??existing.relation,
+    controllerCombatantId:formData.get('controllerCombatantId')??existing.controllerCombatantId,
+    effectLabel:formData.get('effectLabel')??existing.effectLabel,
+    commandRangeFeet:formData.get('commandRangeFeet')!==null?Number(formData.get('commandRangeFeet')):existing.commandRangeFeet,
+    durationKind:formData.get('durationKind')??existing.durationKind,
+    customDurationAmount:formData.get('customDurationAmount')!==null?Number(formData.get('customDurationAmount')):existing.customDurationAmount,
+    customDurationUnit:formData.get('customDurationUnit')??existing.customDurationUnit,
+    mapOutcome:formData.get('mapOutcome')??existing.mapOutcome,
+    initiativeMode:formData.get('initiativeMode')??existing.initiativeMode,
+    initiativeModifier:formData.get('initiativeModifier')!==null?Number(formData.get('initiativeModifier')):existing.initiativeModifier,
+    initiative:formData.get('initiative')!==null?Number(formData.get('initiative')):existing.initiative,
+    tiePlacement:formData.get('tiePlacement')??existing.tiePlacement,
+    reason:formData.get('reason')??existing.reason,
+  });
+}
+function s2InheritanceControls(selectedGroups=S2_SUCCESSOR_INHERITANCE_GROUPS){
+  const effectiveGroups=selectedGroups!==undefined?selectedGroups:S2_SUCCESSOR_INHERITANCE_GROUPS;
+  const selectedSet=new Set(effectiveGroups);
+  return `<fieldset class="inheritance-fieldset"><legend>创建时复制字段（未勾选的组以空/默认值建立，之后两卡完全独立）</legend><div class="inheritance-card-grid">${S2_SUCCESSOR_INHERITANCE_GROUPS.map(group=>{
+    const checked=selectedSet.has(group);
+    return `<label class="inheritance-card ${checked?'selected':''}"><input type="checkbox" name="inheritGroups" value="${group}" ${checked?'checked':''}/> <span class="inheritance-label">${esc(S2_INHERITANCE_LABELS[group])}</span></label>`;
+  }).join('')}</div></fieldset>`;
+}
 function duplicateSourceMarkup(source){return hasDeathReplacement(source)?'<p class="notice warn"><label><input type="checkbox" name="duplicateSource" value="confirmed"/> DM 确认：该遗体已有后继记录，仍要创建本次结果。</label></p>':'';}
 function v060SpellOptions(outcome){return `<option value="">请选择法术或自定义依据</option>${spellsForV060(outcome).map(spell=>`<option value="${spell.id}">${esc(spell.name)}</option>`).join('')}<option value="custom">自定义依据</option>`;}
 function v060RulingState(workspace){const spellId=workspace.querySelector('[data-v060-spell-select]')?.value||'',outcome=workspace.dataset.v060Outcome,spell=spellId?spellForV060(outcome,spellId):null,fields={};(spell?.rulingFields||[]).forEach(field=>{fields[field.id]={mode:workspace.querySelector(`[name="ruling:${field.id}:mode"]`)?.value||'',value:workspace.querySelector(`[name="ruling:${field.id}:value"]`)?.value||''};});return {spellId,spell,outcome,form:workspace.closest('form'),fields,customBasis:workspace.querySelector('[name="customBasis"]')?.value||''};}
@@ -1000,15 +1338,47 @@ function v060PreviewMarkup(state){return `${state.spell&&state.spell.id!=='custo
 function v060RulingContent(outcome,state){const spell=state.spell;if(!spell)return '<p class="muted">只显示当前结果适用的法术。选择后才展开简报与裁定资料。</p>';if(spell.id==='custom')return `<label>自定义依据<input name="customBasis" required value="${esc(state.customBasis)}" placeholder="例如：以某法术为基础的 DM 裁定"/></label><p class="muted">自定义依据不伪造法术字段；结果卡必要操作仍由 DM 填写。</p><aside class="spell-ruling-preview" data-v060-ruling-preview>${v060PreviewMarkup(state)}</aside>`;return `<section class="spell-brief"><div><b>${esc(spell.name)}</b><span>${esc(spell.meta)}</span></div><p>${esc(spell.summary)}</p><small>系统只记录 DM 裁定，不自动核验条件。</small><details><summary>查看详细参考</summary><p>${esc(spell.summary)}</p><p>${esc(V060_GENTLE_REPOSE.name)}：${esc(V060_GENTLE_REPOSE.summary)}</p></details></section><section class="spell-ruling-list"><h5>裁定资料</h5>${spell.rulingFields.map(field=>{const current=state.fields[field.id]||{},modes=V060_RULING_MODES[field.modes]||[],definition=modes.find(item=>item.id===current.mode);return `<article class="spell-ruling-card ${current.mode?'complete':''}"><div><b>${esc(field.label)}</b><small>建议：${esc(field.suggested)}</small></div><input type="hidden" name="ruling:${field.id}:mode" value="${esc(current.mode)}"/> <div class="ruling-mode-group">${modes.map(mode=>`<button type="button" class="${current.mode===mode.id?'active':''}" data-v060-ruling-mode="${mode.id}" data-v060-ruling-field="${field.id}">${esc(mode.label)}</button>`).join('')}</div>${definition?.needsValue?`<label class="ruling-override">最终记录<input name="ruling:${field.id}:value" required value="${esc(current.value)}" placeholder="填写 DM 最终裁定"/></label>`:''}</article>`;}).join('')}</section><aside class="spell-ruling-preview" data-v060-ruling-preview>${v060PreviewMarkup(state)}</aside>`;}
 function v060GuidanceMarkup(outcome){return `<section class="spell-ruling-workspace" data-v060-ruling-workspace data-v060-outcome="${outcome}"><div class="spell-ruling-select"><label>法术 / 依据<select name="spellId" required data-v060-spell-select>${v060SpellOptions(outcome)}</select></label><small>先选结果，再选依据；不会自动裁定。</small></div><div data-v060-ruling-content>${v060RulingContent(outcome,{spell:null,fields:{},customBasis:''})}</div></section>`;}
 function v060OptionalMarkup(){const casters=state.combatants.filter(candidate=>!isDead(candidate)&&candidate.presenceStatus==='on-field');return `<details><summary>可选记录：施法者、资源、时间、灵魂与规则</summary><div class="row"><label>施法者/记录单位<select name="casterCombatantId"><option value="">不追踪</option>${casters.map(c=>`<option value="${esc(c.id)}">${esc(displayName(c))}</option>`).join('')}</select></label><label>资源处理<select name="resourceHandling"><option value="not-tracked">不追踪</option><option value="dm-confirmed">DM 确认已消耗</option><option value="sync">同步扣除当前资源</option><option value="custom">自定义处理</option></select></label><label>资源名称<input name="resourceName" placeholder="仅同步扣除时需要"/></label><label>数量<input name="resourceAmount" type="number" min="1" value="1"/></label></div><div class="row"><label>遗体防腐记录<textarea name="gentleReposeNote" placeholder="可留空；不自动计算期限"></textarea></label><label>时间/期限<textarea name="timeNote" placeholder="可留空；不自动计时"></textarea></label><label>灵魂/剧情<textarea name="soulNote" placeholder="可留空"></textarea></label><label>规则符合情况<textarea name="rulesNote" placeholder="可留空；不构成合法性 Gate"></textarea></label></div></details>`;}
-function v060RestorePanel(source){return `<section class="death-resolution"><h4>恢复原身体</h4><form data-pc-return-to-life-form="${source.id}"><p class="notice warn">先选法术或自定义依据。缺少材料、时间、灵魂或资格记录仍可由 DM 提交。</p><div class="row"><label>最终 HP<input name="hp" type="number" min="1" max="${source.maxHp}" required value="1"/></label><label>战斗状态<select name="conditionHandling"><option value="preserve">保留既有状态（移除 unconscious）</option><option value="clear">清空全部条件</option></select></label><label>状态/疾病/诅咒/力竭<textarea name="effectDisposition" placeholder="可留空：DM 未追踪"></textarea></label></div>${v060GuidanceMarkup('restore')}${v060OptionalMarkup()}<label>DM 原因<textarea name="reason" required></textarea></label><button class="primary" type="submit">确认恢复原实例</button></form></section>`;}
+function v060RestorePanel(source){return `<section class="death-resolution post-death-stage-panel"><h4>恢复原身体</h4><form data-pc-return-to-life-form="${source.id}" class="staged-restore-form"><p class="notice warn">先选法术或自定义依据。缺少材料、时间、灵魂或资格记录仍可由 DM 提交。</p><fieldset class="form-stage-section"><legend class="stage-legend">1. 生命值与状态</legend><div class="row"><label>最终 HP<input name="hp" type="number" min="1" max="${source.maxHp}" required value="1"/></label><label>战斗状态<select name="conditionHandling"><option value="preserve">保留既有状态（移除 unconscious）</option><option value="clear">清空全部条件</option></select></label><label>状态/疾病/诅咒/力竭<textarea name="effectDisposition" placeholder="可留空：DM 未追踪"></textarea></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">2. 法术与依据</legend>${v060GuidanceMarkup('restore')}</fieldset><fieldset class="form-stage-section"><legend class="stage-legend">3. 可选记录与提交</legend>${v060OptionalMarkup()}<label>DM 原因<textarea name="reason" required placeholder="必须填写恢复原身体的 DM 裁定原因"></textarea></label><button class="primary submit-stage-btn" type="submit">确认恢复原实例</button></fieldset></form></section>`;}
 function s2SuccessorPanel(source,slice,shape='normal'){
-  const record=currentCharacterRecordForCombatant(source),shapeLabel={normal:'普通新身体',undead:'不死生物形态',custom:'其他自定义形态'}[shape]||'新身体',defaultName=`${source.name}（${shapeLabel}）`;
+  const record=currentCharacterRecordForCombatant(source),shapeLabel={normal:'普通新身体',undead:'不死生物形态',custom:'其他自定义形态'}[shape]||'新身体';
   if(!record)return `<section class="death-resolution"><p class="notice warn">此死亡 PC 没有匹配当前长期角色卡修订的 CombatProjection。为避免猜测复制来源，不能创建独立新角色卡；请使用从长期角色卡投影加入遭遇的角色。</p></section>`;
-  return `<section class="death-resolution"><h4>以新身体或新形态继续冒险：${shapeLabel}</h4><form data-s2-successor-form="${source.id}" data-s2-slice="${slice}"><input type="hidden" name="shape" value="${shape}"/><p class="notice warn">创建独立 CharacterSheet 与 PC 实例。旧死亡实例及旧卡保留，不自动归档、同步或建立硬关联。</p><div class="row"><label>新角色卡名称<input name="name" required value="${esc(defaultName)}"/></label><label>新实例 HP<input name="hp" type="number" min="1" required value="1"/></label><label>新实例最大 HP<input name="maxHp" type="number" min="1" required value="${esc(source.maxHp)}"/></label><label>关系<select name="relation"><option value="ally" selected>友方</option><option value="neutral">中立</option><option value="enemy">敌对</option></select></label></div>${v060GuidanceMarkup('successor')}<label>形态/身体说明<textarea name="bodyDescription" placeholder="可留空；由 DM 裁定"></textarea></label>${s2InheritanceControls()}<div class="row"><label>原卡处置记录<select name="originalDisposition"><option value="keep-active">保留 active</option><option value="coexist">允许新旧卡剧情并存</option><option value="archive-later">DM 将在战后独立决定是否归档</option></select></label><label>尸体处理<select name="mapOutcome"><option value="remove-corpse-token">移除旧尸体棋子</option><option value="retain-corpse-token">保留旧尸体棋子</option></select></label></div><div class="row"><label>先攻<select name="initiativeMode"><option value="keep">沿用原死亡实例先攻</option><option value="reroll">重新投 1d20</option><option value="manual">DM 手动填写</option></select></label><label>先攻调整值<input name="initiativeModifier" type="number" value="${source.initiativeModifier??0}"/></label><label>手动先攻<input name="initiative" type="number" value="${source.initiative??0}"/></label><label>同值顺序<select name="tiePlacement"><option value="after">同值单位之后</option><option value="before">同值单位之前</option></select></label></div>${v060OptionalMarkup()}${duplicateSourceMarkup(source)}<label>DM 原因<textarea name="reason" required></textarea></label><button class="primary" type="submit">前往地图摆放</button></form></section>`;
+  const draft=deathSuccessorDraft.get(source.id)||{};
+  const currentName=draft.name!==undefined?draft.name:`${source.name}（${shapeLabel}）`;
+  const currentHp=draft.hp!==undefined?draft.hp:1;
+  const currentMaxHp=draft.maxHp!==undefined?draft.maxHp:source.maxHp;
+  const currentRelation=draft.relation||'ally';
+  const currentBodyDesc=draft.bodyDescription||'';
+  const currentInherit=draft.inheritGroups!==undefined?draft.inheritGroups:S2_SUCCESSOR_INHERITANCE_GROUPS;
+  const currentOrigDisp=draft.originalDisposition||'keep-active';
+  const currentMapOutcome=draft.mapOutcome||'remove-corpse-token';
+  const currentInitMode=draft.initiativeMode||'keep';
+  const currentInitMod=draft.initiativeModifier!==undefined?draft.initiativeModifier:(source.initiativeModifier??0);
+  const currentInit=draft.initiative!==undefined?draft.initiative:(source.initiative??0);
+  const currentTie=draft.tiePlacement||'after';
+  const currentReason=draft.reason||'';
+
+  return `<section class="death-resolution post-death-stage-panel"><h4>以新身体或新形态继续冒险：${shapeLabel}</h4><form data-s2-successor-form="${source.id}" data-s2-slice="${slice}" class="staged-successor-form"><input type="hidden" name="shape" value="${shape}"/><p class="notice warn">创建独立 CharacterSheet 与 PC 实例。旧死亡实例及旧卡保留，不自动归档、同步或建立硬关联。</p><fieldset class="form-stage-section"><legend class="stage-legend">1. 基础身份与关系</legend><div class="row"><label>新角色卡名称<input name="name" required value="${esc(currentName)}"/></label><label>新实例 HP<input name="hp" type="number" min="1" required value="${currentHp}"/></label><label>新实例最大 HP<input name="maxHp" type="number" min="1" required value="${esc(currentMaxHp)}"/></label><label>关系<select name="relation"><option value="ally" ${currentRelation==='ally'?'selected':''}>友方</option><option value="neutral" ${currentRelation==='neutral'?'selected':''}>中立</option><option value="enemy" ${currentRelation==='enemy'?'selected':''}>敌对</option></select></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">2. 法术与依据</legend>${v060GuidanceMarkup('successor')}<label>形态/身体说明<textarea name="bodyDescription" placeholder="可留空；由 DM 裁定">${esc(currentBodyDesc)}</textarea></label></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">3. 属性与特性继承</legend>${s2InheritanceControls(currentInherit)}</fieldset><fieldset class="form-stage-section"><legend class="stage-legend">4. 处置与尸体</legend><div class="row"><label>原卡处置记录<select name="originalDisposition"><option value="keep-active" ${currentOrigDisp==='keep-active'?'selected':''}>保留 active</option><option value="coexist" ${currentOrigDisp==='coexist'?'selected':''}>允许新旧卡剧情并存</option><option value="archive-later" ${currentOrigDisp==='archive-later'?'selected':''}>DM 将在战后独立决定是否归档</option></select></label><label>尸体处理<select name="mapOutcome"><option value="remove-corpse-token" ${currentMapOutcome==='remove-corpse-token'?'selected':''}>移除旧尸体棋子</option><option value="retain-corpse-token" ${currentMapOutcome==='retain-corpse-token'?'selected':''}>保留旧尸体棋子</option></select></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">5. 先攻与顺位</legend><div class="row"><label>先攻<select name="initiativeMode"><option value="keep" ${currentInitMode==='keep'?'selected':''}>沿用原死亡实例先攻</option><option value="reroll" ${currentInitMode==='reroll'?'selected':''}>重新投 1d20</option><option value="manual" ${currentInitMode==='manual'?'selected':''}>DM 手动填写</option></select></label><label>先攻调整值<input name="initiativeModifier" type="number" value="${currentInitMod}"/></label><label>手动先攻<input name="initiative" type="number" value="${currentInit}"/></label><label>同值顺序<select name="tiePlacement"><option value="after" ${currentTie==='after'?'selected':''}>同值单位之后</option><option value="before" ${currentTie==='before'?'selected':''}>同值单位之前</option></select></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">6. DM 记录与提交</legend>${v060OptionalMarkup()}${duplicateSourceMarkup(source)}<label>DM 原因<textarea name="reason" required placeholder="请记录创建原因">${esc(currentReason)}</textarea></label><button class="primary submit-stage-btn" type="submit">前往地图摆放</button></fieldset></form></section>`;
 }
 function s2ControlledUndeadPanel(source){
   const templates=transformationTemplates(),controllers=controllerCandidates(source);if(!templates.length)return '';
-  return `<section class="death-resolution"><h4>制造受控不死生物</h4><form data-s2-undead-form="${source.id}"><p class="notice warn">原死亡事实和原角色卡不会恢复。未选择控制者时，只记录本场 DM 裁定，不猜测玩家控制权或长期关联。</p><p class="muted">一次长休不等于 24 小时；Terminal 不换算或自动推进控制时间。</p><div class="row"><label>不死生物模板<select name="templateId" required>${templates.map(template=>`<option value="${esc(template.id)}">${esc(template.name)} · ${esc(template.kind)}</option>`).join('')}</select></label><label>显示名<input name="name" value="" placeholder="默认模板名称"/></label><label>关系<select name="relation"><option value="ally" selected>友方</option><option value="neutral">中立</option><option value="enemy">敌对</option></select></label><label>控制者<select name="controllerCombatantId"><option value="">不追踪长期控制者</option>${controllers.map(controller=>`<option value="${controller.id}">${esc(controller.name)} · ${esc(controller.kind)}</option>`).join('')}</select></label></div>${v060GuidanceMarkup('controlled')}<div class="row"><label>效果/规则定位<input name="effectLabel" placeholder="默认使用所选法术/依据"/></label><label>命令距离（尺）<input name="commandRangeFeet" type="number" min="0" required value="60"/></label><label>控制期限<select name="durationKind" required><option value="dm-managed" selected>DM 管理（不自动计时）</option><option value="permanent">永久</option><option value="custom">自定义</option></select></label><label>自定义数量<input name="customDurationAmount" type="number" min="1" value="1"/></label><label>自定义单位<select name="customDurationUnit"><option value="rounds">回合</option><option value="encounters">场战斗</option><option value="long-rests">次长休</option></select></label></div><div class="row"><label>尸体处理<select name="mapOutcome"><option value="remove-corpse-token">移除旧尸体棋子</option><option value="retain-corpse-token">保留旧尸体棋子</option></select></label><label>先攻<select name="initiativeMode"><option value="keep">沿用原死亡实例先攻</option><option value="reroll">重新投 1d20</option><option value="manual">DM 手动填写</option></select></label><label>先攻调整值<input name="initiativeModifier" type="number" value="0"/></label><label>手动先攻<input name="initiative" type="number" value="${source.initiative??0}"/></label><label>同值顺序<select name="tiePlacement"><option value="after">同值单位之后</option><option value="before">同值单位之前</option></select></label></div>${v060OptionalMarkup()}${duplicateSourceMarkup(source)}<label>DM 原因<textarea name="reason" required></textarea></label><button class="primary" type="submit">前往地图摆放</button></form></section>`;
+  const draft=deathControlledDraft.get(source.id)||{};
+  const currentTemplate=draft.templateId||templates[0]?.id;
+  const currentName=draft.name!==undefined?draft.name:'';
+  const currentRelation=draft.relation||'ally';
+  const currentController=draft.controllerCombatantId!==undefined?draft.controllerCombatantId:'';
+  const currentEffectLabel=draft.effectLabel!==undefined?draft.effectLabel:'';
+  const currentRange=draft.commandRangeFeet!==undefined?draft.commandRangeFeet:60;
+  const currentDurKind=draft.durationKind||'dm-managed';
+  const currentDurAmount=draft.customDurationAmount!==undefined?draft.customDurationAmount:1;
+  const currentDurUnit=draft.customDurationUnit||'rounds';
+  const currentMapOutcome=draft.mapOutcome||'remove-corpse-token';
+  const currentInitMode=draft.initiativeMode||'keep';
+  const currentInitMod=draft.initiativeModifier!==undefined?draft.initiativeModifier:0;
+  const currentInit=draft.initiative!==undefined?draft.initiative:(source.initiative??0);
+  const currentTie=draft.tiePlacement||'after';
+  const currentReason=draft.reason||'';
+
+  return `<section class="death-resolution post-death-stage-panel"><h4>制造受控不死生物</h4><form data-s2-undead-form="${source.id}" class="staged-controlled-form"><p class="notice warn">原死亡事实和原角色卡不会恢复。未选择控制者时，只记录本场 DM 裁定，不猜测玩家控制权或长期关联。</p><p class="muted">一次长休不等于 24 小时；Terminal 不换算或自动推进控制时间。</p><fieldset class="form-stage-section"><legend class="stage-legend">1. 不死生物与控制关系</legend><div class="row"><label>不死生物模板<select name="templateId" required>${templates.map(template=>`<option value="${esc(template.id)}" ${currentTemplate===template.id?'selected':''}>${esc(template.name)} · ${esc(template.kind)}</option>`).join('')}</select></label><label>显示名<input name="name" value="${esc(currentName)}" placeholder="默认模板名称"/></label><label>关系<select name="relation"><option value="ally" ${currentRelation==='ally'?'selected':''}>友方</option><option value="neutral" ${currentRelation==='neutral'?'selected':''}>中立</option><option value="enemy" ${currentRelation==='enemy'?'selected':''}>敌对</option></select></label><label>控制者<select name="controllerCombatantId"><option value="" ${!currentController?'selected':''}>不追踪长期控制者</option>${controllers.map(controller=>`<option value="${controller.id}" ${currentController===controller.id?'selected':''}>${esc(controller.name)} · ${esc(controller.kind)}</option>`).join('')}</select></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">2. 法术与裁定依据</legend>${v060GuidanceMarkup('controlled')}</fieldset><fieldset class="form-stage-section"><legend class="stage-legend">3. 控制与命令范围</legend><div class="row"><label>效果/规则定位<input name="effectLabel" value="${esc(currentEffectLabel)}" placeholder="默认使用所选法术/依据"/></label><label>命令距离（尺）<input name="commandRangeFeet" type="number" min="0" required value="${currentRange}"/></label><label>控制期限<select name="durationKind" required><option value="dm-managed" ${currentDurKind==='dm-managed'?'selected':''}>DM 管理（不自动计时）</option><option value="permanent" ${currentDurKind==='permanent'?'selected':''}>永久</option><option value="custom" ${currentDurKind==='custom'?'selected':''}>自定义</option></select></label><label>自定义数量<input name="customDurationAmount" type="number" min="1" value="${currentDurAmount}"/></label><label>自定义单位<select name="customDurationUnit"><option value="rounds" ${currentDurUnit==='rounds'?'selected':''}>回合</option><option value="encounters" ${currentDurUnit==='encounters'?'selected':''}>场战斗</option><option value="long-rests" ${currentDurUnit==='long-rests'?'selected':''}>次长休</option></select></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">4. 尸体与先攻顺位</legend><div class="row"><label>尸体处理<select name="mapOutcome"><option value="remove-corpse-token" ${currentMapOutcome==='remove-corpse-token'?'selected':''}>移除旧尸体棋子</option><option value="retain-corpse-token" ${currentMapOutcome==='retain-corpse-token'?'selected':''}>保留旧尸体棋子</option></select></label><label>先攻<select name="initiativeMode"><option value="keep" ${currentInitMode==='keep'?'selected':''}>沿用原死亡实例先攻</option><option value="reroll" ${currentInitMode==='reroll'?'selected':''}>重新投 1d20</option><option value="manual" ${currentInitMode==='manual'?'selected':''}>DM 手动填写</option></select></label><label>先攻调整值<input name="initiativeModifier" type="number" value="${currentInitMod}"/></label><label>手动先攻<input name="initiative" type="number" value="${currentInit}"/></label><label>同值顺序<select name="tiePlacement"><option value="after" ${currentTie==='after'?'selected':''}>同值单位之后</option><option value="before" ${currentTie==='before'?'selected':''}>同值单位之前</option></select></label></div></fieldset><fieldset class="form-stage-section"><legend class="stage-legend">5. 可选记录与提交</legend>${v060OptionalMarkup()}${duplicateSourceMarkup(source)}<label>DM 原因<textarea name="reason" required placeholder="请记录创建原因">${esc(currentReason)}</textarea></label><button class="primary submit-stage-btn" type="submit">前往地图摆放</button></fieldset></form></section>`;
 }
 function controllerLinkPanel(combatant){
   const link=combatant?.controllerLink;if(!link)return '';
@@ -1029,7 +1399,8 @@ function movementPlan(c, to) {
   return {from,to,feet,fits:placement.fits,overlaps:!!placement.overlapWith,blocked:!placement.valid,pending:exceeds,reasons:[...placement.reasons,exceeds?'超过剩余移动力':null].filter(Boolean)};
 }
 function move(id, to) {
-  if(combatEnded())return message('本场战斗已结束，地图状态只读。','warn');const c=getCombatant(id);if(!c)return;if(!ordinaryActionsAllowed(c))return message('该生命状态不能移动；昏迷 PC 仍保留先攻位置，但本回合只能处理死亡豁免。','warn');
+  if(combatEnded())return message('本场战斗已结束，地图状态只读。','warn');const c=getCombatant(id);if(!c)return;
+  if(state.encounter?.phase!=='preparation'&&!ordinaryActionsAllowed(c))return message('该生命状态不能移动；昏迷 PC 仍保留先攻位置，但本回合只能处理死亡豁免。','warn');
   const plan=movementPlan(c,to);if(plan.blocked)return message(`移动未提交：${plan.reasons.join('；')}。`,'warn');
   if(state.encounter?.phase==='preparation'){c.position=to;persist();render();return;}
   command('combatant.moved',{id,from:plan.from,to,path:[plan.from,to],computedFeet:plan.feet,actualFeet:plan.feet,elevationFeet:c.elevationFeet,pendingReasons:plan.reasons},()=>{c.position=to;c.movementRemaining=Math.max(0,c.movementRemaining-plan.feet);},{rulesReference:['PHB2024:movement','DMG2024:diagonal'],reason:plan.pending?`DM 超出移动力确认：${plan.reasons.join('；')}`:'二维距离建议'});
@@ -1200,23 +1571,16 @@ function activeExpandedCombatantId(){
   if(selectedId&&state.combatants?.some(x=>x.id===selectedId&&!x.cleanupRemoved))return selectedId;
   return active()?.id||state.combatants?.find(x=>!x.cleanupRemoved)?.id||null;
 }
-function combatantRow(c, expandedId=activeExpandedCombatantId()){
-  const effects=effectsFor(c.id),isActive=active()?.id===c.id,isSelected=state.ui.selectedId===c.id,isExpanded=c.id===expandedId;
+function combatantRow(c){
+  const effects=effectsFor(c.id),isActive=active()?.id===c.id,isSelected=state.ui.selectedId===c.id;
   const ended=combatEnded(),dead=isDead(c),transformed=isTransformed(c),away=c.presenceStatus==='temporarily-away',finished=c.participationStatus==='ended';
-  const locked=ended||away||finished||dead||transformed?'disabled':'';
   const saves=c.deathSaves||{successes:0,failures:0};
-  const status=transformed?`已转化为 ${esc(getCombatant(c.deathRecord?.transformedIntoId)?.name||'其他单位')}`:isPc(c)?`${lifeStatusLabel(c)}${pcLifePhase(c)==='dying'?` · 成功 ${saves.successes}/3 · 失败 ${saves.failures}/3`:''}${(c.conditions||[]).length?` · ${esc((c.conditions||[]).map(conditionLabel).join('、'))}`:''}`:dead?'死亡':finished?'结束参战':away?'临时离场':'在场';
+  const isPrepReserve=state.encounter?.phase==='preparation'&&c.deployment==='reserve';
+  const status=transformed?`已转化为 ${esc(getCombatant(c.deathRecord?.transformedIntoId)?.name||'其他单位')}`:isPc(c)?`${isPrepReserve?'场外预备':lifeStatusLabel(c)}${pcLifePhase(c)==='dying'?` · 成功 ${saves.successes}/3 · 失败 ${saves.failures}/3`:''}${(c.conditions||[]).length?` · ${esc((c.conditions||[]).map(conditionLabel).join('、'))}`:''}`:dead?'死亡':finished?'结束参战':away?'临时离场':isPrepReserve?'场外预备':'在场';
   const ac=combatantAc(c),classLabel=combatantClassLabel(c),hpMeta=combatantHpMeta(c);
   const initVal=c.initiative!=null&&c.initiative!==''?String(c.initiative).padStart(2,'0'):'—';
-  let actionPanel='';
-  if(isExpanded){
-    const lifecycle=!ended&&!finished&&!dead&&!transformed&&(!isPc(c)||ordinaryActionsAllowed(c))?(away&&c.hp>0?`<button data-lifecycle-reenter="${c.id}">再入场</button>`:away?'':`<button data-lifecycle-leave="${c.id}">暂时离场</button><button class="danger" data-lifecycle-end="${c.id}">结束参战</button>`):ended&&state.ui.postCombatCleanup&&!c.cleanupRemoved?`<button data-cleanup-token="${c.id}">撤下棋子</button>`:'';
-    const critical=isPc(c)&&c.hp===0?`<label class="roster-critical-check"><input type="checkbox" data-hp-critical="${c.id}"/> 本次为重击（仅用于 0 HP 受伤失败数）</label>`:'';
-    const hpControls=away||finished||dead||transformed?'':`<div class="roster-ctrl-row"><label class="compact-input">伤害/治疗<input type="number" min="1" step="1" value="5" data-hp-input="${c.id}" inputmode="numeric" ${locked}/></label>${critical}<button class="btn-damage" data-hp-damage="${c.id}" ${locked}>伤害</button><button class="btn-heal" data-hp-heal="${c.id}" ${locked}>治疗</button></div><div class="roster-ctrl-row"><label class="compact-input">临时 HP<input type="number" min="0" step="1" value="${c.tempHp||0}" data-temp-hp-input="${c.id}" inputmode="numeric" ${locked}/></label><button data-temp-hp="${c.id}" ${locked}>设定</button></div>`;
-    actionPanel=`<div class="combatant-actions roster-expanded-panel">${hpControls}${lifecycle?`<div class="roster-ctrl-row roster-lifecycle-row">${lifecycle}</div>`:''}</div>`;
-  }
   const effectText=effects.length?`${effects.length}效果`:'';
-  return `<article class="combatant ${c.relation} ${isActive?'active':''} ${isSelected?'selected':''} ${isExpanded?'is-expanded':''} ${away?'away':''} ${finished?'finished':''} ${dead?'dead':''} ${transformed?'transformed':''}" data-select-card="${c.id}" tabindex="0" aria-label="选择 ${esc(displayName(c))}"><div class="combatant-summary roster-row-summary"><span class="roster-col-init ${c.relation}" title="先攻值">${initVal}</span><div class="roster-col-identity"><div class="roster-name-row"><span class="name">${esc(displayName(c))}</span>${isActive?'<span class="roster-badge-active">行动</span>':''}</div><div class="roster-meta-row"><span class="roster-class-tag">${esc(classLabel)}</span><span class="pill ${dead?'death-pill':''}">${esc(status)}</span>${effectText?`<span class="roster-effect-pill">${esc(effectText)}</span>`:''}</div></div><div class="roster-col-ac" title="护甲等级 (AC)"><small class="roster-ac-label">AC</small><b class="roster-ac-val">${ac!=null?ac:'—'}</b></div><div class="roster-col-hp" title="当前 HP / 最大 HP"><div class="roster-hp-text"><b class="roster-hp-val">${c.hp}/${c.maxHp}</b>${c.tempHp?`<span class="roster-temp-val">+${c.tempHp}</span>`:''}</div><div class="roster-hp-track"><div class="roster-hp-fill ${hpMeta.colorClass}" style="width:${hpMeta.pct}%;"></div>${hpMeta.tempPct>0?`<div class="roster-temp-fill" style="width:${hpMeta.tempPct}%;"></div>`:''}</div></div><button type="button" class="roster-chevron-btn" data-roster-toggle="${c.id}" title="${isExpanded?'收起互动面板':'展开互动面板'}" aria-label="${isExpanded?'收起':'展开'}">${isExpanded?'▲':'▼'}</button></div>${actionPanel}</article>`;
+  return `<article class="combatant ${c.relation} ${isActive?'active':''} ${isSelected?'selected':''} ${away?'away':''} ${finished?'finished':''} ${dead?'dead':''} ${transformed?'transformed':''}" data-select-card="${c.id}" tabindex="0" aria-label="选择 ${esc(displayName(c))}"><div class="roster-row-summary"><span class="roster-col-init ${c.relation}" title="先攻值">${initVal}</span><div class="roster-col-identity"><div class="roster-name-row"><span class="name" title="${esc(displayName(c))}">${esc(displayName(c))}</span>${isActive?'<span class="roster-badge-active">行动</span>':''}</div><div class="roster-meta-row"><span class="roster-class-tag">${esc(classLabel)}</span><span class="pill status-label ${dead?'death-pill':isPc(c)&&pcLifePhase(c)==='stable'?'status-stable':(c.conditions||[]).some(x=>['prone','unconscious'].includes(x))||isPc(c)&&pcLifePhase(c)==='dying'?'status-warning':'status-neutral'}">${esc(status)}</span>${effectText?`<span class="roster-effect-pill">${esc(effectText)}</span>`:''}</div></div><div class="roster-col-ac" title="护甲等级 (AC)"><small class="roster-ac-label">AC</small><b class="roster-ac-val">${ac!=null?ac:'—'}</b></div><div class="roster-col-hp" title="当前 HP / 最大 HP"><div class="roster-hp-text"><b class="roster-hp-val">${c.hp}/${c.maxHp}</b>${c.tempHp?`<span class="roster-temp-val">+${c.tempHp}</span>`:''}</div><div class="roster-hp-track"><div class="roster-hp-fill ${hpMeta.colorClass}" style="width:${hpMeta.pct}%;"></div>${hpMeta.tempPct>0?`<div class="roster-temp-fill" style="width:${hpMeta.tempPct}%;"></div>`:''}</div></div></div></article>`;
 }
 function effectCards(id){const effects=effectsFor(id),combatant=getCombatant(id),legacy=(combatant?.conditions||[]).filter(condition=>!(isPc(combatant)&&['unconscious','prone'].includes(condition)));return effects.map(effect=>`<div class="effect-card"><b>${esc(effect.name)}</b><small>${esc(effectSource(effect))} · ${esc(effectEnds(effect))}${effect.concentration?' · 专注':''}</small></div>`).join('')+(legacy.length?`<div class="effect-card legacy"><b>${esc(legacy.join('、'))}</b><small>旧版未跟踪状态：无来源与轮次</small></div>`:'')||'<span class="muted">无状态或 Buff</span>';}
 function referenceActionsFor(c){const normalize=action=>typeof action==='string'?{name:action,category:'action'}:action,entryId=c?.templateSnapshot?.sourceEntryId,admitted=referenceTemplateSeeds.find(template=>template.sourceEntryId===entryId),approved=(admitted?.referenceActions||[]).map(normalize),snapshot=(c?.templateSnapshot?.referenceActions||[]).map(normalize);if(snapshot.length)return snapshot.map(action=>{const evidence=approved.find(item=>item.name===action.name);return {...evidence,...action,detail:action.detail||evidence?.detail};});return approved;}
@@ -1306,7 +1670,17 @@ function reentryDraftPanel(){
   const d=state.ui.reentryDraft,c=getCombatant(d?.combatantId);if(!d||!c)return '';
   return `<section class="card"><h2>${esc(c.name)}：准备再次入场</h2><p class="notice warn">与战斗中加入单位相同：可直接进入地图摆放，或先暂存等待批量摆放。临时 HP、手工状态、Buff、Debuff 与专注已在离场时清除；再次入场保留当前 HP、已消耗资源、法术位和实例身份。</p><form data-reentry-draft-form><div class="row"><label>先攻<select name="initiativeMode" data-reentry-initiative-mode><option value="keep" ${d.initiativeMode==='keep'?'selected':''}>沿用 ${c.initiative??'—'}</option><option value="reroll" ${d.initiativeMode==='reroll'?'selected':''}>重新投 1d20 + 调整值</option><option value="manual" ${d.initiativeMode==='manual'?'selected':''}>DM 手动填写最终值</option></select></label><label>先攻调整值<input name="initiativeModifier" type="number" step="1" value="${normalizeInitiativeModifier(d.initiativeModifier,c.initiativeModifier)}"/></label><label>手动最终先攻<input name="initiative" type="number" step="1" value="${d.initiative??c.initiative??0}" ${d.initiativeMode==='manual'?'':'disabled'}/></label><label>同值顺序<select name="tiePlacement"><option value="after" ${d.tiePlacement==='after'?'selected':''}>同值单位之后</option><option value="before" ${d.tiePlacement==='before'?'selected':''}>同值单位之前</option></select></label></div><details><summary>详细配置（精确坐标）</summary><div class="row"><label>地图 X<input name="x" type="number" min="0" value="${d.position.x}"/></label><label>地图 Y<input name="y" type="number" min="0" value="${d.position.y}"/></label></div></details><p class="muted">地图摆放以拖拽为主；坐标仅用于精确定位。</p><div class="row"><button class="primary" type="submit" data-reentry-draft-action="map">确认资料并进入摆放</button><button type="submit" data-reentry-draft-action="stage">暂存等待批量摆放</button><button type="button" data-action="cancel-reentry-draft">放弃草稿</button></div></form></section>`;
 }
-function reservesPanel(){const pendingReserveIds=new Set(entryPlacementItems().map(item=>item.reserveMemberId).filter(Boolean)),reserves=state.encounter.members.filter(member=>member.deployment==='reserve'&&!member.deployedCombatantId&&!pendingReserveIds.has(member.id));if(!reserves.length||combatEnded())return '';return `<section class="card"><h2>场外预备</h2><p class="muted">预备单位尚未获得先攻位置；投入时由 DM 设置位置与先攻。</p><div class="row">${reserves.map(member=>`<button data-reserve-deploy="${member.id}">投入 ${esc(member.name)}</button>`).join('')}</div></section>`;}
+function reservesPanel(){
+  const pendingReserveIds=new Set(entryPlacementItems().map(item=>item.reserveMemberId).filter(Boolean));
+  const reserves=state.encounter.members.filter(member=>member.deployment==='reserve'&&!member.deployedCombatantId&&!pendingReserveIds.has(member.id));
+  if(!reserves.length||combatEnded())return '';
+  const linked=reserves.filter(member=>member.linkedEntityProjection||member.controlledEntityProjection);
+  const ordinary=reserves.filter(member=>!linked.includes(member));
+  const entries=(members,label)=>members.map(member=>`<button class="reinforcement-entry" data-reserve-deploy="${member.id}"><span>${esc(member.name)}</span><small>${label(member)}</small></button>`).join('');
+  const linkedMarkup=linked.length?`<section class="reinforcement-group linked"><h3>关联生物增援</h3><div class="reinforcement-list">${entries(linked,member=>member.controlledEntityProjection?'受控关联生物':'关联生物')}</div></section>`:'';
+  const ordinaryMarkup=ordinary.length?`<section class="reinforcement-group"><h3>预备单位</h3><div class="reinforcement-list">${entries(ordinary,()=>'场外预备')}</div></section>`:'';
+  return `<section class="card reinforcements-panel" data-panel-id="reinforcements"><h2>场外预备与增援</h2><p class="muted">增援先进入地图摆放与先攻确认；确认前不会创建参战实例或写入事件。</p>${linkedMarkup}${ordinaryMarkup}</section>`;
+}
 function deathResolutionPanel(){const resolution=state.ui.deathResolution,c=getCombatant(resolution?.combatantId);if(!resolution||!isDead(c)||isPc(c)||combatEnded())return '';if(resolution.mode!=='transform')return `<section class="card death-resolution"><h2>处理死亡：${esc(displayName(c))}</h2><p class="notice warn">该怪物 / NPC 已记录为死亡，已退出先攻与再入场。以下均为 DM 手动事件，不自动裁定法术、材料、即时死亡或复活规则。</p><div class="row"><button class="primary" data-death-dm-revive="${c.id}">DM 特许复起</button><button data-death-special="${c.id}">特殊复苏 / 转化</button><button data-death-close>取消</button></div><p class="death-help">DM 指定极端特殊情况，以 1 HP 复起；不恢复资源、法术位、临时 HP、状态或效果。</p>${c.kind==='npc'?s2ControlledUndeadPanel(c):''}</section>`;const templates=transformationTemplates(),suggestedName=templates.length?`${templates[0].name}化${c.name}`:'';return `<section class="card death-resolution"><h2>特殊复苏 / 转化：${esc(displayName(c))}</h2><p class="notice warn">选择一个怪物或 NPC 模板，系统会保留原死亡实例，并创建新的参战实例。请由 DM 裁定其叙事与规则来源。</p>${templates.length?`<form data-death-transform-form><div class="row"><label>转化模板<select name="templateId" required data-transform-template data-source-name="${esc(c.name)}">${templates.map(template=>`<option value="${template.id}" data-template-name="${esc(template.name)}">${esc(template.name)} · ${esc(template.sourceType||'custom')}</option>`).join('')}</select></label><label>显示名<input name="name" data-transform-name data-suggested-name="${esc(suggestedName)}" value="${esc(suggestedName)}" placeholder="可由 DM 自行修订"/></label><label>关系<select name="relation"><option value="enemy" ${c.relation==='enemy'?'selected':''}>敌对</option><option value="ally" ${c.relation==='ally'?'selected':''}>友方</option><option value="neutral" ${c.relation==='neutral'?'selected':''}>中立</option></select></label><label>当前 HP<input name="hp" type="number" min="1" value="" placeholder="默认最大 HP"/></label></div><div class="row"><label>先攻<select name="initiativeMode"><option value="keep">沿用死亡单位先攻</option><option value="reroll">重新投 1d20</option><option value="manual">DM 手动填写</option></select></label><label>手动先攻<input name="initiative" type="number" min="0" value="${c.initiative??0}"/></label><label>同值顺序<select name="tiePlacement"><option value="after">同值单位之后</option><option value="before">同值单位之前</option></select></label></div><div class="row"><button class="primary" type="submit" data-transform-action="direct">确认并在原位置转化</button><button type="submit" data-transform-action="map">进入地图批量摆放</button><button type="button" data-death-close>取消</button></div></form>`:'<p class="notice warn">单位库中没有可用于特殊转化的怪物或 NPC 模板。</p>'}</section>`;}
 function endCombatPanel(){const ending=state.ui.endCombatConfirm;if(!ending||combatEnded())return '';return `<section class="card end-combat-confirm"><h2>确认结束战斗</h2><p class="notice warn">在场 ${ending.onField} · 临时离场 ${ending.away} · 未投入预备 ${ending.reserves} · 未确认草稿 ${ending.draft}。确认后会结束所有已参战实例并放弃未确认草稿；长期角色只生成待审核候选，不会直接回写。</p>${ending.hasLinkedCharacters?'<p class="muted">本场含角色投影：将进入只读战后清理，完成候选审核后才能新建遭遇。</p>':'<p class="muted">将进入只读战后清理；可随后清空战场并新建遭遇。</p>'}<div class="row"><button class="primary" data-end-combat-confirm="save">结束并导出 JSON</button><button data-end-combat-confirm="nosave">结束但不导出</button><button data-end-combat-cancel>继续战斗</button></div></section>`;}
 function injectEndCombatPanel(){const markup=endCombatPanel(),host=document.querySelector('.panel.two')||document.querySelector('[data-panel-id="turn"]')?.closest('.wb-column-content')||document.querySelector('.wb-col-left .wb-column-content');if(markup&&host&&!document.querySelector('.end-combat-confirm'))host.insertAdjacentHTML('beforebegin',markup);}
@@ -1323,7 +1697,165 @@ function combatView(){
   const status=ended?(cleanup?'本场战斗已结束；当前为只读战后清理，可撤下棋子但不能行动、进入先攻或再入场。':`本场战斗已结束于第 ${state.turn.round} 轮；记录已封存为只读。`):state.turn.started?(a?`第 ${state.turn.round} 轮 · 当前：${esc(displayName(a))}`:`第 ${state.turn.round} 轮 · 等待增援，可投入单位或结束战斗`):'尚未开始：确认遭遇后可掷先攻。';
   return `${initiativeTimeline()}${initiativeResolver()}${entryDraftPanel()}${entryPlacementPanel()}${reentryDraftPanel()}${reservesPanel()}${deathResolutionPanel()}<section class="panel two"><div class="card"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="row">${ended?(cleanup?`<button data-action="cleanup-enemies">撤下全部敌对单位</button><button class="danger" data-action="finish-cleanup">清空战场并新建遭遇</button>`:''):`<button class="primary" data-action="initiative">掷先攻</button><button data-action="next">下一回合</button><button data-action="undo">撤销上一步</button><button class="danger" data-action="end-combat">结束战斗</button>`}</div><h3>单位</h3><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(combatantRow).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div><div class="card"><h2>当前选中者状态</h2><p class="muted density-standard-only">${hasSelected?`正在查看：${esc(displayName(focus))}`:'未手动选择，默认显示当前行动者。'}</p>${focus?`${actionEconomyMarkup(focus,canOperate,canRestoreEconomy)}${canOperate?'':`<p class="notice warn">${ended?'战斗已结束，状态只读。':isDead(focus)?'该单位已死亡，不能行动、治疗、再入场或以普通方式修改状态。':'当前查看单位不是行动者；行动、资源与手动效果操作仅对当前行动者开放。'}</p>`}${isDead(focus)&&!ended?`<section class="death-controls"><h3>死亡处理</h3><p class="muted">尸体棋子保留在地图；可由 DM 决定特许复起或特殊复苏 / 转化。</p><button class="primary" data-death-resolve="${focus.id}">处理死亡</button></section>`:''}<h3>资源</h3>${Object.entries(focus.resources).map(([k,v])=>`<div class="row"><span>${esc(k)} ${v}/${focus.resourceMax[k]??v}</span><button data-resource="${k}" data-amount="-1" ${canOperate?'':'disabled'}>消耗</button><button data-resource="${k}" data-amount="1" ${canOperate?'':'disabled'}>恢复</button></div>`).join('')||'<span class="muted">无次数资源</span>'}<h3>法术位</h3>${Object.entries(focus.slots).map(([k,v])=>`<span class="pill">${k}环 ${v}/${focus.slotsMax[k]}</span>`).join(' ')||'<span class="muted">非玩家法术位模型或未配置</span>'}<h3>状态、Buff 与专注</h3><div class="effect-list">${effectCards(focus.id)}</div>${masteryStatusPanel(focus)}${canOperate?manualEffectMarkup():''}`:ended?'<span class="muted">战斗内 HP、资源与状态没有自动回写长期角色卡；长期结算仍延期。</span>':'<span class="muted">选择单位后显示操作。</span>'}<section class="reference-section">${referenceActionPanel(focus)}</section></div></section>`;
 }
-function mapInspector(){const c=getCombatant(state.ui.selectedId);if(!c)return '<div class="map-inspector"><h3>选中单位状态</h3><span class="muted">点选棋子后在此查看 Buff、状态、来源、朝向与发射口。</span></div>';if(isDead(c)){const nextStep=isPc(c)?'请在战斗页的“当前选中者状态”记录 DM 确认复活。':'请在战斗页的“当前选中者状态”处理复起或特殊转化。';return `<div class="map-inspector dead-inspector"><h3>选中单位状态</h3><b>${esc(c.name)}</b><small>☠ 死亡（DM 判定）· HP 0/${c.maxHp}</small>${projectionStatusMarkup(currentStatusProjection().byId[c.id])}<p class="muted">尸体棋子保留在地图，但不可移动、转向、加入范围候选或再入场。${nextStep}</p><button data-select="">取消选择</button></div>`;}ensureFacing(c);const editable=canAdjustFacing(c),port=facingOrigin(c),dirs=[['north','北'],['east','东'],['south','南'],['west','西']];return `<div class="map-inspector"><h3>选中单位状态</h3><b>${esc(c.name)}</b><small>${esc(shortLabel(c))} · HP ${c.hp}/${c.maxHp}</small>${projectionStatusMarkup(currentStatusProjection().byId[c.id])}<div class="effect-list">${effectCards(c.id)}</div><section class="facing-controls"><h4>朝向与发射口</h4><div class="row">${dirs.map(([dir,label])=>`<button data-facing="${c.id}" data-facing-value="${dir}" class="${c.facing===dir?'active':''}" ${editable?'':'disabled'}>${label}</button>`).join('')}</div><small>正面：${c.facing==='north'?'北':c.facing==='east'?'东':c.facing==='south'?'南':'西'}；发射口（地图格）：${port.x+1}, ${port.y+1}</small><div class="row">${frontPortCells(c).map(p=>`<button data-facing-port="${c.id}" data-port-x="${p.x}" data-port-y="${p.y}" class="${c.facingPort.x===p.x&&c.facingPort.y===p.y?'active':''}" ${editable?'':'disabled'}>发射口 ${c.position.x+p.x+1},${c.position.y+p.y+1}</button>`).join('')}</div>${combatEnded()?'<small>战斗已结束；朝向、发射口与位置均为只读记录。</small>':editable?'<small>当前行动者可不限次数调整；“下一回合”后锁定。</small>':`<small>该单位回合已结束；如为强制转向，可由 DM 修正。</small><div class="row">${dirs.map(([dir,label])=>`<button data-facing-correct="${c.id}" data-facing-value="${dir}">DM 修正为${label}</button>`).join('')}</div>`}</section><button data-select="">取消选择</button></div>`;}
+function mapInspector(rangeMarkup=''){
+  const c=getCombatant(state.ui.selectedId)||active();
+  const currentTab = uiPreferences.inspectorTab === 'token' ? 'token' : 'combat';
+
+  const tabsMarkup = `
+    <div class="inspector-tabs" role="tablist" aria-label="单位面板选项">
+      <button type="button" class="inspector-tab-btn ${currentTab==='combat'?'active':''}" data-inspector-tab="combat" role="tab" aria-selected="${currentTab==='combat'}">战斗操作</button>
+      <button type="button" class="inspector-tab-btn ${currentTab==='token'?'active':''}" data-inspector-tab="token" role="tab" aria-selected="${currentTab==='token'}">棋子互动</button>
+    </div>
+  `;
+
+  if(!c) {
+    if (currentTab === 'token') {
+      return `<div class="map-inspector unit-action-center mode-token empty">
+        ${tabsMarkup}
+        <div class="token-pos-meta">
+          <span class="token-meta-item">棋子状态：<b>未选中单位</b></span>
+          <span class="muted" style="font-size:0.72rem;">点选地图棋子设置朝向与发射口，或直接在此使用范围测绘：</span>
+        </div>
+        ${rangeMarkup ? `<section class="token-range-section">${rangeMarkup}</section>` : ''}
+      </div>`;
+    }
+    return `<div class="map-inspector unit-action-center mode-combat empty">
+      ${tabsMarkup}
+      <h3>选中单位状态</h3>
+      <span class="muted">点选左侧列表单位或地图棋子后在此查看与操作。</span>
+    </div>`;
+  }
+  ensureFacing(c);
+  const a=active(),ended=combatEnded(),dead=isDead(c),transformed=isTransformed(c),away=c.presenceStatus==='temporarily-away',finished=c.participationStatus==='ended';
+  const locked=ended||away||finished||dead||transformed?'disabled':'';
+  const saves=c.deathSaves||{successes:0,failures:0};
+  const isPrepReserve=state.encounter?.phase==='preparation'&&c.deployment==='reserve';
+  const status=transformed?`已转化为 ${esc(getCombatant(c.deathRecord?.transformedIntoId)?.name||'其他单位')}`:isPc(c)?`${isPrepReserve?'场外预备':lifeStatusLabel(c)}${pcLifePhase(c)==='dying'?` · 成功 ${saves.successes}/3 · 失败 ${saves.failures}/3`:''}${(c.conditions||[]).length?` · ${esc((c.conditions||[]).map(conditionLabel).join('、'))}`:''}`:dead?'死亡':finished?'结束参战':away?'临时离场':isPrepReserve?'场外预备':'在场';
+  const ac=combatantAc(c),classLabel=combatantClassLabel(c),hpMeta=combatantHpMeta(c);
+  const editable=canAdjustFacing(c),port=facingOrigin(c),dirs=[['north','北'],['east','东'],['south','南'],['west','西']];
+  const relationLabel=c.relation==='enemy'?'敌对':c.relation==='ally'?'友方':'中立';
+
+  if (currentTab === 'token') {
+    return `<div class="map-inspector unit-action-center mode-token" data-unit-action-center="${c.id}">
+      ${tabsMarkup}
+      <div class="token-interact-header">
+        <div class="unit-title-group">
+          <h3 class="unit-name">${esc(displayName(c))}</h3>
+          <span class="pill token-short-pill">${esc(shortLabel(c))}</span>
+          <span class="pill pill-relation ${c.relation}">${relationLabel}</span>
+          <span class="pill pill-ac">AC <b>${ac!=null?ac:'—'}</b></span>
+        </div>
+        <div class="token-pos-meta">
+          <span class="token-meta-item">格点坐标：<b>X: ${c.position.x+1}, Y: ${c.position.y+1}</b></span>
+          <span class="token-meta-item">占位规格：<b>${c.footprint.widthCells||1}×${c.footprint.heightCells||1} 格</b> (${esc(c.size||'中型')})</span>
+          <span class="token-meta-item">移动速度：<b>${c.speed||30} 尺</b></span>
+        </div>
+      </div>
+
+      <section class="token-facing-section">
+        <div class="token-section-header">
+          <h4>朝向控制</h4>
+          <span class="token-active-hint">正面朝向：<b>${c.facing==='north'?'北':c.facing==='east'?'东':c.facing==='south'?'南':'西'}</b></span>
+        </div>
+        <div class="facing-btn-grid">
+          ${dirs.map(([dir,label])=>`<button type="button" data-facing="${c.id}" data-facing-value="${dir}" class="facing-btn ${c.facing===dir?'active':''}" ${editable?'':'disabled'}>${label}</button>`).join('')}
+        </div>
+      </section>
+
+      <section class="token-port-section">
+        <div class="token-section-header">
+          <h4>发射口选择</h4>
+          <span class="token-active-hint">发射口格点：<b>${port.x+1}, ${port.y+1}</b></span>
+        </div>
+        <div class="port-btn-grid">
+          ${frontPortCells(c).map(p=>`<button type="button" data-facing-port="${c.id}" data-port-x="${p.x}" data-port-y="${p.y}" class="port-btn ${c.facingPort.x===p.x&&c.facingPort.y===p.y?'active':''}" ${editable?'':'disabled'}>发射口 ${c.position.x+p.x+1},${c.position.y+p.y+1}</button>`).join('')}
+        </div>
+      </section>
+
+      <div class="token-rule-hints">
+        ${combatEnded()
+          ?'<small class="muted">战斗已结束；朝向、发射口与位置均为只读记录。</small>'
+          :editable
+          ?'<small class="muted">当前行动者可不限次数调整朝向与发射口；“下一回合”后锁定。</small>'
+          :`<div class="token-dm-correction"><small class="muted">该单位回合已锁定；若因战术强迫位移/转向，DM 可直接修正：</small><div class="dm-correct-btn-grid">${dirs.map(([dir,label])=>`<button type="button" data-facing-correct="${c.id}" data-facing-value="${dir}" class="secondary">DM 修正为${label}</button>`).join('')}</div></div>`}
+      </div>
+
+      <div class="token-action-footer">
+        ${ended&&state.ui.postCombatCleanup&&!c.cleanupRemoved?`<button type="button" data-cleanup-token="${c.id}" class="danger">撤下棋子</button>`:''}
+        <button type="button" data-select="" class="secondary btn-deselect">取消选择棋子</button>
+      </div>
+
+      ${rangeMarkup ? `<section class="token-range-section">${rangeMarkup}</section>` : ''}
+    </div>`;
+  }
+
+  // Combat Tab (战斗操作)
+  const critical=isPc(c)&&c.hp===0?`<label class="roster-critical-check"><input type="checkbox" data-hp-critical="${c.id}"/> 本次为重击（0 HP 受伤记 2 次失败）</label>`:'';
+  const hpControls=away||finished||dead||transformed?'':`<div class="unit-ctrl-grid"><div class="ctrl-group"><label class="compact-input">伤害/治疗<input type="number" min="1" step="1" value="5" data-hp-input="${c.id}" inputmode="numeric" ${locked}/></label><div class="btn-group"><button class="btn-damage" data-hp-damage="${c.id}" ${locked}>伤害</button><button class="btn-heal" data-hp-heal="${c.id}" ${locked}>治疗</button></div></div><div class="ctrl-group"><label class="compact-input">临时 HP<input type="number" min="0" step="1" value="${c.tempHp||0}" data-temp-hp-input="${c.id}" inputmode="numeric" ${locked}/></label><button data-temp-hp="${c.id}" ${locked}>设定</button></div></div>${critical}`;
+
+  const lifecycle=!ended&&!finished&&!dead&&!transformed&&(!isPc(c)||ordinaryActionsAllowed(c))?(away&&c.hp>0?`<button data-lifecycle-reenter="${c.id}">再入场</button>`:away?'':`<button data-lifecycle-leave="${c.id}">暂时离场</button><button class="danger" data-lifecycle-end="${c.id}">结束参战</button>`):ended&&state.ui.postCombatCleanup&&!c.cleanupRemoved?`<button data-cleanup-token="${c.id}">撤下棋子</button>`:'';
+  const deathSection=dead&&!ended?`<div class="unit-death-notice"><p class="muted">该单位已死亡（DM 判定）；棋子保留在地图。${isPc(c)?'请在下方面板记录 DM 确认复活。':'请在此处理复起或特殊转化。'}</p>${!isPc(c)?`<button class="primary" data-death-resolve="${c.id}">处理复起或特殊转化</button>`:''}</div>`:'';
+
+  const canOperate=c.id===a?.id&&!ended&&!dead;
+  const canRestoreEconomy=canOperate&&c.presenceStatus==='on-field'&&c.participationStatus==='active';
+  const economy=actionEconomyMarkup(c,canOperate,canRestoreEconomy);
+
+  const resKey=`${c.id}:resources`;
+  const resOpen=inspectorDisclosureState.has(resKey)?inspectorDisclosureState.get(resKey):true;
+  const hasRes=Object.keys(c.resources||{}).length>0,hasSlots=Object.keys(c.slots||{}).length>0;
+  const resDetails=hasRes||hasSlots?`<details class="wb-details-fold" data-inspector-fold="resources" data-fold-unit="${c.id}" ${resOpen?'open':''}><summary>资源与法术位</summary><div class="details-content">${hasRes?`<div class="resource-list">${Object.entries(c.resources).map(([k,v])=>`<div class="row"><span>${esc(k)} ${v}/${c.resourceMax[k]??v}</span><button data-resource="${k}" data-amount="-1" ${canOperate?'':'disabled'}>消耗</button><button data-resource="${k}" data-amount="1" ${canOperate?'':'disabled'}>恢复</button></div>`).join('')}</div>`:''}${hasSlots?`<div class="slot-list">${Object.entries(c.slots).map(([k,v])=>`<span class="pill">${k}环 ${v}/${c.slotsMax[k]}</span>`).join(' ')}</div>`:''}</div></details>`:'';
+
+  const refActions=referenceActionsFor(c),customActions=customActionsForCombatant(c),allActions=[...refActions,...customActions];
+  const actKey=`${c.id}:actions`;
+  const actOpen=(state.ui.referenceAction?.combatantId===c.id)||(inspectorDisclosureState.has(actKey)?inspectorDisclosureState.get(actKey):true);
+  const actionDetails=allActions.length?`<details class="wb-details-fold" data-inspector-fold="actions" data-fold-unit="${c.id}" ${actOpen?'open':''}><summary>动作与精通 (${allActions.length}项)</summary><div class="details-content">${referenceActionPanel(c)}${masteryStatusPanel(c)}</div></details>`:'';
+
+  return `<div class="map-inspector unit-action-center mode-combat" data-unit-action-center="${c.id}">
+    ${tabsMarkup}
+    <div class="unit-action-header">
+      <div class="unit-title-group">
+        <h3 class="unit-name">${esc(displayName(c))}</h3>
+        <span class="pill pill-relation ${c.relation}">${relationLabel}</span>
+        <span class="pill pill-ac">AC <b>${ac!=null?ac:'—'}</b></span>
+      </div>
+      <div class="unit-meta-group">
+        <span class="unit-class-tag">${esc(classLabel)}</span>
+        <span class="pill ${dead?'death-pill':''}">${esc(status)}</span>
+        ${projectionStatusMarkup(currentStatusProjection().byId[c.id])}
+      </div>
+    </div>
+    <div class="unit-hp-box">
+      <div class="unit-hp-row">
+        <span class="unit-hp-label">生命值 (HP)</span>
+        <div class="unit-hp-val-group">
+          <b class="unit-hp-cur ${hpMeta.colorClass}">${c.hp}</b>
+          <span class="unit-hp-slash">/</span>
+          <span class="unit-hp-max">${c.maxHp}</span>
+          ${c.tempHp?`<span class="unit-temp-tag">+${c.tempHp} 临时</span>`:''}
+        </div>
+      </div>
+      <div class="roster-hp-track big-track">
+        <div class="roster-hp-fill ${hpMeta.colorClass}" style="width:${hpMeta.pct}%;"></div>
+        ${hpMeta.tempPct>0?`<div class="roster-temp-fill" style="width:${hpMeta.tempPct}%;"></div>`:''}
+      </div>
+    </div>
+    <div class="unit-action-ops">
+      ${hpControls}
+      ${lifecycle?`<div class="unit-lifecycle-row">${lifecycle}</div>`:''}
+      ${deathSection}
+    </div>
+    ${isPc(c)?'<div class="unit-pc-life-host" data-pc-life-host></div>':''}
+    <div class="unit-economy-effects">
+      ${economy}
+      <div class="effect-list">${effectCards(c.id)}</div>
+      ${canOperate?manualEffectMarkup():''}
+    </div>
+    <div class="unit-action-drawers">
+      ${resDetails}
+      ${actionDetails}
+    </div>
+  </div>`;
+}
 function mapView(){const r=state.ui.range,cells=r&&r.phase==='preview'?coveredCells(r):[];const w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit';let grid='';for(let y=0;y<h;y++)for(let x=0;x<w;x++){const token=state.combatants.find(c=>c.position.x===x&&c.position.y===y);const fx=token?.footprint.widthCells||1,fy=token?.footprint.heightCells||1;grid+=`<div class="cell ${cells.includes(`${x},${y}`)?'preview':''}" data-cell="${x},${y}">${token?`<div class="token ${token.relation} ${active()?.id===token.id?'active':''} ${state.ui.selectedId===token.id?'selected':''}" data-token="${token.id}" title="${esc(token.name)}" style="width:calc(${fx*100}% + ${fx-1}px);height:calc(${fy*100}% + ${fy-1}px)">${esc(shortLabel(token))}</div>`:''}</div>`;} const candidates=r&&r.phase==='preview'?rangeTargets(cells):[];return `<section class="panel"><div class="map-layout"><div class="card map-wrap"><h2>二维战术地图 <small>${w}×${h} / 每格 ${state.settings.cellFeet} 尺</small></h2><div class="row map-mode"><span>显示：</span><button data-map-mode="fit" class="${mode==='fit'?'active':''}">适应屏幕</button><button data-map-mode="tactical" class="${mode==='tactical'?'active':''}">战术操作</button></div><div id="movement-preview" class="notice warn">按住棋子并拖动；松开后才记录移动。黄色提示表示待 DM 裁定。</div><div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div><p class="muted">地图不叠加 Buff 图标；点选棋子查看单位状态卡。</p></div><aside class="card map-inspector-panel">${mapInspector()}</aside><aside class="card"><h2>地图与范围</h2><p class="muted">棋子：按住拖动、松开提交。范围：选择形状后在地图按住拖动；预览本身不写入事件。</p><div class="row"><button data-range="circle">Circle</button><button data-range="cone">Cone</button><button data-range="line">Line</button><button data-range="square">Square</button></div>${r?`<div id="range-live" class="notice ${r.phase==='armed'?'warn':''}">${r.phase==='armed'?'已选择形状：请在地图按住并拖动。':`${r.shape} 预览：${cells.length} 格；候选 ${candidates.length} 个。松开后可编辑。`}</div>${r.phase==='preview'?`<div class="row"><label>尺寸（尺）<input id="range-size" type="number" min="5" step="5" value="${r.size}" /></label><label>结算<select id="range-mode"><option value="damage">伤害</option><option value="healing">治疗</option><option value="buff">Buff</option><option value="condition">状态</option></select></label><label>数值<input id="range-amount" type="number" min="1" value="8" /></label></div><div class="row"><label>效果名称<input id="effect-name" placeholder="例如：祝福 / 中毒" /></label><label>持续轮数<input id="effect-duration" type="number" min="1" value="1" /></label><label><input id="effect-concentration" type="checkbox"/> 专注</label></div><h3>候选与 DM 覆写</h3>${state.combatants.map(c=>`<div class="row"><label><input type="checkbox" data-target="${c.id}" ${([...candidates.map(x=>x.id),...r.manualAdd].includes(c.id)&&!r.manualRemove.includes(c.id))?'checked':''}/> ${esc(c.name)}</label></div>`).join('')}<div class="row"><button class="primary" data-action="apply-range">确认并批量结算</button><button data-action="cancel-range">取消预览</button></div>`:''}`:'<div class="notice warn">选择形状后，在地图按住并拖动：Circle/Square 决定中心和大小，Cone/Line 以当前行动者为源点决定朝向和长度。</div>'}</aside></div></section>`;}
 function referenceActionPreview(action){const options=action.options?.length?`<ol>${action.options.map(option=>`<li><b>${esc(option.roll)} · ${esc(option.name)}</b>：${esc(option.detail)}</li>`).join('')}</ol>`:'';return `<li><b>${esc(action.name)}</b>：${esc(action.detail||'规则内容未准入')}${options}</li>`;}
 function templatePreviewMarkup(template){const referenceActions=template.referenceActions||[],referenceTraits=template.traits||[],customActions=customActionsFor(template),referenceNames=referenceResourceNames(template),referenceResources=Object.entries(template.resources||{}).filter(([name])=>referenceNames.has(name)),customResources=Object.entries(template.resources||{}).filter(([name])=>!referenceNames.has(name)),color=templateColor(template);return `<h2>模板提示</h2><p><span class="color-swatch" style="background:${esc(color)}"></span>${template.colorMode==='custom'?'自选颜色':'随关系默认颜色'} · ${esc(template.relation==='enemy'?'敌对':template.relation==='ally'?'友方':'中立')}</p>${referenceActions.length?`<h3>规则书动作</h3><ul>${referenceActions.map(referenceActionPreview).join('')}</ul>`:''}${referenceTraits.length?`<h3>规则书特性</h3><ul>${referenceTraits.map(trait=>`<li><b>${esc(trait.name)}</b>：${esc(trait.detail||'规则内容未准入')}</li>`).join('')}</ul>`:''}<h3>自定义动作</h3>${customActions.length?`<ul>${customActions.map(action=>{const normalized=typeof action==='string'?{name:action}:action;return `<li><b>${esc(normalized.name)}</b>${actionDetail(normalized)?`：${esc(actionDetail(normalized))}`:' <small>用途未标注</small>'}</li>`;}).join('')}</ul>`:'<p class="muted">尚未配置自定义动作。</p>'}${referenceResources.length?`<h3>规则书资源</h3><ul>${referenceResources.map(([name,amount])=>`<li><b>${esc(name)}</b> ${amount} 次：${esc(template.resourceDetails?.[name]||'规则内容未准入')}</li>`).join('')}</ul>`:''}<h3>自定义资源</h3>${customResources.length?`<ul>${customResources.map(([name,amount])=>`<li><b>${esc(name)}</b> ${amount} 次${template.resourceDetails?.[name]?`：${esc(template.resourceDetails[name])}`:' <small>用途未标注</small>'}</li>`).join('')}</ul>`:'<p class="muted">尚未配置自定义资源。</p>'}<p class="muted">规则书条目显示已核验内容且不可在此改写；自定义条目由 DM 标注。系统不会自动裁定命中、伤害或规则效果。</p>`;}
@@ -1344,7 +1876,7 @@ function characterList(canProject){
 }
 function characterForm(sheet=null){
   const editing=!!sheet,abilities=sheet?.abilities||{},score=key=>abilities[key]?.score??10,firstClass=sheet?.classes?.[0]||{};
-  return `<form data-character-sheet-form class="character-form"><div class="row"><h2>${editing?`编辑 ${esc(sheet.name)} 为新修订`:'创建长期角色卡'}</h2>${editing?'<button type="button" data-character-edit-cancel>取消编辑</button>':''}</div><p class="notice warn">M1-S2 只保存 DM 手工事实，不把角色名称或职业名称当作规则证明。派生值保持 <code>needs-review</code>，武器精通保持 <code>unknown</code>。</p><fieldset><legend>身份与起源</legend><div class="form-grid"><label>角色名称<input name="name" value="${esc(sheet?.name||'15级散打武者')}" required/></label><label>玩家 / 所有者提示<input name="ownerHint" value="${esc(sheet?.ownerHint||'')}"/></label><label>规则版本<input name="ruleVersion" value="${esc(sheet?.ruleVersion||'2024')}"/></label><label>总等级<input name="totalLevel" type="number" min="0" value="${sheet?.totalLevel??15}"/></label><label>职业<input name="className" value="${esc(firstClass.name||'武僧')}"/></label><label>子职<input name="subclass" value="${esc(firstClass.subclass||'散打宗')}"/></label><label>种族<input name="species" value="${esc(sheet?.origin?.species||'')}"/></label><label>背景<input name="background" value="${esc(sheet?.origin?.background||'')}"/></label></div></fieldset><fieldset><legend>战斗快捷条与六项属性</legend><div class="form-grid"><label>AC<input name="armorClass" type="number" min="0" value="${sheet?.armorClass??16}"/></label><label>当前 HP<input name="currentHp" type="number" min="0" value="${sheet?.hp?.current??112}"/></label><label>最大 HP<input name="maxHp" type="number" min="1" value="${sheet?.hp?.max??112}"/></label><label>速度（尺）<input name="speed" type="number" min="0" value="${sheet?.speed??55}"/></label><label>先攻调整值<input name="initiativeModifier" type="number" value="${sheet?.initiativeModifier??4}"/></label><label>熟练加值<input name="proficiencyBonus" type="number" value="${sheet?.proficiencyBonus??0}"/></label><label>被动察觉<input name="passivePerception" type="number" value="${sheet?.passivePerception??0}"/></label><label>生命骰<input name="hitDice" value="${esc(sheet?.combatState?.hitDice||'')}" placeholder="例如 15d8；由 DM 确认"/></label>${[['strength','力量'],['dexterity','敏捷'],['constitution','intelligence'],['intelligence','智力'],['wisdom','感知'],['charisma','魅力']].map(([key,label])=>`<label>${label}<input name="${key}" type="number" min="0" value="${score(key)}"/></label>`).join('')}<label><input name="heroicInspiration" type="checkbox" ${sheet?.combatState?.heroicInspiration?'checked':''}/> 英雄激励</label></div><label>豁免（每行：名称 | 不熟练/熟练/专精 | 最终加值 | 状态）<textarea name="saves" rows="3">${esc(serializeProficiencies(sheet?.saves))}</textarea></label><label>技能（每行：名称 | 不熟练/熟练/专精 | 最终加值 | 状态）<textarea name="skills" rows="3">${esc(serializeProficiencies(sheet?.skills))}</textarea></label></fieldset><fieldset><legend>结构化战斗资料</legend><label>攻击（每行：名称 | 属性 | 攻击加值 | 伤害 | 类型 | 触及/射程 | 熟练是/否 | 资源关联）<textarea name="attacks" rows="4" placeholder="徒手打击|敏捷||待 DM 填写|unknown|5尺|是|">${esc(serializeAttacks(sheet?.attackProfiles)||(!editing?'徒手打击|敏捷||待 DM 填写|unknown|5尺|是|':''))}</textarea></label><label>动作与能力（每行：名称 | action/bonus/reaction | 资源关联 | 说明）<textarea name="actions" rows="4">${esc(serializeCharacterActions(sheet?.actions)||(!editing?'疾风连击|bonus|功力|DM 手工记录；规则效果待核验':''))}</textarea></label><label>资源（每行：名称 | 当前 | 最大 | 恢复方式 | 备注）<textarea name="resources" rows="4">${esc(serializeResourcesForCharacter(sheet?.resources)||(!editing?'功力|15|15|manual|本地验证余额；具体规则待核验':''))}</textarea></label></fieldset><fieldset><legend>装备与关联单位</legend><label>装备（每行：名称 | 数量 | 已装备 | 已同调 | 容器 | 消耗品 | 弹药/资源关联 | 备注）<textarea name="equipment" rows="4">${esc(serializeEquipment(sheet?.equipment)||(!editing?'旅行装备|1|是|否|随身|否||DM 手工验证项':''))}</textarea></label><label>关联单位（每行：名称 | 类型 | 关系 | 备注 | UnitTemplate ID）<textarea name="linkedEntities" rows="3" placeholder="示例盟友|ally|ally|第0回合物化|scout">${esc(serializeLinked(sheet?.linkedEntities))}</textarea></label></fieldset><fieldset><legend>补充资料</legend><div class="form-grid"><label>感官<input name="senses" value="${esc((sheet?.senses||[]).join('，'))}"/></label><label>语言<input name="languages" value="${esc((sheet?.languages||[]).join('，'))}"/></label><label>当前状态<input name="conditions" value="${esc((sheet?.combatState?.conditions||[]).join('，'))}"/></label></div><label>经历<textarea name="history">${esc(sheet?.origin?.history||'')}</textarea></label><label>DM 备注<textarea name="note">${esc(sheet?.note||'')}</textarea></label></fieldset><button class="primary" type="submit">${editing?'保存为新修订':'创建长期角色卡'}</button><p class="muted">新角色创建后从修订 1 开始；编辑会生成修订 N+1，不会原地覆盖历史。</p></form>`;
+  return `<form data-character-sheet-form class="character-form"><div class="row"><h2>${editing?`编辑 ${esc(sheet.name)} 为新修订`:'创建长期角色卡'}</h2>${editing?'<button type="button" data-character-edit-cancel>取消编辑</button>':''}</div><p class="notice warn">M1-S2 只保存 DM 手工事实，不把角色名称或职业名称当作规则证明。派生值保持 <code>needs-review</code>，武器精通保持 <code>unknown</code>。</p><fieldset><legend>身份与起源</legend><div class="form-grid"><label>角色名称<input name="name" value="${esc(sheet?.name||'15级散打武者')}" required/></label><label>玩家 / 所有者提示<input name="ownerHint" value="${esc(sheet?.ownerHint||'')}"/></label><label>规则版本<input name="ruleVersion" value="${esc(sheet?.ruleVersion||'2024')}"/></label><label>总等级<input name="totalLevel" type="number" min="0" value="${sheet?.totalLevel??15}"/></label><label>职业<input name="className" value="${esc(firstClass.name||'武僧')}"/></label><label>子职<input name="subclass" value="${esc(firstClass.subclass||'散打宗')}"/></label><label>种族<input name="species" value="${esc(sheet?.origin?.species||'')}"/></label><label>背景<input name="background" value="${esc(sheet?.origin?.background||'')}"/></label></div></fieldset><fieldset><legend>战斗快捷条与六项属性</legend><div class="form-grid"><label>AC<input name="armorClass" type="number" min="0" value="${sheet?.armorClass??16}"/></label><label>当前 HP<input name="currentHp" type="number" min="0" value="${sheet?.hp?.current??112}"/></label><label>最大 HP<input name="maxHp" type="number" min="1" value="${sheet?.hp?.max??112}"/></label><label>速度（尺）<input name="speed" type="number" min="0" value="${sheet?.speed??55}"/></label><label>先攻调整值<input name="initiativeModifier" type="number" value="${sheet?.initiativeModifier??4}"/></label><label>熟练加值<input name="proficiencyBonus" type="number" value="${sheet?.proficiencyBonus??0}"/></label><label>被动察觉<input name="passivePerception" type="number" value="${sheet?.passivePerception??0}"/></label><label>生命骰<input name="hitDice" value="${esc(sheet?.combatState?.hitDice||'')}" placeholder="例如 15d8；由 DM 确认"/></label>${[['strength','力量'],['dexterity','敏捷'],['constitution','intelligence'],['intelligence','智力'],['wisdom','感知'],['charisma','魅力']].map(([key,label])=>`<label>${label}<input name="${key}" type="number" min="0" value="${score(key)}"/></label>`).join('')}<label><input name="heroicInspiration" type="checkbox" ${sheet?.combatState?.heroicInspiration?'checked':''}/> 英雄激励</label></div><label>豁免（每行：名称 | 不熟练/熟练/专精 | 最终加值 | 状态）<textarea name="saves" rows="3">${esc(serializeProficiencies(sheet?.saves))}</textarea></label><label>技能（每行：名称 | 不熟练/熟练/专精 | 最终加值 | 状态）<textarea name="skills" rows="3">${esc(serializeProficiencies(sheet?.skills))}</textarea></label></fieldset><fieldset><legend>结构化战斗资料</legend><label>攻击（每行：名称 | 属性 | 攻击加值 | 伤害 | 类型 | 触及/射程 | 熟练是/否 | 资源关联）<textarea name="attacks" rows="4" placeholder="徒手打击|敏捷||待 DM 填写|unknown|5尺|是|">${esc(serializeAttacks(sheet?.attackProfiles)||(!editing?'徒手打击|敏捷||待 DM 填写|unknown|5尺|是|':''))}</textarea></label><label>动作与能力（每行：名称 | action/bonus/reaction | 资源关联 | 说明）<textarea name="actions" rows="4">${esc(serializeCharacterActions(sheet?.actions)||(!editing?'疾风连击|bonus|功力|DM 手工记录；规则效果待核验':''))}</textarea></label><label>资源（每行：名称 | 当前 | 最大 | 恢复方式 | 备注）<textarea name="resources" rows="4">${esc(serializeResourcesForCharacter(sheet?.resources)||(!editing?'功力|15|15|manual|本地验证余额；具体规则待核验':''))}</textarea></label></fieldset><fieldset><legend>装备与关联单位</legend><label>装备（每行：名称 | 数量 | 已装备 | 已同调 | 容器 | 消耗品 | 弹药/资源关联 | 备注）<textarea name="equipment" rows="4">${esc(serializeEquipment(sheet?.equipment)||(!editing?'旅行装备|1|是|否|随身|否||DM 手工验证项':''))}</textarea></label><label>关联单位（每行：名称 | 类型 | 关系 | 备注 | UnitTemplate ID）<textarea name="linkedEntities" data-linked-json="${esc(JSON.stringify(sheet?.linkedEntities||[]))}" rows="3" placeholder="示例盟友|ally|ally|第0回合物化|scout">${esc(serializeLinked(sheet?.linkedEntities))}</textarea></label></fieldset><fieldset><legend>补充资料</legend><div class="form-grid"><label>感官<input name="senses" value="${esc((sheet?.senses||[]).join('，'))}"/></label><label>语言<input name="languages" value="${esc((sheet?.languages||[]).join('，'))}"/></label><label>当前状态<input name="conditions" value="${esc((sheet?.combatState?.conditions||[]).join('，'))}"/></label></div><label>经历<textarea name="history">${esc(sheet?.origin?.history||'')}</textarea></label><label>DM 备注<textarea name="note">${esc(sheet?.note||'')}</textarea></label></fieldset><button class="primary" type="submit">${editing?'保存为新修订':'创建长期角色卡'}</button><p class="muted">新角色创建后从修订 1 开始；编辑会生成修订 N+1，不会原地覆盖历史。</p></form>`;
 }
 function masteryLongRestPanel(record,sheet){
   const mastery=sheet.weaponMastery||{},relevant=(mastery.grants||[]).length>0,terms=(sheet.attackProfiles||[]).filter(attack=>attack.masteryTerm).map(attack=>attack.masteryTerm);
@@ -1357,9 +1889,90 @@ function masteryLongRestPanel(record,sheet){
 function auditMarkup(label,audit){if(!audit)return '';const value=audit.effectiveValue??'unknown';return `<details class="audit"><summary>${esc(label)}：${esc(value)} <span class="pill">${esc(audit.status)}</span></summary><dl><dt>计算输入</dt><dd>${esc(JSON.stringify(audit.inputs||[]))}</dd><dt>计算值</dt><dd>${esc(audit.calculatedValue??'unknown')}</dd><dt>手工覆写</dt><dd>${esc(audit.overrideValue??'无')}</dd><dt>有效值</dt><dd>${esc(value)}</dd><dt>覆写原因</dt><dd>${esc(audit.overrideReason||'无')}</dd></dl></details>`;}
 function controlledEntityStatusLabel(status){return ({controlled:'受控','permanent-controlled':'永久受控','expired-uncontrolled':'已到期失控',released:'已解除控制','control-lost':'已失去控制'}[status]||status||'未知');}
 function controlledEntityCardMarkup(record,sheet){
-  const entities=sheet.controlledEntities||[];
-  const preparing=state.encounter?.phase==='preparation',projection=state.combatProjections.find(item=>item.characterId===sheet.characterId&&item.characterRevision===sheet.revision);
-  const cards=entities.map(entity=>{const reusable=['controlled','permanent-controlled'].includes(entity.status),duplicate=state.encounter.members.some(member=>member.controlledEntityProjection?.sourceCombatProjectionId===projection?.projectionId&&member.controlledEntityProjection?.controlledEntityId===entity.id);return `<article class="character-fact-card"><div class="card-heading"><b>${esc(entity.name)}</b><span class="pill">${esc(controlledEntityStatusLabel(entity.status))}</span></div><p>效果：${esc(entity.effectLabel||'DM 未标注')} · 命令距离：${esc(entity.commandRangeFeet??'—')} 尺</p><p>期限：${esc(controlledDurationLabel(entity.duration))}</p><small>模板：${esc(entity.templateRef?.templateId||'未标注')} · 最近战斗实例：${esc(entity.activeCombatantId||'无')}</small><details><summary>控制记录（${(entity.history||[]).length}）</summary>${(entity.history||[]).map(item=>`<p>${esc(item.at||'时间未知')} · ${esc(item.type||'记录')} · ${esc(controlledEntityStatusLabel(item.status))} · ${esc(item.reason||'无原因')}</p>`).join('')||'<p class="muted">无额外记录。</p>'}</details>${reusable?`<button class="primary" data-controlled-materialize="${esc(entity.id)}" data-controlled-character="${esc(sheet.characterId)}" ${duplicate||!preparing||!projection?'disabled':''}>${duplicate?'已加入本次遭遇':'加入新遭遇'}</button><small>${preparing&&projection?'本场将创建新的独立实例。':'先在第 0 回合加入控制者当前角色投影。'}</small>`:`<small>失控关系不再从控制者卡投入；DM 仍可从单位库独立加入模板。</small>`}${entity.status==='expired-uncontrolled'?`<button data-controlled-renewal-request="${esc(entity.id)}" data-controlled-character="${esc(sheet.characterId)}">记录尝试续控意图</button>`:''}</article>`;}).join('')||'<p class="muted">无受控生物关系。</p>';
+  let entities=sheet.controlledEntities||[];
+  const preparing=state.encounter?.phase==='preparation',joining=state.turn.started&&!combatEnded();
+
+  if(joining){
+    const resolved=resolveCombatProjectionForEntity({characterId:sheet.characterId,entityKind:'controlled'});
+    if(resolved.ok&&resolved.projection?.controlledEntities){
+      const sheetIds=new Set(entities.map(e=>e.id));
+      const extraFromProj=resolved.projection.controlledEntities.filter(e=>!sheetIds.has(e.id));
+      if(extraFromProj.length){entities=[...entities,...extraFromProj];}
+    }
+  }
+
+  const cards=entities.map(entity=>{
+    const reusable=['controlled','permanent-controlled'].includes(entity.status);
+    const resolved=resolveCombatProjectionForEntity({characterId:sheet.characterId,entityId:entity.id,entityKind:'controlled'});
+    const projection=resolved.projection;
+    const duplicate=isControlledEntityDuplicate(projection?.projectionId,entity.id);
+    const template=templateById(entity.templateRef?.templateId);
+    const templateValid=template&&!template.archived;
+    let actionMarkup='';
+
+    if(preparing){
+      if(reusable){
+        let disabled=false,buttonText='',helpText='';
+        if(duplicate){
+          disabled=true;
+          buttonText='已加入本次遭遇';
+          helpText='已在当前遭遇中。';
+        }else if(!templateValid){
+          disabled=true;
+          buttonText='加入新遭遇';
+          helpText='绑定的 UnitTemplate 不存在或已归档。';
+        }else if(!resolved.ok){
+          disabled=true;
+          buttonText='加入新遭遇';
+          helpText='先在第 0 回合加入控制者当前角色投影。';
+        }else{
+          disabled=false;
+          buttonText='加入新遭遇';
+          helpText='本场将创建新的独立实例。';
+        }
+        actionMarkup=`<button class="primary" data-controlled-materialize="${esc(entity.id)}" data-controlled-character="${esc(sheet.characterId)}" ${disabled?'disabled':''}>${buttonText}</button><small class="action-help-text">${helpText}</small>`;
+      }else{
+        actionMarkup=`<small class="action-help-text">失控关系不再从控制者卡投入；DM 仍可从单位库独立加入模板。</small>`;
+      }
+    }else if(joining){
+      if(reusable){
+        let disabled=false,buttonText='',helpText='';
+        if(duplicate){
+          disabled=true;
+          buttonText='已加入本次战斗';
+          helpText='已在正式实例、reserve、草稿或待入场批次中。';
+        }else if(!templateValid){
+          disabled=true;
+          buttonText='加入待入场批次';
+          helpText='绑定的 UnitTemplate 不存在或已归档，暂无法加入。';
+        }else if(!resolved.ok){
+          disabled=true;
+          buttonText='加入待入场批次';
+          if(resolved.reason==='entity-not-in-projection'){
+            helpText='该实体只存在于更新后的角色卡修订中，不属于当前战斗。角色卡的新修订不会自动修改进行中的战斗。';
+          }else if(resolved.reason==='no-combatant'){
+            helpText='控制者不在当前战斗或未在场。';
+          }else if(resolved.reason==='no-projection'){
+            helpText='找不到该角色在当前战斗中的冻结投影。';
+          }else if(resolved.reason==='multiple-ambiguous-projections'){
+            helpText='检测到同一角色存在多个不同的战斗投影，无法安全确定来源。';
+          }else{
+            helpText='找不到该角色在当前战斗中的有效冻结投影。';
+          }
+        }else{
+          disabled=false;
+          buttonText='加入待入场批次';
+          helpText='将使用当前战斗冻结投影建立独立快照。';
+        }
+        actionMarkup=`<button class="primary" data-controlled-materialize="${esc(entity.id)}" data-controlled-character="${esc(sheet.characterId)}" ${disabled?'disabled':''}>${buttonText}</button><small class="action-help-text">${helpText}</small>`;
+      }else{
+        actionMarkup=`<small class="action-help-text">控制已失效（${esc(controlledEntityStatusLabel(entity.status))}）；DM 可从单位库独立加入对应模板。</small>`;
+      }
+    }else{
+      actionMarkup=`<small class="action-help-text">战斗已结束或未在准备阶段；受控关系只读。</small>`;
+    }
+    return `<article class="character-fact-card"><div class="card-heading"><b>${esc(entity.name)}</b><span class="pill">${esc(controlledEntityStatusLabel(entity.status))}</span></div><p>效果：${esc(entity.effectLabel||'DM 未标注')} · 命令距离：${esc(entity.commandRangeFeet??'—')} 尺</p><p>期限：${esc(controlledDurationLabel(entity.duration))}</p><small>模板：${esc(entity.templateRef?.templateId||'未标注')} · 最近战斗实例：${esc(entity.activeCombatantId||'无')}</small><details><summary>控制记录（${(entity.history||[]).length}）</summary>${(entity.history||[]).map(item=>`<p>${esc(item.at||'时间未知')} · ${esc(item.type||'记录')} · ${esc(controlledEntityStatusLabel(item.status))} · ${esc(item.reason||'无原因')}</p>`).join('')||'<p class="muted">无额外记录。</p>'}</details>${actionMarkup}${entity.status==='expired-uncontrolled'?`<button data-controlled-renewal-request="${esc(entity.id)}" data-controlled-character="${esc(sheet.characterId)}">记录尝试续控意图</button>`:''}</article>`;
+  }).join('')||'<p class="muted">无受控生物关系。</p>';
   const maySettle=entities.some(entity=>entity.status==='controlled'&&(entity.duration?.kind==='one-long-rest'||(entity.duration?.kind==='custom'&&entity.duration?.unit==='long-rests')));
   const renewable=entities.filter(entity=>entity.status==='controlled'&&entity.duration?.kind==='one-long-rest');
   return `<section class="linked-controlled-module"><div class="region-heading"><div><span class="eyebrow">Controlled entities</span><h4>受控生物</h4></div><span class="pill">与关联单位并列</span></div><div class="character-card-grid">${cards}</div>${maySettle?`<form data-controlled-long-rest-form="${esc(sheet.characterId)}" class="character-form"><fieldset><legend>登记一次长休</legend>${renewable.length?`<p class="muted">若 DM 已确认在到期前完成续控，可勾选对应项目；本操作不验证法术、材料、资源或规则资格。</p>${renewable.map(entity=>`<label><input type="checkbox" name="renewedEntityId" value="${esc(entity.id)}"/> DM 确认：已在到期前续控一次“${esc(entity.name)}”</label>`).join('')}`:'<p class="muted">本次只结算自定义长休期限，没有可刷新的一次长休控制。</p>'}<label>DM 记录说明<input name="reason" required placeholder="例如：本次长休前已由 DM 确认续控"/></label><button class="primary" type="submit">确认并结算本次长休</button></fieldset></form>`:''}<p class="notice warn">“24 小时”在本地产品中按一次长休结算。到期只会标记为失控，不删除生物、不自动改为敌对；本次 DM 确认续控只刷新计数，不执行或验证具体法术。</p></section>`;
@@ -1409,7 +2022,7 @@ function characterDetailV2(record,canProject){
     spells:`<section class="character-region character-region-modern" data-character-region="spells" aria-labelledby="character-tab-spells"><div class="region-heading"><div><span class="eyebrow">Spellcasting</span><h3>法术</h3></div><span class="pill">M1-S4 骨架</span></div><p class="notice warn">来源、资源与施放方式分开保存；没有已准入且版本明确的输入时，攻击调整值、DC、取得资格与可支付性保持 <code>needs-review</code>，不执行法术效果。</p><h4>施法来源</h4><div class="character-card-grid">${spellProfiles.map(profile=>`<article class="character-fact-card"><b>${esc(profile.sourceName)}</b><span class="pill">${esc(profile.sourceKind)}</span><p>属性：${esc(profile.ability)} · 攻击 ${esc(profile.spellAttack?.value??'unknown')} · DC ${esc(profile.saveDc?.value??'unknown')}</p><small>${esc(profile.acquisitionMode)} / ${esc(profile.preparationMode)} · 资源池 ${esc((profile.resourcePoolIds||[]).join('、')||'未指定')} · ${esc(profile.sourceStatus)}</small></article>`).join('')||'<p class="muted">尚无施法来源。</p>'}</div><h4>施法资源池</h4><div class="character-card-grid">${spellPools.map(pool=>`<article class="character-fact-card"><b>${esc(pool.label)}</b><span class="pill">${esc(pool.kind)}</span><p>${(pool.balances||[]).map(balance=>`${esc(balance.label)} ${esc(balance.current)}/${esc(balance.max)}`).join(' · ')||'无已确认余额'}</p><small>${esc(pool.recovery)} · ${esc(pool.sourceStatus)}</small></article>`).join('')||'<p class="muted">尚无施法资源池。</p>'}</div><h4>法术与施放方式</h4><div class="character-card-grid">${spellEntries.map(spell=>`<article class="character-fact-card"><b>${esc(spell.name)}</b><p>法术书 ${spell.availability?.inSpellbook?'是':'否'} · 已知 ${spell.availability?.known?'是':'否'} · 已准备 ${spell.availability?.prepared?'是':'否'} · 始终准备 ${spell.availability?.alwaysPrepared?'是':'否'} · 本场可用 ${spell.availability?.availableThisEncounter?'是':'否'}</p><small>${(spell.castingOptions||[]).map(option=>`${esc(option.profileId)} → ${esc(option.resourcePoolId||'无需资源')} / ${esc(option.balanceId||'待确认')}`).join('；')||'尚无施放方式'} · ${esc(spell.sourceStatus)}</small></article>`).join('')||'<p class="muted">尚无法术记录。</p>'}</div></section>`,
     equipment:`<section class="character-region character-region-modern" data-character-region="equipment" aria-labelledby="character-tab-equipment"><div class="region-heading"><div><span class="eyebrow">Inventory</span><h3>装备与背包</h3></div></div>${equipmentMarkup}<p class="muted">主要 Sheet 提供武器/穿戴装备，背包 Sheet 提供容器内物品；财务账本不进入装备列表。数量、容器和同调标记均保持导入事实。</p></section>`,
     origin:`<section class="character-region character-region-modern" data-character-region="origin" aria-labelledby="character-tab-origin"><div class="region-heading"><div><span class="eyebrow">Origin</span><h3>起源与经历</h3></div></div><div class="origin-facts"><span><b>种族：</b>${esc(sheet.origin.species||'未配置')}</span><span><b>背景：</b>${esc(sheet.origin.background||'未配置')}</span></div><article class="character-narrative"><h4>经历</h4><p>${esc(sheet.origin.history||'尚无经历。')}</p><small>DM 备注：${esc(sheet.note||'无')}</small></article></section>`,
-    linked:`<section class="character-region character-region-modern" data-character-region="linked" aria-labelledby="character-tab-linked"><div class="region-heading"><div><span class="eyebrow">Linked entities</span><h3>关联单位</h3></div><span class="pill">M1-S5 独立棋子</span></div><div class="character-card-grid">${(sheet.linkedEntities||[]).map(entity=>`<article class="character-fact-card"><b>${esc(entity.name)}</b><span class="pill">${esc(entity.kind)} / ${esc(entity.relation)}</span><p>${esc(entity.note||'无备注')}</p><small>${entity.templateRef?.templateId?`绑定模板：${esc(entity.templateRef.templateId)}`:'未绑定模板；加入遭遇时可选择本场模板'}</small></article>`).join('')||'<p class="muted">无魔宠、盟友或其他关联单位。</p>'}</div><p class="notice warn">第 0 回合可从显式 templateRef 生成独立棋子、HP 与行动轮；不按名称猜测，也不会塞进角色本体。</p>${controlledEntityCardMarkup(record,sheet)}</section>`,
+    linked:`<section class="character-region character-region-modern" data-character-region="linked" aria-labelledby="character-tab-linked"><div class="region-heading"><div><span class="eyebrow">Linked entities</span><h3>关联单位</h3></div><span class="pill">M1-S5 独立棋子</span></div><div class="character-card-grid">${(sheet.linkedEntities||[]).map(entity=>`<article class="character-fact-card"><b>${esc(entity.name)}</b><span class="pill">${esc(entity.kind)} / ${esc(entity.relation)}</span><p>${esc(entity.note||'无备注')}</p><small>${entity.templateRef?.templateId?`绑定模板：${esc(entity.templateRef.templateId)}`:'未绑定模板；加入遭遇时可选择本场模板'}</small></article>`).join('')||'<p class="muted">无魔宠、盟友或其他关联单位。</p>'}</div><p class="notice warn">关联生物使用显式 UnitTemplate 创建独立棋子、HP 与行动轮。可在第 0 回合加入或设为场外预备，也可在战斗开始后进入待入场批次；不会按名称猜测，也不会并入角色本体。</p>${linkedMaterializationPanel(record,state.encounter?.phase==='preparation',state.turn.started&&!combatEnded())}${controlledEntityCardMarkup(record,sheet)}</section>`,
     notes:`<section class="character-region character-region-modern" data-character-region="notes" aria-labelledby="character-tab-notes"><div class="region-heading"><div><span class="eyebrow">DM Notes</span><h3>DM 备注</h3></div><span class="pill">修订 ${esc(sheet.revision)}</span></div><article class="character-narrative dm-note-display"><h4>当前长期角色卡备注</h4><p>${esc(sheet.note||'尚无 DM 备注。')}</p></article><p class="notice warn">这里仅显示当前 CharacterSheet 修订中已保存的备注。战后“复活记录”候选在 DM 接受前不会写入；接受后会追加到此处，并在“导入与修订”留下新的修订差异。</p></section>`,
     revisions:`<section class="character-region character-region-modern" data-character-region="revisions" aria-labelledby="character-tab-revisions"><div class="region-heading"><div><span class="eyebrow">Source & revisions</span><h3>导入与修订</h3></div></div><article class="source-summary"><b>来源状态：${esc(sheet.source.kind)} / ${esc(sheet.source.status)}</b><p>${esc(sheet.source.note||'无来源备注')}</p>${sheet.source.fileSha256?`<small>${esc(sheet.source.importerId||'importer')}@${esc(sheet.source.sourceVersion||'unknown')} · ${esc(sheet.source.fileName||'文件名未知')}<br/>SHA-256 ${esc(sheet.source.fileSha256)}</small>`:'<small>本角色由手工入口建立。</small>'}</article><div class="revision-history">${revisionHistory(record)}</div></section>`
   };
@@ -1472,7 +2085,7 @@ function characterView(){
 function logView(){const groups=new Map();[...state.events].reverse().forEach(event=>{const key=`第 ${event.round??'—'} 轮`;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(event);});const events=[...groups].map(([label,items])=>`<section class="event-group"><h3>${label}</h3>${items.map(event=>`<article class="event"><div class="event-summary"><b>#${event.sequence} ${esc(event.type)}</b><span>${event.manualCorrection?'DM 修正':''}${event.undoOfEventId?'补偿撤销':''}</span><time>${esc(event.occurredAt)}</time></div><details><summary>技术详情</summary><dl><dt>Event ID</dt><dd><code>${esc(event.id||'未记录')}</code></dd><dt>Payload</dt><dd><pre>${esc(JSON.stringify(event.payload,null,2))}</pre></dd></dl></details></article>`).join('')}</section>`).join('');return `<section class="workspace-fixed-grid"><div class="workbench-panel"><div class="section-heading"><div><span class="eyebrow">AUDIT TRAIL</span><h2>顺序事件日志</h2></div><span class="metric">${state.events.length} events</span></div><div class="log">${events||'<div class="empty-state"><b>尚无事件</b><span>范围预览和工作区切换不会写入日志。</span></div>'}</div></div><aside class="workbench-panel"><h2>数据与恢复</h2><p>自动保存已启用。导入先验证 Schema，失败不会覆盖当前内存状态。</p><div class="action-stack"><button data-action="save">手动保存</button><button data-action="export">导出 v0.7 JSON</button><button data-action="import">导入 JSON</button><button class="danger" data-action="new">新建空会话</button></div><dl class="compact-details"><dt>Snapshot 序号</dt><dd>${state.snapshotSequence}</dd><dt>存储键</dt><dd><code>${STORAGE_KEY}</code></dd></dl></aside></section>`;}
 function diceView(){
   const history=[...state.events].reverse().filter(event=>event.type==='dice.rolled').slice(0,100);
-  return `<section class="workspace-fixed-grid dice-workspace"><div class="workbench-panel dice-console"><div><span class="eyebrow">DICE CONSOLE</span><h2>掷骰</h2></div><div class="dice-controls"><label>骰式<input id="dice-formula" value="1d20+2" aria-label="骰式" inputmode="text"/></label><label>模式<select id="dice-mode"><option value="normal">普通</option><option value="advantage">优势</option><option value="disadvantage">劣势</option></select></label><button class="primary" data-action="roll">掷骰</button></div><div class="dice-shortcut"><label>快捷数字<input id="dice-shortcut" aria-label="快捷数字骰式" inputmode="numeric" placeholder="例如 110284"/></label><button data-dice-shortcut-preview>识别快捷骰式</button><div id="dice-shortcut-result" class="muted">标准面数 d4/d6/d8/d10/d12/d20/d100；有歧义时必须选择候选。</div></div><label class="toggle-line"><input type="checkbox" id="dark-rolls" ${state.settings.darkRolls?'checked':''}/> 暗骰，仅在事件中标记为 DM 可见</label><p class="muted">支持多个 NdM 与常数的加减：<code>2d6+2d4+1</code>。大小写与空格会规范化；优势/劣势仅接受正向 <code>1d20±K</code>。结果写入事件，恢复时不会重掷。</p></div><aside class="workbench-panel"><div class="section-heading"><div><span class="eyebrow">ROLL HISTORY</span><h2>结果历史</h2></div><span class="metric">最近 ${history.length}/100</span></div><button data-dice-history-top>回到最新</button><div class="dice-history" aria-label="最近一百次骰果" tabindex="0">${history.map(event=>{const payload=event.payload||{};const termSummary=(payload.terms||[]).map(term=>term.kind==='dice'?`${term.sign<0?'-':'+'}${term.count}d${term.sides} [${(term.dice||[]).join(',')}] = ${term.subtotal}`:`${term.sign<0?'-':'+'}${term.amount} = ${term.subtotal}`).join(' · ')||'未记录分项';const context=event.activeCombatantId?(getCombatant(event.activeCombatantId)?.name||event.activeCombatantId):'无当前行动者';return `<article><b>${esc(payload.total??'—')}</b><span>${esc(payload.mode||'normal')} · ${esc(payload.formulaCanonical||payload.canonical||payload.formula||'unknown')} · ${payload.visibility==='dm-only'?'暗骰':'公开'}</span><small>${esc(payload.formulaRaw||payload.raw||payload.formula||'unknown')} · ${esc(termSummary)} · 常数 ${esc(payload.modifier??0)} · 第 ${event.round??'—'} 轮 · ${esc(context)} · ${esc(event.occurredAt||'时间未知')}</small></article>`;}).join('')||'<div class="empty-state"><b>尚无掷骰</b><span>第一条结果会保留在这里；事件日志会保留全部历史。</span></div>'}</div></aside></section>`;
+  return `<section class="workspace-fixed-grid dice-workspace"><div class="workbench-panel dice-console"><div class="section-heading dice-heading"><div><span class="eyebrow">DICE CONSOLE</span><h2>掷骰</h2></div><button type="button" class="primary return-battle-btn" data-workspace="battle" title="返回战斗工作台">返回战斗</button></div><div class="dice-controls"><label>骰式<input id="dice-formula" value="1d20+2" aria-label="骰式" inputmode="text"/></label><label>模式<select id="dice-mode"><option value="normal">普通</option><option value="advantage">优势</option><option value="disadvantage">劣势</option></select></label><button class="primary" data-action="roll">掷骰</button></div><div class="dice-shortcut"><label>快捷数字<input id="dice-shortcut" aria-label="快捷数字骰式" inputmode="numeric" placeholder="例如 110284"/></label><button data-dice-shortcut-preview>识别快捷骰式</button><div id="dice-shortcut-result" class="muted">标准面数 d4/d6/d8/d10/d12/d20/d100；有歧义时必须选择候选。</div></div><label class="toggle-line"><input type="checkbox" id="dark-rolls" ${state.settings.darkRolls?'checked':''}/> 暗骰，仅在事件中标记为 DM 可见</label><p class="muted">支持多个 NdM 与常数的加减：<code>2d6+2d4+1</code>。大小写与空格会规范化；优势/劣势仅接受正向 <code>1d20±K</code>。结果写入事件，恢复时不会重掷。</p></div><aside class="workbench-panel"><div class="section-heading"><div><span class="eyebrow">ROLL HISTORY</span><h2>结果历史</h2></div><span class="metric">最近 ${history.length}/100</span></div><button data-dice-history-top>回到最新</button><div class="dice-history" aria-label="最近一百次骰果" tabindex="0">${history.map(event=>{const payload=event.payload||{};const termSummary=(payload.terms||[]).map(term=>term.kind==='dice'?`${term.sign<0?'-':'+'}${term.count}d${term.sides} [${(term.dice||[]).join(',')}] = ${term.subtotal}`:`${term.sign<0?'-':'+'}${term.amount} = ${term.subtotal}`).join(' · ')||'未记录分项';const context=event.activeCombatantId?(getCombatant(event.activeCombatantId)?.name||event.activeCombatantId):'无当前行动者';return `<article><b>${esc(payload.total??'—')}</b><span>${esc(payload.mode||'normal')} · ${esc(payload.formulaCanonical||payload.canonical||payload.formula||'unknown')} · ${payload.visibility==='dm-only'?'暗骰':'公开'}</span><small>${esc(payload.formulaRaw||payload.raw||payload.formula||'unknown')} · ${esc(termSummary)} · 常数 ${esc(payload.modifier??0)} · 第 ${event.round??'—'} 轮 · ${esc(context)} · ${esc(event.occurredAt||'时间未知')}</small></article>`;}).join('')||'<div class="empty-state"><b>尚无掷骰</b><span>第一条结果会保留在这里；事件日志会保留全部历史。</span></div>'}</div></aside></section>`;
 }
 function settingsView(){return `<section class="settings-grid"><section class="workbench-panel"><div class="section-heading"><div><span class="eyebrow">SESSION</span><h2>会话与地图</h2></div></div><div class="form-grid"><label>会话名称<input id="session-name" value="${esc(state.name)}"/></label><label>地图宽<input id="map-w" type="number" min="5" max="40" value="${state.settings.width}"/></label><label>地图高<input id="map-h" type="number" min="5" max="40" value="${state.settings.height}"/></label><label>斜向规则<select id="diagonal"><option value="five-feet" ${state.settings.diagonalRule==='five-feet'?'selected':''}>每斜格 5 尺</option><option value="five-ten-alternating" ${state.settings.diagonalRule==='five-ten-alternating'?'selected':''}>5/10 尺交替</option></select></label></div><button class="primary" data-action="settings">保存会话设置</button></section><section class="workbench-panel"><span class="eyebrow">DISPLAY</span><h2>显示与布局</h2><p>当前密度：<b>${uiPreferences.density==='compact'?'紧凑':'标准'}</b>。战斗、地图和角色的面板配置位于各自工作区顶部。</p><button data-layout-reset-all>恢复全部工作区默认</button></section><section class="workbench-panel"><span class="eyebrow">DATA SAFETY</span><h2>保存、导入与恢复</h2><div class="action-stack"><button data-action="save">手动保存</button><button data-action="export">导出 JSON</button><button data-action="import">导入 JSON</button><button class="danger" data-action="new">新建空会话</button></div><p class="muted">v0.7 只写新键；v0.6 及更早键保持只读。</p></section><section class="workbench-panel"><span class="eyebrow">RUNTIME</span><h2>版本与边界</h2><dl class="compact-details"><dt>Delivery</dt><dd>${DELIVERY_VERSION}</dd><dt>Session Schema</dt><dd>${SESSION_ENVELOPE_SCHEMA_VERSION}</dd><dt>会话存储</dt><dd><code>${STORAGE_KEY}</code></dd><dt>UI 偏好</dt><dd><code>dnd-terminal.v0.7.0.ui-preferences</code></dd></dl><p class="muted">墙体、视线、掩护、碰撞和三维命中仍由 DM 裁定。</p></section>${developerValidationToolsMarkup()}</section>`;}
 function preparationView(){return unifiedWorkbenchView();}
@@ -1483,62 +2096,97 @@ function mapViewV2(){return unifiedWorkbenchView();}
 function unifiedWorkbenchView(){
   const a=active(),focus=getCombatant(state.ui.selectedId)||a,ended=combatEnded(),cleanup=!!state.ui.postCombatCleanup,hasSelected=!!getCombatant(state.ui.selectedId),canOperate=!!focus&&focus.id===a?.id&&!ended&&!isDead(focus),canRestoreEconomy=!!focus&&!ended&&!isDead(focus)&&focus.presenceStatus==='on-field'&&focus.participationStatus==='active';
   const status=ended?(cleanup?'本场战斗已结束；当前为只读战后清理，可撤下棋子但不能行动、进入先攻或再入场。':`本场战斗已结束于第 ${state.turn.round} 轮；记录已封存为只读。`):state.turn.started?(a?`第 ${state.turn.round} 轮 · 当前：${esc(displayName(a))}`:`第 ${state.turn.round} 轮 · 等待增援，可投入单位或结束战斗`):'尚未开始：确认遭遇后可掷先攻。';
-  const overlays=`${initiativeResolver()}${entryDraftPanel()}${entryPlacementPanel()}${reentryDraftPanel()}${reservesPanel()}${deathResolutionPanel()}`;
-  const combatControls=ended?(cleanup?`<button data-action="cleanup-enemies">撤下全部敌对单位</button><button class="danger" data-action="finish-cleanup">清空战场并新建遭遇</button>`:''):`<button class="primary" data-action="initiative">掷先攻</button><button data-action="next">下一回合</button><button data-action="undo">撤销上一步</button><button class="danger" data-action="end-combat">结束战斗</button>`;
+  const overlays=`${initiativeResolver()}${entryDraftPanel()}${entryPlacementPanel()}${reentryDraftPanel()}${deathResolutionPanel()}`;
+  const reinforcements=reservesPanel();
+  const combatControls=ended?(cleanup?`<div class="combat-cleanup-group"><button data-action="cleanup-enemies">撤下全部敌对单位</button><button class="danger" data-action="finish-cleanup">清空战场并新建遭遇</button></div>`:''):`<div class="combat-ctrl-bar"><div class="combat-progression-group"><button class="primary btn-initiative" data-action="initiative">掷先攻</button><button class="btn-next-turn" data-action="next">下一回合</button><button class="btn-undo" data-action="undo">撤销上一步</button></div><div class="combat-danger-group"><button class="danger btn-end-combat" data-action="end-combat">结束战斗</button></div></div>`;
   const prepMarkup = state.encounter?.phase === 'preparation' ? `
     <div class="card" data-panel-id="prep-controls">
       <h2>遭遇准备阶段</h2>
-      ${fixtureLoadConfirmation ? `
-        <div class="notice warn">
-          <p>将载入固定战斗验证场景并替换当前 CombatSession。请选择：</p>
-          <div class="row">
-            <button class="primary" data-load-fixtures-confirm="nosave">直接载入（不导出）</button>
-            <button data-load-fixtures-confirm="export">导出后载入</button>
-            <button data-load-fixtures-cancel>取消</button>
-          </div>
-        </div>
-      ` : `
-        <p class="notice warn">尚未开始战斗。可从单位库加入单位，或一键载入测试场景；确认后进入先攻。</p>
-        <div class="row">
-          <button class="primary" data-v2-action="open-library">从单位库加入单位</button>
-          <button data-load-fixtures-request>一键载入演示遭遇</button>
-          <button class="primary" data-v2-action="confirm-encounter" ${state.encounter?.members?.length ? '' : 'disabled'}>确认遭遇，进入先攻</button>
-        </div>
-      `}
-      ${state.encounter?.members?.length ? `<div class="combatants">${state.encounter.members.map(member=>`<article class="combatant ${member.relation}"><div class="combatant-summary"><b>${esc(member.name)}</b><span class="pill">${member.deployment==='reserve'?'场外预备':'准备投入'}</span></div></article>`).join('')}</div>` : ''}
+      <p class="notice warn">尚未开始战斗。可从单位库加入单位，编辑初始属性或设为场外预备；确认后进入先攻。</p>
+      <div class="row">
+        <button class="primary" data-v2-action="open-library">从单位库加入单位</button>
+        <button class="danger" data-v2-action="abandon-preparation" ${state.encounter?.members?.length ? '' : 'disabled'}>放弃准备</button>
+        <button class="primary" data-v2-action="confirm-encounter" ${state.encounter?.members?.length ? '' : 'disabled'}>确认遭遇，进入先攻</button>
+      </div>
+      <div class="combatants">
+        ${(state.encounter?.members||[]).map(member=>`
+          <article class="combatant ${member.relation} ${state.ui.selectedId===member.id?'selected':''}" data-select-card="${member.id}" tabindex="0" aria-label="选择 ${esc(displayName(member))}">
+            <div class="combatant-summary">
+              <b>${esc(member.name)}</b>
+              <span class="pill">${member.deployment==='reserve'?'场外预备':esc(member.templateSnapshot?.sourceType||'template')}</span>
+              <span>${member.deployment==='reserve'?'未摆放':`${member.footprint.widthCells}×${member.footprint.heightCells} · ${member.position.x+1},${member.position.y+1}`}</span>
+            </div>
+            <div class="row">
+              <label>显示名<input data-v2-member-id="${member.id}" data-v2-member-field="name" value="${esc(member.name)}"/></label>
+              <label>初始 HP<input type="number" min="0" max="${member.maxHp}" data-v2-member-id="${member.id}" data-v2-member-field="hp" value="${member.hp}"/></label>
+              <label>关系<select data-v2-member-id="${member.id}" data-v2-member-field="relation">
+                <option value="enemy" ${member.relation==='enemy'?'selected':''}>敌对</option>
+                <option value="ally" ${member.relation==='ally'?'selected':''}>友方</option>
+                <option value="neutral" ${member.relation==='neutral'?'selected':''}>中立</option>
+              </select></label>
+              <label>开战部署<select data-v2-member-id="${member.id}" data-v2-member-field="deployment">
+                <option value="field" ${member.deployment!=='reserve'?'selected':''}>投入战场</option>
+                <option value="reserve" ${member.deployment==='reserve'?'selected':''}>场外预备</option>
+              </select></label>
+              <label>资源<input data-v2-member-id="${member.id}" data-v2-member-field="resources" value="${esc(Object.entries(member.resources||{}).map(([name,amount])=>`${name}:${amount}`).join('，'))}" placeholder="名称:数量"/></label>
+              <label>状态<input data-v2-member-id="${member.id}" data-v2-member-field="conditions" value="${esc((member.conditions||[]).join('，'))}" placeholder="例如：隐形，中毒"/></label>
+              <button class="danger" data-v2-action="remove-member" data-member-id="${member.id}">移出遭遇</button>
+            </div>
+          </article>
+        `).join('')||'<p class="muted">尚未加入单位。请先从单位库选取参考、自定义或变体模板。</p>'}
+      </div>
     </div>
   ` : '';
-  const turnMarkup=`${overlays}${prepMarkup}<div class="card" data-panel-id="turn"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="row">${combatControls}</div></div>`;
-  const expandedId=activeExpandedCombatantId();
+  const turnMarkup=`${overlays}${prepMarkup}<div class="card" data-panel-id="turn"><h2>战斗控制</h2><div class="notice ${state.turn.started?'':'warn'}">${status}</div><div class="combat-controls-host">${combatControls}</div></div>${reinforcements}`;
   const onFieldCount=state.combatants.filter(c=>!c.cleanupRemoved).length;
-  const rosterMarkup=`<div class="card roster-card" data-panel-id="roster"><div class="roster-title-bar"><h3>单位态势</h3><small class="roster-unit-count">${onFieldCount} 单位在场</small></div><div class="roster-header-row" aria-hidden="true"><span class="col-head-init">先攻</span><span class="col-head-name">单位 / 状态</span><span class="col-head-ac">AC</span><span class="col-head-hp">生命值 (HP)</span><span class="col-head-toggle"></span></div><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(c=>combatantRow(c,expandedId)).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div>`;
+  const rosterMarkup=`<div class="card roster-card" data-panel-id="roster"><div class="roster-title-bar"><h3>单位态势</h3><small class="roster-unit-count">${onFieldCount} 单位在场</small></div><div class="roster-header-row" aria-hidden="true"><span class="col-head-init">先攻</span><span class="col-head-name">单位 / 状态</span><span class="col-head-ac">AC</span><span class="col-head-hp">生命值 (HP)</span></div><div class="combatants ${state.ui.selectedId?'has-selection':''}">${state.combatants.filter(c=>!c.cleanupRemoved).map(combatantRow).join('')||'<span class="muted">暂无仍在战场上的单位。</span>'}</div></div>`;
   const recentResultMarkup=`<div class="situation-grid" data-panel-id="recent-result">${battleSituationMarkup(currentStatusProjection())}</div>`;
   const r=state.ui.range,cells=r&&r.phase==='preview'?coveredCells(r):[],w=state.settings.width,h=state.settings.height,mode=state.settings.mapMode||'fit',s2Draft=s2PlacementDraft;
   const pendingTransformSources=new Set(entryPlacementItems().filter(item=>item.kind==='transformation').map(item=>item.sourceCombatantId));
-  const mapCombatants=(ended?state.combatants.filter(c=>c.presenceStatus==='on-field'&&!c.cleanupRemoved&&c.corpseTokenVisible!==false):onFieldTokens()).filter(c=>!pendingTransformSources.has(c.id));
+  const mapCombatants=(state.encounter?.phase==='preparation'?(state.encounter.members||[]).filter(m=>m.deployment!=='reserve'):(ended?state.combatants.filter(c=>c.presenceStatus==='on-field'&&!c.cleanupRemoved&&c.corpseTokenVisible!==false):onFieldTokens())).filter(c=>!pendingTransformSources.has(c.id));
   const pendingPlacements=pendingPlacementCombatants();
   let grid='';
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const token=mapCombatants.find(c=>c.position.x===x&&c.position.y===y),pending=pendingPlacements.find(c=>c.position.x===x&&c.position.y===y),draftToken=s2Draft?.item.combatant.position.x===x&&s2Draft?.item.combatant.position.y===y?s2Draft.item.combatant:null;grid+=`<div class="cell ${cells.includes(`${x},${y}`)?'preview':''}" data-cell="${x},${y}">${token?tokenMarkup(token):pending?tokenMarkup(pending,{pending:true}):draftToken?tokenMarkup(draftToken,{s2Draft:true}):''}</div>`;}
-  const movementNotice=`<div id="movement-preview" class="notice ${s2Draft||pendingPlacements.length?'warn':''}">${s2Draft?`正在摆放 ${esc(s2Draft.item.combatant.name)}：拖动预览棋子可无限调整；确认后才会生成。`:pendingPlacements.length?`正在摆放本批 ${pendingPlacements.length} 个单位：逐个拖动后一次性确认投入；未确认前不会加入先攻或写入事件。`:'按住棋子并拖动；松开后才记录移动。黄色提示表示超过移动力，重叠和越界不可提交。'}</div>`;
-  const mapGridMarkup=`${movementNotice}<div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div>`;
-  const actionMarkup=`<div class="card" data-panel-id="current-action"><h2>当前选中者状态</h2><p class="muted density-standard-only">${hasSelected?`正在查看：${esc(displayName(focus))}`:'未手动选择，默认显示当前行动者。'}</p>${focus?`${actionEconomyMarkup(focus,canOperate,canRestoreEconomy)}${canOperate?'':`<p class="notice warn">${ended?'战斗已结束，状态只读。':isDead(focus)?'该单位已死亡，不能行动、治疗、再入场或以普通方式修改状态。':'当前查看单位不是行动者；行动、资源与手动效果操作仅对当前行动者开放。'}</p>`}${isDead(focus)&&!ended?`<section class="death-controls"><h3>死亡处理</h3><p class="muted">尸体棋子保留在地图；可由 DM 决定特许复起或特殊复苏 / 转化。</p><button class="primary" data-death-resolve="${focus.id}">处理死亡</button></section>`:''}<h3>资源</h3>${Object.entries(focus.resources).map(([k,v])=>`<div class="row"><span>${esc(k)} ${v}/${focus.resourceMax[k]??v}</span><button data-resource="${k}" data-amount="-1" ${canOperate?'':'disabled'}>消耗</button><button data-resource="${k}" data-amount="1" ${canOperate?'':'disabled'}>恢复</button></div>`).join('')||'<span class="muted">无次数资源</span>'}<h3>法术位</h3>${Object.entries(focus.slots).map(([k,v])=>`<span class="pill">${k}环 ${v}/${focus.slotsMax[k]}</span>`).join(' ')||'<span class="muted">非玩家法术位模型或未配置</span>'}<h3>状态、Buff 与专注</h3><div class="effect-list">${effectCards(focus.id)}</div>${masteryStatusPanel(focus)}${canOperate?manualEffectMarkup():''}`:ended?'<span class="muted">战斗内 HP、资源与状态没有自动回写长期角色卡；长期结算仍延期。</span>':'<span class="muted">选择单位后显示操作。</span>'}<section class="reference-section">${referenceActionPanel(focus)}</section></div>`;
-  const inspectorMarkup=`<aside class="card map-inspector-panel" data-panel-id="map-inspector">${mapInspector()}</aside>`;
-  const candidates=r&&r.phase==='preview'?rangeTargets(cells):[];
-  const preview=r?`<div id="range-live" class="notice ${r.phase==='armed'?'warn':''}">${r.phase==='armed'?`已选择${rangeLabel(r.shape)}：请在地图按住并拖动。`:`${rangeLabel(r.shape)}预览：${cells.length} 格；候选 ${candidates.length} 个。松开后可编辑。`}</div>${r.phase==='preview'?`<div class="row"><label>尺寸（尺）<input id="range-size" type="number" min="5" step="5" value="${r.size}" /></label><label>结算<select id="range-mode"><option value="damage">伤害</option><option value="healing">治疗</option><option value="buff">Buff</option><option value="condition">状态</option></select></label><label>数值<input id="range-amount" type="number" min="1" value="8" /></label></div><div class="row"><label>效果名称<input id="effect-name" placeholder="例如：祝福 / 中毒" /></label><label>持续轮数<input id="effect-duration" type="number" min="1" value="1" /></label><label><input id="effect-concentration" type="checkbox"/> 专注</label></div><h3>候选与 DM 覆写</h3>${state.combatants.map(c=>`<div class="row"><label><input type="checkbox" data-target="${c.id}" ${([...candidates.map(x=>x.id),...r.manualAdd].includes(c.id)&&!r.manualRemove.includes(c.id))?'checked':''}/> ${esc(c.name)}</label></div>`).join('')}<div class="row"><button class="primary" data-action="apply-range">确认并批量结算</button><button data-action="cancel-range">取消预览</button></div>`:''}`:'';
+  const movementNotice=`<div id="movement-preview" class="notice ${s2Draft||pendingPlacements.length?'warn':''}">${s2Draft?`正在摆放 ${esc(s2Draft.item.combatant.name)}：拖动预览棋子可无限调整；确认后才会生成。`:pendingPlacements.length?`正在摆放本批 ${pendingPlacements.length} 个单位：逐个拖动后一次性确认投入；未确认前不会加入先攻或写入事件。`:state.encounter?.phase==='preparation'?'第 0 回合：拖动棋子摆放开战位置；确认遭遇后才正式进入战斗。':'按住棋子并拖动；松开后才记录移动。黄色提示表示超过移动力，重叠和越界不可提交。'}</div>`;
+  const mapGridMarkup=`<div class="grid ${mode}" data-map-grid style="--grid-cols:${w};grid-template-columns:repeat(${w},var(--cell-size))">${grid}</div>`;
+  const actionMarkup='';
+ const candidates=r&&r.phase==='preview'?rangeTargets(cells):[];
+  const targetPicker=r?.phase==='preview'?(()=>{
+    const mapCandidates=new Set(candidates.map(candidate=>candidate.id));
+    const selectable=state.combatants.filter(combatant=>!combatant.cleanupRemoved);
+    const groups=[
+      ['友方','allies',combatant=>!combatant.controllerLink&&combatant.kind!=='npc'&&combatant.relation==='ally'],
+      ['关联生物','associated',combatant=>!!combatant.controllerLink],
+      ['敌方','enemies',combatant=>!combatant.controllerLink&&combatant.kind!=='npc'&&combatant.relation==='enemy'],
+      ['NPC / 中立','npcs',combatant=>!combatant.controllerLink&&(combatant.kind==='npc'||combatant.relation==='neutral')],
+    ];
+    return `<div class="range-target-picker" aria-label="候选与 DM 覆写">${groups.map(([label,kind,match])=>{const members=selectable.filter(match);if(!members.length)return '';return `<section class="range-target-group ${kind}"><h4>${label}</h4><div class="range-target-list">${members.map(combatant=>{const automatic=mapCandidates.has(combatant.id),selected=automatic?!r.manualRemove.includes(combatant.id):r.manualAdd.includes(combatant.id);return `<button type="button" class="range-target ${selected?'is-selected':'is-muted'} relation-${combatant.relation} ${combatant.controllerLink?'is-associated':''}" data-range-target="${combatant.id}" aria-pressed="${selected}" title="${automatic?'地图候选':'DM 覆写'} · ${esc(displayName(combatant))}">${esc(displayName(combatant))}</button>`;}).join('')}</div></section>`;}).join('')}</div>`;
+  })():'';
+  const preview=r?`<div id="range-live" class="notice ${r.phase==='armed'?'warn':''}">${r.phase==='armed'?`已选择${rangeLabel(r.shape)}：请在地图按住并拖动。`:`${rangeLabel(r.shape)}预览：${cells.length} 格；候选 ${candidates.length} 个。松开后可编辑。`}</div>${r.phase==='preview'?`<div class="row"><label>尺寸（尺）<input id="range-size" type="number" min="5" step="5" value="${r.size}" /></label><label>结算<select id="range-mode"><option value="damage">伤害</option><option value="healing">治疗</option><option value="buff">Buff</option><option value="condition">状态</option></select></label><label>数值<input id="range-amount" type="number" min="1" value="8" /></label></div><div class="row"><label>效果名称<input id="effect-name" placeholder="例如：祝福 / 中毒" /></label><label>持续轮数<input id="effect-duration" type="number" min="1" value="1" /></label><label><input id="effect-concentration" type="checkbox"/> 专注</label></div><h3>候选与 DM 覆写</h3>${targetPicker}<div class="row"><button class="primary" data-action="apply-range">确认并批量结算</button><button data-action="cancel-range">取消预览</button></div>`:''}`:'';
   const sidebar=s2Draft
     ? `<h3>摆放新躯体</h3><p class="notice warn">正在为“${esc(s2Draft.item.combatant.name)}”摆放。拖动半透明预览棋子到空格；可反复调整。确认前不会创建任何实例。</p><p class="muted">已有棋子（含尸体）、完整 footprint 越界或重叠都会拒绝确认。</p><div class="row"><button class="primary" data-s2-placement-confirm>确认摆放并生成</button><button data-s2-placement-cancel>取消摆放</button></div>`
     : pendingPlacements.length
     ? `<p>正在一次性摆放本批 ${pendingPlacements.length} 个单位。每个单位的整块占位必须落在空格内，且本批单位之间也不能重叠；再次入场单位在确认前仍不会进入先攻。</p><div class="entry-placement-list">${pendingPlacements.map(c=>`<span class="pill">${esc(displayName(c))} · ${c.position.x+1},${c.position.y+1}</span>`).join('')}</div><div class="row"><button class="primary" data-action="confirm-entry-placement">确认本批全部投入</button><button data-action="cancel-entry-placement">取消整批投入</button></div>`
     : `<p class="muted">棋子：按住拖动、松开提交。范围：选择形状后在地图按住并拖动；预览本身不写入事件。</p><div class="row"><button data-range="circle">圆形</button><button data-range="cone">锥形</button><button data-range="line">直线</button><button data-range="square">方形</button><button data-action="undo">撤销上一步</button></div>${preview||'<div class="notice warn">选择形状后，在地图按住并拖动：圆形/方形决定中心和大小，锥形/直线以当前行动者已选发射口为源点决定朝向和长度。</div>'}`;
   const rangeMarkup=`<aside class="card" data-panel-id="range"><h2>地图与范围</h2>${sidebar}</aside>`;
+  const inspectorMarkup=`<aside class="card map-inspector-panel" data-panel-id="map-inspector">${mapInspector(rangeMarkup)}</aside>`;
+  const isDeadPc = Boolean(focus && isPc(focus) && isDead(focus));
+  const isPostDeathActive = Boolean(isDeadPc && !ended);
+  const hasPendingPlacement = Boolean(s2Draft || pendingPlacements.length > 0 || entryPlacementItems().length > 0);
+  const isResolutionMode = Boolean(isPostDeathActive || hasPendingPlacement);
+  const resolutionKey = isResolutionMode ? (focus?.id || 'placement') : null;
+  if (resolutionView.key !== resolutionKey) resolutionView = { key: resolutionKey, rightCollapsed: false };
+  const layoutState = uiPreferences.workbenchSubMode === 'map' ? 'map' : isResolutionMode ? 'resolution' : (uiPreferences.workbenchSubMode || 'full');
   return battleWorkbenchMarkup({
     state,
     activeCombatant: a,
     selectedCombatant: focus,
     subMode: uiPreferences.workbenchSubMode||'full',
+    layoutState,
     theme: uiPreferences.theme||'dark',
+    inspectorTab: uiPreferences.inspectorTab||'combat',
     leftCollapsed: !!uiPreferences.workbenchLeftCollapsed,
-    rightCollapsed: !!uiPreferences.workbenchRightCollapsed,
+    rightCollapsed: isResolutionMode ? resolutionView.rightCollapsed : !!uiPreferences.workbenchRightCollapsed,
     diceDockOpen: !!uiPreferences.workbenchDiceDockOpen,
     zoomLevel: uiPreferences.workbenchZoom||1.0,
     esc,
@@ -1546,8 +2194,9 @@ function unifiedWorkbenchView(){
     turnMarkup,
     actionMarkup,
     inspectorMarkup,
-    rangeMarkup,
+    rangeMarkup: '',
     mapGridMarkup,
+    movementMarkup: movementNotice,
     recentResultMarkup,
   });
 }
@@ -1561,36 +2210,63 @@ function view(){
 }
 function injectPcLifePanel(){
   if(!['战斗','地图'].includes(currentDomainTab())||state.encounter?.phase==='preparation')return;
-  const heading=[...document.querySelectorAll('h2')].find(node=>node.textContent==='当前选中者状态'),host=heading?.closest('.card'),focus=getCombatant(state.ui.selectedId)||active();
+  const host=document.querySelector('[data-pc-life-host]')||[...document.querySelectorAll('h2')].find(node=>node.textContent==='当前选中者状态')?.closest('.card');
+  const focus=getCombatant(state.ui.selectedId)||active();
   if(!host||!isPc(focus))return;
-  host.querySelectorAll('[data-death-resolve]').forEach(button=>button.closest('.death-controls')?.remove());
+  if(host.hasAttribute('data-pc-life-host')){
+    host.innerHTML='';
+  }else{
+    host.querySelectorAll('.pc-life-panel').forEach(panel=>panel.remove());
+    host.querySelectorAll('[data-death-resolve]').forEach(button=>button.closest('.death-controls')?.remove());
+  }
   const saves=focus.deathSaves||{successes:0,failures:0,history:[]},history=(saves.history||[]).slice(-8).reverse();
   const required=focus.id===active()?.id&&deathSaveRequired(focus);
   const phase=pcLifePhase(focus),conditions=(focus.conditions||[]).map(conditionLabel),helper=active(),canStabilize=phase==='dying'&&helper&&helper.id!==focus.id&&ordinaryActionsAllowed(helper)&&helper.actionAvailable&&!combatEnded(),canStand=phase==='active'&&hasCondition(focus,'prone')&&ordinaryActionsAllowed(focus)&&!combatEnded();
   const section=document.createElement('section');section.className='pc-life-panel';
-  section.innerHTML=`<h3>PC 生命状态</h3><div class="row"><span class="stat">生命阶段<b>${esc(lifeStatusLabel(focus))}</b></span><span class="stat">状态<b>${esc(conditions.join('、')||'无')}</b></span><span class="stat">成功<b>${saves.successes||0}/3</b></span><span class="stat">失败<b>${saves.failures||0}/3</b></span></div>${required?`<form data-death-save-form="${focus.id}"><p class="notice warn">本回合必须先记录死亡豁免；除自然 20 恢复 1 HP 外，本回合不会获得普通行动。</p><div class="row"><button class="primary" type="button" data-death-save-roll="${focus.id}">投 d20 并记录</button><label>手动最终 d20<input name="roll" type="number" min="1" max="20" required value="10"/></label><button type="submit">记录手动结果</button></div></form>`:''}${canStand?`<div class="notice warn">已恢复正 HP，但仍倒地；昏迷结束不会自动站起。</div><button data-pc-stand="${focus.id}">消耗 ${Math.floor(focus.speed/2)} 尺移动力起立</button>`:''}${canStabilize?`<form data-medical-stabilize-form="${focus.id}"><p class="muted">施救者：${esc(displayName(helper))}；提交会消耗其普通动作。DC 10，Terminal 只记录最终 Medicine 检定值。</p><div class="row"><label>最终检定值<input name="checkTotal" type="number" required value="10"/></label><button type="submit">医疗稳定</button></div></form>`:''}<details ${phase==='needs-review'?'open':''}><summary>DM 生命阶段修正</summary><form data-life-correction-form="${focus.id}"><div class="row"><label>阶段<select name="lifePhase"><option value="active" ${phase==='active'?'selected':''}>正常</option><option value="dying" ${phase==='dying'?'selected':''}>濒死</option><option value="stable" ${phase==='stable'?'selected':''}>稳定</option><option value="dead" ${phase==='dead'?'selected':''}>死亡</option><option value="needs-review" ${phase==='needs-review'?'selected':''}>待复核</option></select></label><label>HP<input name="hp" type="number" min="0" max="${focus.maxHp}" value="${focus.hp}"/></label><label>原因<input name="reason" required placeholder="必须记录修正原因"/></label><button type="submit">追加 DM 修正事件</button></div></form></details><details><summary>死亡豁免轨迹（${(saves.history||[]).length}）</summary>${history.map(item=>`<p><b>${esc(item.kind)}</b> · 第 ${esc(item.round??'—')} 轮 · ${esc(item.result)}${item.roll?` · d20 ${item.roll}`:''}${item.source?` · ${esc(item.source)}`:''}${item.amount?` · 伤害 ${item.amount}`:''}</p>`).join('')||'<p class="muted">尚无轨迹；迁移不会补造历史。</p>'}</details>`;
+  const statusStrip = `
+    <div class="pc-life-summary-strip">
+      <div class="pc-life-metric phase-metric stat">
+        <span class="pc-metric-label">生命阶段</span>
+        <b class="pc-metric-val phase-${phase}">${esc(lifeStatusLabel(focus))}</b>
+      </div>
+      <div class="pc-life-metric condition-metric stat">
+        <span class="pc-metric-label">状态</span>
+        <b class="pc-metric-val conditions-val">${esc(conditions.join('、')||'无')}</b>
+      </div>
+      <div class="pc-life-metric success-metric stat death-saves-metric">
+        <span class="pc-metric-label">成功</span>
+        <b class="pc-metric-val saves-succ-val">${saves.successes||0}/3</b>
+      </div>
+      <div class="pc-life-metric failure-metric stat death-saves-metric">
+        <span class="pc-metric-label">失败</span>
+        <b class="pc-metric-val saves-fail-val">${saves.failures||0}/3</b>
+      </div>
+    </div>
+  `;
+  section.innerHTML=`<h3>PC 生命状态</h3>${statusStrip}${required?`<form data-death-save-form="${focus.id}" class="pc-death-save-op"><p class="notice warn">本回合必须先记录死亡豁免；除自然 20 恢复 1 HP 外，本回合不会获得普通行动。</p><div class="row death-save-row"><button class="primary btn-roll-save" type="button" data-death-save-roll="${focus.id}">投 d20 并记录</button><label class="manual-save-label">手动最终 d20<input name="roll" type="number" min="1" max="20" required value="10"/></label><button type="submit" class="btn-save-submit">记录手动结果</button></div></form>`:''}${canStand?`<div class="pc-stand-op"><div class="notice warn">已恢复正 HP，但仍倒地；昏迷结束不会自动站起。</div><button data-pc-stand="${focus.id}" class="btn-stand-up">消耗 ${Math.floor(focus.speed/2)} 尺移动力起立</button></div>`:''}${canStabilize?`<form data-medical-stabilize-form="${focus.id}" class="pc-stabilize-op"><p class="muted">施救者：${esc(displayName(helper))}；提交会消耗其普通动作。DC 10，Terminal 只记录最终 Medicine 检定值。</p><div class="row"><label>最终检定值<input name="checkTotal" type="number" required value="10"/></label><button type="submit">医疗稳定</button></div></form>`:''}<div class="pc-life-details-group"><details class="wb-details-fold" ${phase==='needs-review'?'open':''}><summary>DM 生命阶段修正</summary><form data-life-correction-form="${focus.id}" class="life-correction-form"><div class="row"><label>阶段<select name="lifePhase"><option value="active" ${phase==='active'?'selected':''}>正常</option><option value="dying" ${phase==='dying'?'selected':''}>濒死</option><option value="stable" ${phase==='stable'?'selected':''}>稳定</option><option value="dead" ${phase==='dead'?'selected':''}>死亡</option><option value="needs-review" ${phase==='needs-review'?'selected':''}>待复核</option></select></label><label>HP<input name="hp" type="number" min="0" max="${focus.maxHp}" value="${focus.hp}"/></label><label class="reason-label">原因<input name="reason" required placeholder="必须记录修正原因"/></label><button type="submit">追加 DM 修正事件</button></div></form></details><details class="wb-details-fold"><summary>死亡豁免轨迹（${(saves.history||[]).length}）</summary><div class="death-saves-history-list">${history.map(item=>`<p class="save-history-item"><b>${esc(item.kind)}</b> · 第 ${esc(item.round??'—')} 轮 · ${esc(item.result)}${item.roll?` · d20 ${item.roll}`:''}${item.source?` · ${esc(item.source)}`:''}${item.amount?` · 伤害 ${item.amount}`:''}</p>`).join('')||'<p class="muted">尚无轨迹；迁移不会补造历史。</p>'}</div></details></div>`;
   const latestRevival=(focus.deathRecord?.resolutions||[]).filter(resolution=>resolution?.type==='pc-return-to-life').at(-1),revivalMarkup=revivalSummaryMarkup(latestRevival);
   if(revivalMarkup)section.querySelector('h3')?.insertAdjacentHTML('afterend',revivalMarkup);
   if(phase==='dead'&&!combatEnded()){
     const choice=deathOutcomeChoice?.combatantId===focus.id?deathOutcomeChoice.kind:null,shape=deathOutcomeChoice?.combatantId===focus.id?deathOutcomeChoice.shape:null;
     const choices=[['restore','恢复原身体','恢复原 PC 战斗实例。'],['successor','以新身体或新形态继续冒险','创建独立新角色卡与新 PC 实例。'],['controlled','制造受控不死生物','创建独立 monster/NPC 实例；控制记录可只限本场。']];
-    section.insertAdjacentHTML('beforeend',`<section class="death-outcome-choice"><h4>死亡后处理方式</h4><p class="muted">首次选择决定对象拓扑。法术只在对应结果内显示；提示不阻塞 DM 裁定。</p><div class="row">${choices.map(([kind,label])=>`<button type="button" data-death-outcome="${kind}" data-death-outcome-source="${focus.id}" class="${choice===kind?'active':''}">${label}</button>`).join('')}</div>${choice?`<p class="notice warn">${esc(choices.find(item=>item[0]===choice)?.[2]||'')}</p>`:''}</section>`);
+    section.insertAdjacentHTML('beforeend',`<section class="death-outcome-choice"><h4>死亡后处理方式</h4><p class="muted">首次选择决定对象拓扑。法术只在对应结果内显示；提示不阻塞 DM 裁定。</p><div class="death-outcome-segmented">${choices.map(([kind,label])=>`<button type="button" data-death-outcome="${kind}" data-death-outcome-source="${focus.id}" class="death-outcome-btn ${choice===kind?'active':''}">${label}</button>`).join('')}</div>${choice?`<p class="notice warn death-choice-notice">${esc(choices.find(item=>item[0]===choice)?.[2]||'')}</p>`:''}</section>`);
     if(choice==='restore')section.insertAdjacentHTML('beforeend',v060RestorePanel(focus));
     else if(choice==='successor'){
       const shapes=[['normal','普通新身体'],['undead','不死生物形态'],['custom','其他自定义形态']];
-      section.insertAdjacentHTML('beforeend',`<section class="death-resolution"><h4>选择新身体/新形态</h4><div class="row">${shapes.map(([id,label])=>`<button type="button" data-v060-shape="${id}" data-v060-shape-source="${focus.id}" class="${shape===id?'active':''}">${label}</button>`).join('')}</div></section>`);
+      section.insertAdjacentHTML('beforeend',`<section class="death-resolution shape-picker-section"><h4>选择新身体/新形态</h4><div class="shape-segmented-group">${shapes.map(([id,label])=>`<button type="button" data-v060-shape="${id}" data-v060-shape-source="${focus.id}" class="shape-btn ${shape===id?'active':''}">${label}</button>`).join('')}</div></section>`);
       if(shape)section.insertAdjacentHTML('beforeend',s2SuccessorPanel(focus,shape==='undead'?'S2C':'S2A',shape));
     } else if(choice==='controlled')section.insertAdjacentHTML('beforeend',s2ControlledUndeadPanel(focus));
   }
   const controllerMarkup=controllerLinkPanel(focus);if(controllerMarkup)section.insertAdjacentHTML('beforeend',controllerMarkup);
   host.append(section);
-  if(!ordinaryActionsAllowed(focus)){host.querySelectorAll('[data-resource],[data-economy],[data-economy-restore],[data-action="manual-effect"]').forEach(control=>{control.disabled=true;});}
+  const inspector=host.closest('.unit-action-center')||host;
+  if(!ordinaryActionsAllowed(focus)){inspector.querySelectorAll('[data-resource],[data-economy],[data-economy-restore],[data-action="manual-effect"]').forEach(control=>{control.disabled=true;});}
   if(active()&&!ordinaryActionsAllowed(active()))document.querySelectorAll('[data-economy]').forEach(control=>{control.disabled=true;});
 }
 function ensureWorkbenchShell(){
   const app=document.querySelector('#app');
   if(app.querySelector('[data-workbench-shell]'))return app;
-  app.innerHTML=`<div class="shell workbench-shell" data-workbench-shell><div class="workbench-layout"><aside class="workbench-rail"><div class="rail-brand"><span class="brand-mark" data-rail-toggle title="收起/展开导航侧栏">DT</span><div><p class="eyebrow">DM WORKBENCH</p><b>DND Terminal</b></div></div><button type="button" class="rail-collapse-btn" data-rail-toggle title="收起导航侧栏 (释放战术视野)" aria-label="收起侧边栏">◀</button><nav class="workbench-nav" aria-label="工作区导航" data-workbench-nav></nav><div class="rail-meta"><small data-workbench-version></small><span>本地私有</span></div></aside><div class="workbench-main"><header class="topbar workbench-topbar" data-workbench-topbar><div class="workbench-topbar-main"><p class="eyebrow">CURRENT SESSION</p><h1 data-workbench-session></h1></div><div class="workbench-session"><b data-workbench-phase></b><small data-workbench-summary></small></div><button type="button" class="topbar-collapse-btn" data-header-toggle title="向上收起会话标题栏 (保留名称并释放战术视野)" aria-label="收起会话标题栏">▲</button></header><details class="mobile-workspace-nav"><summary>切换工作区</summary><nav class="workbench-nav" aria-label="窄屏工作区导航" data-workbench-nav></nav></details><div class="global-notice" data-workbench-notice></div><main data-workbench-view></main><footer class="footer">CharacterSheet（长期只读） · CombatProjection · CombatantInstance · CombatEvent · PostCombatDiff</footer></div></div></div>`;
+  app.innerHTML=`<div class="shell workbench-shell" data-workbench-shell><div class="workbench-layout"><aside class="workbench-rail"><div class="rail-brand"><span class="brand-mark" data-rail-toggle title="收起/展开导航侧栏">DT</span><div><p class="eyebrow">DM WORKBENCH</p><b>DND Terminal</b></div></div><button type="button" class="rail-collapse-btn" data-rail-toggle title="收起导航侧栏 (释放战术视野)" aria-label="收起侧边栏">◀</button><nav class="workbench-nav" aria-label="工作区导航" data-workbench-nav></nav><div class="rail-meta"><small data-workbench-version></small><span>本地私有</span></div></aside><div class="workbench-main"><header class="topbar workbench-topbar" data-workbench-topbar><div class="workbench-topbar-main"><p class="eyebrow">CURRENT SESSION</p><h1 data-workbench-session></h1></div><div class="workbench-topbar-dice" data-wb-topbar-dice></div><div class="workbench-session"><b data-workbench-phase></b><small data-workbench-summary></small></div><button type="button" class="topbar-collapse-btn" data-header-toggle title="向上收起会话标题栏 (保留名称并释放战术视野)" aria-label="收起会话标题栏">▲</button></header><details class="mobile-workspace-nav"><summary>切换工作区</summary><nav class="workbench-nav" aria-label="窄屏工作区导航" data-workbench-nav></nav></details><div class="global-notice" data-workbench-notice></div><main data-workbench-view></main><footer class="footer">CharacterSheet（长期只读） · CombatProjection · CombatantInstance · CombatEvent · PostCombatDiff</footer></div></div></div>`;
   return app;
 }
 function applyPanelPreferences(root){
@@ -1629,6 +2305,7 @@ function bindWorkbenchShell(shell){
   shell.querySelectorAll('[data-workbench-topbar].header-collapsed').forEach(topbar=>topbar.onclick=(e)=>{if(e.target.closest('button'))return;uiPreferences={...uiPreferences,workbenchHeaderCollapsed:false};persistUiPreferences();render();});
 }
 function render(){
+  document.documentElement.dataset.theme = uiPreferences.theme || 'dark';
   const app=ensureWorkbenchShell(),shell=app.querySelector('[data-workbench-shell]');
   const layout=shell.querySelector('.workbench-layout');
   if(layout){
@@ -1649,6 +2326,21 @@ function render(){
       headerBtn.title=uiPreferences.workbenchHeaderCollapsed?'展开会话标题栏':'向上收起会话标题栏 (保留名称并释放战术视野)';
       headerBtn.setAttribute('aria-label',headerBtn.title);
     }
+    const topbarDice=topbar.querySelector('[data-wb-topbar-dice]');
+    if(topbarDice){
+      const latestRollRecord=state.events.slice().reverse().find(e=>e.type==='dice.rolled');
+      const rollHistoryRecords=state.events.slice().reverse().filter(e=>e.type==='dice.rolled');
+      topbarDice.innerHTML=diceDockMarkup({
+        latestRoll: latestRollRecord?.payload || null,
+        currentWorkspace: currentWorkspaceId(),
+        esc,
+      });
+      bindDiceDock(topbarDice,{
+        onDiceRoll: (formula,mode,dark)=>{
+          rollWorkbenchDice(formula,mode,dark);
+        },
+      });
+    }
   }
   renderedStatusProjection=projectWorkspaceStatus(state);
   shell.querySelector('[data-workbench-version]').textContent=`v${DELIVERY_VERSION} · 会话 Schema ${SESSION_ENVELOPE_SCHEMA_VERSION} · 本地私有`;
@@ -1657,7 +2349,12 @@ function render(){
   shell.querySelector('[data-workbench-summary]').textContent=`${state.events.length} events · ${state.encounter?.phase||'未知阶段'}`;
   shell.querySelectorAll('[data-workbench-nav]').forEach(nav=>nav.innerHTML=WORKSPACES.filter(w=>!w.navHidden).map(workspaceNavButton).join(''));
   shell.querySelector('[data-workbench-notice]').innerHTML=state.ui.message?`<p class="notice ${state.ui.messageKind||''}">${esc(state.ui.message)}</p>`:'';
+  const previousViewport = shell.querySelector('[data-map-viewport]');
+  if (previousViewport) mapViewPositions.set(state.id || state.name, { left: previousViewport.scrollLeft, top: previousViewport.scrollTop });
   const viewRoot=shell.querySelector('[data-workbench-view]');viewRoot.innerHTML=view();
+  const nextViewport = viewRoot.querySelector('[data-map-viewport]');
+  const savedPosition = mapViewPositions.get(state.id || state.name);
+  if (nextViewport) { nextViewport.scrollLeft=savedPosition?.left ?? 88; nextViewport.scrollTop=savedPosition?.top ?? 88; }
   bindWorkbenchShell(shell);upgradeLinkedEditors();bind();applyPanelPreferences(shell.querySelector('.workspace'));
 }
 function bindMapInteractions(){
@@ -1775,11 +2472,32 @@ function bind(){
     workspace.addEventListener('click',event=>{const button=event.target.closest('[data-v060-ruling-mode]');if(!button)return;const snapshot=v060RulingState(workspace);if(!snapshot.spell)return;snapshot.fields[button.dataset.v060RulingField]={...(snapshot.fields[button.dataset.v060RulingField]||{}),mode:button.dataset.v060RulingMode};redraw(snapshot);});
     workspace.addEventListener('input',()=>{const preview=workspace.querySelector('[data-v060-ruling-preview]');if(preview)preview.innerHTML=v060PreviewMarkup(v060RulingState(workspace));});
   });
+  document.querySelectorAll('details.wb-details-fold[data-inspector-fold]').forEach(details=>{
+    details.ontoggle=()=>{
+      const foldKey=details.dataset.inspectorFold,unitId=details.dataset.foldUnit;
+      if(unitId&&foldKey)setInspectorDisclosureState(unitId,foldKey,details.open);
+    };
+  });
   document.querySelectorAll('[data-pc-return-to-life-form]').forEach(form=>form.addEventListener('submit',event=>{event.preventDefault();confirmPcReturnToLife(event.currentTarget.dataset.pcReturnToLifeForm,event.currentTarget);}));
-  document.querySelectorAll('[data-death-outcome]').forEach(button=>button.onclick=()=>{deathOutcomeChoice={combatantId:button.dataset.deathOutcomeSource,kind:button.dataset.deathOutcome,shape:null};render();});
-  document.querySelectorAll('[data-v060-shape]').forEach(button=>button.onclick=()=>{deathOutcomeChoice={combatantId:button.dataset.v060ShapeSource,kind:'successor',shape:button.dataset.v060Shape};render();});
-  document.querySelectorAll('[data-s2-successor-form]').forEach(form=>form.addEventListener('submit',event=>{event.preventDefault();beginS2SuccessorPlacement(event.currentTarget.dataset.s2SuccessorForm,event.currentTarget,event.currentTarget.dataset.s2Slice);}));
-  document.querySelectorAll('[data-s2-undead-form]').forEach(form=>form.addEventListener('submit',event=>{event.preventDefault();beginS2ControlledUndeadPlacement(event.currentTarget.dataset.s2UndeadForm,event.currentTarget);}));
+  document.querySelectorAll('[data-death-outcome]').forEach(button=>button.onclick=()=>{
+    const sForm=document.querySelector('[data-s2-successor-form]');if(sForm)saveSuccessorDraftFromForm(sForm);
+    const uForm=document.querySelector('[data-s2-undead-form]');if(uForm)saveControlledDraftFromForm(uForm);
+    deathOutcomeChoice={combatantId:button.dataset.deathOutcomeSource,kind:button.dataset.deathOutcome,shape:null};render();
+  });
+  document.querySelectorAll('[data-v060-shape]').forEach(button=>button.onclick=()=>{
+    const sForm=document.querySelector('[data-s2-successor-form]');if(sForm)saveSuccessorDraftFromForm(sForm);
+    deathOutcomeChoice={combatantId:button.dataset.v060ShapeSource,kind:'successor',shape:button.dataset.v060Shape};render();
+  });
+  document.querySelectorAll('[data-s2-successor-form]').forEach(form=>{
+    form.addEventListener('input',()=>saveSuccessorDraftFromForm(form));
+    form.addEventListener('change',()=>saveSuccessorDraftFromForm(form));
+    form.addEventListener('submit',event=>{event.preventDefault();beginS2SuccessorPlacement(event.currentTarget.dataset.s2SuccessorForm,event.currentTarget,event.currentTarget.dataset.s2Slice);});
+  });
+  document.querySelectorAll('[data-s2-undead-form]').forEach(form=>{
+    form.addEventListener('input',()=>saveControlledDraftFromForm(form));
+    form.addEventListener('change',()=>saveControlledDraftFromForm(form));
+    form.addEventListener('submit',event=>{event.preventDefault();beginS2ControlledUndeadPlacement(event.currentTarget.dataset.s2UndeadForm,event.currentTarget);});
+  });
   document.querySelector('[data-s2-placement-confirm]')?.addEventListener('click',()=>confirmS2PlacementAt(s2PlacementDraft?.item.combatant.position));
   document.querySelectorAll('[data-controller-link-form]').forEach(form=>form.addEventListener('submit',event=>{event.preventDefault();updateS2ControllerLink(event.currentTarget.dataset.controllerLinkForm,event.currentTarget);}));
   document.querySelectorAll('[data-controlled-command-form]').forEach(form=>form.addEventListener('submit',event=>{event.preventDefault();issueControlledCommand(event.currentTarget.dataset.controlledCommandForm,event.currentTarget);}));
@@ -1787,11 +2505,17 @@ function bind(){
   document.querySelectorAll('[data-cleanup-token]').forEach(button=>button.onclick=()=>cleanupToken(button.dataset.cleanupToken));
   document.querySelectorAll('[data-create]').forEach(b=>b.onclick=()=>addCombatant(templates.find(t=>t.id===b.dataset.create),{x:Math.min(2,state.combatants.length),y:Math.min(2,state.combatants.length)}));
   document.querySelectorAll('[data-select-card]').forEach(card=>{const select=()=>{state.ui.selectedId=card.dataset.selectCard;persist();render();};card.onclick=event=>{if(event.target.closest('button,input,label'))return;select();};card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}};});
+  document.querySelectorAll('[data-inspector-tab]').forEach(b=>b.onclick=e=>{e.stopPropagation();uiPreferences={...uiPreferences,inspectorTab:b.dataset.inspectorTab};persistUiPreferences();render();});
   document.querySelectorAll('[data-roster-toggle]').forEach(btn=>btn.onclick=event=>{event.stopPropagation();const id=btn.dataset.rosterToggle,curr=activeExpandedCombatantId();state.ui.selectedId=(curr===id)?(active()?.id&&active().id!==id?active().id:null):id;persist();render();});
   document.querySelectorAll('[data-facing]').forEach(b=>b.onclick=()=>setFacingDraft(b.dataset.facing,b.dataset.facingValue));
   document.querySelectorAll('[data-facing-port]').forEach(b=>b.onclick=()=>setFacingPortDraft(b.dataset.facingPort,Number(b.dataset.portX),Number(b.dataset.portY)));
   document.querySelectorAll('[data-facing-correct]').forEach(b=>b.onclick=()=>correctFacing(b.dataset.facingCorrect,b.dataset.facingValue));
-  document.querySelectorAll('[data-reference-action]').forEach(b=>b.onclick=()=>{state.ui.selectedId=b.dataset.referenceAction;state.ui.referenceAction={combatantId:b.dataset.referenceAction,name:b.dataset.referenceName,kind:b.dataset.referenceKind||'reference'};persist();render();});
+  document.querySelectorAll('[data-reference-action]').forEach(b=>b.onclick=()=>{
+    state.ui.selectedId=b.dataset.referenceAction;
+    state.ui.referenceAction={combatantId:b.dataset.referenceAction,name:b.dataset.referenceName,kind:b.dataset.referenceKind||'reference'};
+    setInspectorDisclosureState(b.dataset.referenceAction,'actions',true);
+    persist();render();
+  });
   document.querySelectorAll('[data-legendary-action]').forEach(b=>b.onclick=()=>useLegendaryAction(b.dataset.legendaryAction,b.dataset.legendaryName));
   document.querySelectorAll('[data-tie-up]').forEach(b=>b.onclick=()=>moveTieItem(b.dataset.tieUp,b.dataset.tieId,-1));
   document.querySelectorAll('[data-tie-down]').forEach(b=>b.onclick=()=>moveTieItem(b.dataset.tieDown,b.dataset.tieId,1));
@@ -1814,7 +2538,19 @@ function bind(){
   document.querySelectorAll('[data-resource]').forEach(button=>{const row=button.closest('.row'),focus=getCombatant(state.ui.selectedId)||active();if(!row||!focus||row.dataset.resourcePurpose)return;row.dataset.resourcePurpose='shown';const note=document.createElement('small');note.className='resource-purpose';note.textContent=`用途：${resourcePurpose(focus,button.dataset.resource)}`;row.append(note);});
   document.querySelectorAll('[data-range]').forEach(b=>b.onclick=()=>setRange(b.dataset.range));
   bindMapInteractions();
-  document.querySelectorAll('[data-target]').forEach(box=>box.onchange=()=>{const r=state.ui.range;if(!r)return;const id=box.dataset.target;if(box.checked){r.manualRemove=r.manualRemove.filter(x=>x!==id);if(!rangeTargets(coveredCells(r)).some(c=>c.id===id)&&!r.manualAdd.includes(id))r.manualAdd.push(id);}else{r.manualAdd=r.manualAdd.filter(x=>x!==id);if(rangeTargets(coveredCells(r)).some(c=>c.id===id)&&!r.manualRemove.includes(id))r.manualRemove.push(id);}persist();render();});
+  document.querySelectorAll('[data-range-target]').forEach(button=>button.onclick=()=>{
+    const r=state.ui.range;if(!r||r.phase!=='preview')return;
+    const id=button.dataset.rangeTarget,automatic=rangeTargets(coveredCells(r)).some(combatant=>combatant.id===id);
+    const selected=automatic?!r.manualRemove.includes(id):r.manualAdd.includes(id);
+    if(selected){
+      if(automatic&&!r.manualRemove.includes(id))r.manualRemove.push(id);
+      if(!automatic)r.manualAdd=r.manualAdd.filter(value=>value!==id);
+    }else{
+      if(automatic)r.manualRemove=r.manualRemove.filter(value=>value!==id);
+      if(!automatic&&!r.manualAdd.includes(id))r.manualAdd.push(id);
+    }
+    persist();render();
+  });
   document.querySelector('#range-size')?.addEventListener('change',e=>{state.ui.range.size=Math.max(5,Number(e.target.value)||5);persist();render();});
   document.querySelector('#dark-rolls')?.addEventListener('change',e=>{state.settings.darkRolls=e.target.checked;persist();});
   document.querySelector('[data-dice-shortcut-preview]')?.addEventListener('click',()=>{
@@ -1874,7 +2610,17 @@ function bindBattleWorkbench(shell = document){
   document.documentElement.dataset.theme = uiPreferences.theme || 'dark';
   bindBattleWorkbenchInteractions(shell, {
     onSubModeChange: nextMode => {
+      if (nextMode === 'map' && uiPreferences.workbenchSubMode !== 'map') mapReturnMode = uiPreferences.workbenchSubMode || 'combat';
       uiPreferences = { ...uiPreferences, workbenchSubMode: nextMode };
+      persistUiPreferences();
+      render();
+    },
+    onMapBackgroundClick: () => {
+      if (mapGesture || state.ui.range || s2PlacementDraft || pendingPlacementCombatants().length || (deathOutcomeChoice?.kind && deathOutcomeChoice.combatantId === state.ui.selectedId)) return;
+      const mode = uiPreferences.workbenchSubMode || 'full';
+      const next = mode === 'map' ? (['full','combat'].includes(mapReturnMode) ? mapReturnMode : 'combat') : 'map';
+      if (mode !== 'map') mapReturnMode = mode;
+      uiPreferences = { ...uiPreferences, workbenchSubMode: next };
       persistUiPreferences();
       render();
     },
@@ -1886,7 +2632,10 @@ function bindBattleWorkbench(shell = document){
     },
     onCollapseChange: (side, collapsed) => {
       if (side === 'left') uiPreferences = { ...uiPreferences, workbenchLeftCollapsed: collapsed };
-      if (side === 'right') uiPreferences = { ...uiPreferences, workbenchRightCollapsed: collapsed };
+      if (side === 'right') {
+        if (resolutionView.key) resolutionView.rightCollapsed = collapsed;
+        else uiPreferences = { ...uiPreferences, workbenchRightCollapsed: collapsed };
+      }
       persistUiPreferences();
       render();
     },

@@ -58,10 +58,64 @@ export function bindMapController(viewport, canvas, options = {}) {
     initialZoom = 1.0,
     labelElement = null,
     onZoomChange = null,
+    panHandle = null,
+    onBackgroundClick = null,
   } = options;
 
   let currentZoom = clampZoom(initialZoom);
   applyMapScale(viewport, canvas, currentZoom, labelElement);
+
+  let pan = null;
+  let backgroundPress = null;
+  const startPan = event => {
+    if (event.button !== 0 || event.isPrimary === false) return;
+    pan = { id:event.pointerId, x:event.clientX, y:event.clientY, left:viewport.scrollLeft, top:viewport.scrollTop };
+    panHandle.setPointerCapture?.(event.pointerId);
+    panHandle.classList.add('is-panning');
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  const movePan = event => {
+    if (!pan || pan.id !== event.pointerId) return;
+    viewport.scrollLeft = pan.left - (event.clientX-pan.x);
+    viewport.scrollTop = pan.top - (event.clientY-pan.y);
+    event.preventDefault();
+  };
+  const endPan = event => {
+    if (!pan || pan.id !== event.pointerId) return;
+    pan = null;
+    panHandle.classList.remove('is-panning');
+    if (panHandle.hasPointerCapture?.(event.pointerId)) panHandle.releasePointerCapture(event.pointerId);
+  };
+  const panKey = event => {
+    const delta = {ArrowLeft:[-48,0],ArrowRight:[48,0],ArrowUp:[0,-48],ArrowDown:[0,48]}[event.key];
+    if (!delta) return;
+    viewport.scrollBy(delta[0],delta[1]);
+    event.preventDefault();
+  };
+  const excluded = target => target.closest('[data-token],[data-entry-placement-token],[data-s2-placement-token],button,input,select,textarea,a,summary,[data-map-pan-handle]');
+  const backgroundDown = event => {
+    backgroundPress = event.button === 0 && event.isPrimary !== false && !excluded(event.target)
+      ? { id:event.pointerId,x:event.clientX,y:event.clientY,time:Date.now(),moved:false } : null;
+  };
+  const backgroundMove = event => {
+    if (backgroundPress && Math.hypot(event.clientX-backgroundPress.x,event.clientY-backgroundPress.y)>6) backgroundPress.moved=true;
+  };
+  const backgroundUp = event => {
+    const press=backgroundPress; backgroundPress=null;
+    if (press && press.id===event.pointerId && !press.moved && Date.now()-press.time<500 && !excluded(event.target)) onBackgroundClick?.();
+  };
+  const cancelBackground = () => { backgroundPress=null; };
+  panHandle?.addEventListener('pointerdown',startPan);
+  panHandle?.addEventListener('pointermove',movePan);
+  panHandle?.addEventListener('pointerup',endPan);
+  panHandle?.addEventListener('pointercancel',endPan);
+  panHandle?.addEventListener('lostpointercapture',endPan);
+  panHandle?.addEventListener('keydown',panKey);
+  viewport.addEventListener('pointerdown',backgroundDown);
+  viewport.addEventListener('pointermove',backgroundMove);
+  viewport.addEventListener('pointerup',backgroundUp);
+  viewport.addEventListener('pointercancel',cancelBackground);
 
   // 1. Natural Mouse Wheel Zoom (NO Ctrl key required!)
   const handleWheel = (event) => {
@@ -121,6 +175,16 @@ export function bindMapController(viewport, canvas, options = {}) {
 
   // Cleanup handler
   return () => {
+    panHandle?.removeEventListener('pointerdown',startPan);
+    panHandle?.removeEventListener('pointermove',movePan);
+    panHandle?.removeEventListener('pointerup',endPan);
+    panHandle?.removeEventListener('pointercancel',endPan);
+    panHandle?.removeEventListener('lostpointercapture',endPan);
+    panHandle?.removeEventListener('keydown',panKey);
+    viewport.removeEventListener('pointerdown',backgroundDown);
+    viewport.removeEventListener('pointermove',backgroundMove);
+    viewport.removeEventListener('pointerup',backgroundUp);
+    viewport.removeEventListener('pointercancel',cancelBackground);
     viewport.removeEventListener('wheel', handleWheel);
     canvas.removeEventListener('touchstart', handleTouchStart);
     canvas.removeEventListener('touchmove', handleTouchMove);

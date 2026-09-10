@@ -55,6 +55,7 @@ export function defaultUiPreferences() {
     workbenchRightCollapsed: false,
     workbenchDiceDockOpen: false,
     workbenchZoom: 1.0,
+    inspectorTab: 'combat',
     panels: Object.fromEntries(PANEL_REGISTRY.map(panel => [panel.id, { visible: true, width: panel.width, order: panel.order }])),
   };
 }
@@ -79,6 +80,7 @@ export function normalizeUiPreferences(value) {
   next.workbenchRightCollapsed = value?.workbenchRightCollapsed === true;
   next.workbenchDiceDockOpen = value?.workbenchDiceDockOpen === true;
   next.workbenchZoom = Number.isFinite(value?.workbenchZoom) && value.workbenchZoom >= 0.4 && value.workbenchZoom <= 2.5 ? value.workbenchZoom : 1.0;
+  next.inspectorTab = value?.inspectorTab === 'token' ? 'token' : 'combat';
   for (const workspace of WORKSPACES) {
     const panels = PANEL_REGISTRY.filter(panel => panel.workspace === workspace.id);
     const claimedOrders = new Set();
