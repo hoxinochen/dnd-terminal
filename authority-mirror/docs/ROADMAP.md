@@ -1,8 +1,8 @@
 # Roadmap
 
-- **状态（Status）：** Active Direction / No Current Delivery
+- **状态（Status）：** Active Delivery / v0.7.1 Main Integration
 - **最近归档版本：** v0.7.0 Archived — Local Private
-- **当前门禁：** 下一交付尚未选择；不存在 Approved/Frozen ABC
+- **当前门禁：** v0.7.1 候选已冻结，主线 merge 已获授权；Push、Release、Archive、部署与公开发布未授权
 - **Naming Rule：** 产品交付使用 SemVer；Milestone/Slice 只在已采纳 ESG Profile 的适用条件成立时使用，不自动继承历史选择。
 
 ## 当前项目位置
@@ -11,7 +11,9 @@ v0.1.0 至 v0.7.0 已完成七个大版本的本地产品演进。v0.7.0 的 Imp
 
 项目已经具备本地单 DM 战斗闭环、二维方格与范围候选、顺序事件、自动保存与导入导出、长期角色修订与受控 Excel 导入、战斗投影、战后审核回写、PC 生命阶段和死亡后窄结果，以及七工作区、只读状态投影和受控布局。
 
-当前没有正在实施或已经批准的下一版本。Backlog、优先级和 AI 推荐只为方向选择提供依据。
+当前交付为 `v0.7.1 — 统一战斗工作台 UX 适配`。它已在候选分支完成并通过自动、隔离 Chrome 与 User Safari 验收；候选 commit 为 `58ebd92`，正在进入主线集成。
+
+v0.7.1 只收敛真实验收发现的响应式布局、三主题状态可读性、骰子栏 containment、地图视口平移/空白导航和既有死亡/投入流程 UX，不扩张为地图资源、规则引擎或多人能力。
 
 ## User 已确认的战略优先方向
 
@@ -84,16 +86,16 @@ Backlog 保存完整条目、优先级、来源和依赖；Roadmap 只保存跨�
 | v0.5.0 | 死亡后恢复、后继角色和受控不死生物窄流程 |
 | v0.6.0 | 三类死亡后结果与八项非阻塞法术裁定资料 |
 | v0.7.0 | 七工作区、状态投影、统一视觉系统与受控布局 |
+| v0.7.1 | 统一战斗工作台响应式 UX、三主题可读性与地图视口交互 |
 
 详细实施、测试和冻结事实由各版本 version-work 记录承担，本 Roadmap 不重复。
 
 ## 下一门禁
 
-下一步不是直接编写代码，也不是自动生成 ABC，而是：
+下一步是完成 v0.7.1 主线集成回归，而不是启动另一项产品方向：
 
-1. 重新读取当前 Authority、Architecture、Roadmap 与 Backlog；
-2. 审计 P1 条目、依赖、风险和建议版本尺寸；
-3. 给出两至三个候选方向及一个明确推荐；
-4. 等待 User 选择方向；
-5. 方向选定后才可起草 ABC；
-6. ABC 批准冻结后仍需独立的 Implementation 授权。
+1. 在 `main` 完成 v0.7.1 fast-forward merge；
+2. 执行主线全量测试和浏览器冒烟验证；
+3. 更新 v0.7.1 Integration 结果；
+4. 如需 Local Private Release 或 Archive，另行请求并执行对应门禁；
+5. Push 仍需 User 单独授权。

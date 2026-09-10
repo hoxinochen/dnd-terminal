@@ -1,12 +1,12 @@
 # DND Terminal 工程协作规范
 
-- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0、v0.5.0、v0.6.0 与 v0.7.0 Archived — Local Private
+- **文档状态（Status）：** v0.3.0 / M1、v0.3.1、v0.4.0、v0.5.0、v0.6.0 与 v0.7.0 Archived — Local Private；v0.7.1 Approved / Frozen for Integration
 - **适用范围（Scope）：** DND Terminal 文档 Authority 与产品 Workspace
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
-- **当前交付（Current Delivery）：** 无；最近归档交付为 `v0.7.0 — 高密度 DM 工作台、状态投影与统一视觉系统`
-- **当前门禁（Current Gate）：** v0.7.0 Archived — Local Private；下一交付尚未授权
+- **当前交付（Current Delivery）：** `v0.7.1 — 统一战斗工作台 UX 适配`
+- **当前门禁（Current Gate）：** v0.7.1 候选已冻结，main integration 已获授权；Push、Release、Archive、部署与公开发布未授权
 - **ESG Core：** Downstream Documentation Schema `schema-v0.3.0`（与 Minimal Governance Framework `schema-v0.2.0` 兼容）
 - **v0.7.0 Profile 适用性：** 一个主 Slice、五个内部 Implementation Phase 与一次综合验收；Milestone Documentation Profile `Not Applicable`；Archive Contract `schema-v0.1.1` / Lightweight Archive Profile `schema-v0.1.2` 已选择并完成
 - **主要语言（Primary Language）：** 简体中文
@@ -131,7 +131,9 @@ User 于 `2026-09-01` 明确授权生成、批准并冻结 `version-work/v0.7.0/
 
 User 于 `2026-09-02` 先授权生成 `version-work/v0.7.0/AMENDMENT_01.md` 与更新 Backlog，随后批准冻结并授权 Implementation。地图视口、100 条骰史、复合骰式/快捷输入、单一角色创建任务流与设置开发工具均已完成；地图图片和有符号四向热扩展继续属于 BL-007。Amendment 的测试、浏览器验证、Review、Local Private Release 与 Archive 均已完成。
 
-当前没有 Approved/Frozen 的下一交付 ABC。分支、Commit、Push、部署、公开发布或再分发均不因本次活文档收口自动获批。
+User 于 `2026-09-10` 明确批准本次合作交付使用 `v0.7.1`，冻结范围为统一战斗工作台的响应式布局、三主题状态可读性、地图视口平移/空白导航、骰子栏 containment 与既有死亡/投入流程的 UX 适配；候选 commit 为 `58ebd92`。User 同时授权生成 v0.7.1 ESG 交付文档并 merge 到 `main`。该交付不改写 v0.7.0 冻结材料；Push、Release、Archive、部署和公开发布仍未授权。
+
+当前 v0.7.1 正处于 Main Integration 门禁。除已明确授权的 v0.7.1 文档与 merge 外，不得自动创建下一版本或扩张到未冻结能力。
 
 当前以下行为仍不自动获批：
 

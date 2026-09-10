@@ -2,12 +2,12 @@
 
 - **项目名称（Project Name）：** DND Terminal
 - **项目 ID：** `dnd-terminal`
-- **当前产品版本：** `v0.7.0` 高密度 DM 工作台、状态投影与统一视觉系统
-- **当前状态：** v0.6.0 与 v0.7.0 Archived — Local Private
-- **当前交付：** 无；最近归档交付为 `v0.7.0 — 高密度 DM 工作台、状态投影与统一视觉系统`
-- **当前门禁：** v0.7.0 Archived — Local Private；下一交付尚未授权
-- **活文档核对基线：** 已核对至 v0.7.0 Archive / 2026-09-04
-- **Release / Technical Sync：** v0.7.0 已完成 Local Private Release、Lightweight Archive 与既有本地技术同步；当前 `main` 与 `origin/main` 均为 `bc31f20`。本次活文档收口与 Backlog v2 更新尚未 Commit/Push；部署或公开发布仍未授权
+- **当前产品版本：** `v0.7.1` 统一战斗工作台 UX 适配
+- **当前状态：** v0.7.0 Archived — Local Private；v0.7.1 Approved / Frozen for Integration
+- **当前交付：** `v0.7.1 — 统一战斗工作台 UX 适配`
+- **当前门禁：** v0.7.1 候选已冻结，main integration 已获授权；Push、Release、Archive、部署与公开发布未授权
+- **活文档核对基线：** 已核对至 v0.7.1 Integration / 2026-09-10
+- **Release / Technical Sync：** 候选冻结 commit 为 `58ebd92`；main integration 已获 User 授权，主线合并后的回归待执行，Push、Release、Archive、部署与公开发布仍未授权
 - **文档 Authority：** `/Users/chenzehao/Vaults/obsidian/obisidian/理工学习相关/DND Terminal`
 - **产品 Workspace：** `/Users/chenzehao/Projects/DND Terminal`
 - **数据来源区：** `/Users/chenzehao/Antigravity Source/lorebuddy-规则书/NotebookLM_Version`
@@ -32,7 +32,9 @@ User 于 `2026-09-01` 正式授权生成、批准并冻结 v0.7.0 ABC，随后�
 
 User 于 `2026-09-02` 先授权更新 Backlog 并生成 v0.7.0 Amendment 01，随后明确批准冻结并授权 Implementation；本次施工已完成，自动测试与浏览器复验事实见对应 Implementation / Testing。该 Amendment 收口地图视口、骰点历史/复合骰式、角色创建流程和设置开发验证工具；地图导入及有符号四向热扩展继续属于强化后的 BL-007，不进入本次施工。User 已确认人工审核通过并授权 Review；Review 已完成。User 随后授权先后执行 Local Private Release 与 Archive；Release 与 Lightweight Archive 均已完成，Commit、Push、部署与公开发布仍未授权。
 
-当前没有 Approved/Frozen 的下一交付。User 已确认 Backlog v2 的首次整体优先级；P1 近期方向为 BL-032、BL-035、BL-033 与 BL-030，BL-016 作为持续数据门禁，BL-009 是高重要性但继续暂缓的长期多人核心。AI 建议首先审查 BL-032，但该建议不是 User 对下一版本的选择，也不授权 ABC 或 Implementation。
+User 于 `2026-09-10` 批准本次合作交付命名为 `v0.7.1`，并授权生成 ESG 交付文档和 merge。v0.7.1 聚焦统一战斗工作台的响应式布局、三主题状态可读性、地图视口平移/空白导航、骰子栏 containment 和既有死亡/投入流程的 UX 适配；候选 commit 为 `58ebd92`。User Safari 人工验收通过；主线合并后的回归仍待执行。
+
+当前没有已批准的下一版本；v0.7.1 是当前进行中的 Main Integration 交付。Backlog、优先级和 AI 推荐不自动扩张本交付范围。
 
 - [项目 Authority](docs/extensions/project-authority.md)
 - [产品需求基线](docs/extensions/product-requirements.md)
@@ -90,6 +92,11 @@ User 于 `2026-09-02` 先授权更新 Backlog 并生成 v0.7.0 Amendment 01，�
 - [v0.7.0 Independent Review](version-work/v0.7.0/REVIEW.md)
 - [v0.7.0 Release Notes](version-work/v0.7.0/RELEASE_NOTES.md)
 - [v0.7.0 Archive Summary](version-work/v0.7.0/archive/ARCHIVE_SUMMARY.md)
+- [v0.7.1 Approved ABC](version-work/v0.7.1/ABC.md)
+- [v0.7.1 Implementation](version-work/v0.7.1/IMPLEMENTATION.md)
+- [v0.7.1 Testing](version-work/v0.7.1/TESTING.md)
+- [v0.7.1 Independent Review](version-work/v0.7.1/REVIEW.md)
+- [v0.7.1 Collaboration Record](version-work/v0.7.1/COLLABORATION_RECORD.md)
 
 全部项目文档的 canonical Authority 只在 Obsidian；Workspace 的 `authority-mirror/` 与根 README 是单向技术投影。v0.5.0 产品实现为 `370b92a`，Authority 镜像为 `2f897a6`，活文档治理同步为 `ab82faf`；v0.6.0 归档基线为 `3464d17`，v0.7.0 产品与文档的既有技术同步已进入 `main`/`origin/main`，当前提交为 `bc31f20`。本次 2026-09-04 活文档收口将在工作树形成新的未提交投影；部署与公开发布仍未授权。
 
